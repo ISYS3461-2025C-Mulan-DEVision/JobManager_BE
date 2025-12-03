@@ -1,5 +1,6 @@
 package com.devision.job_manager_auth.service.external;
 
+import com.devision.job_manager_auth.dto.external.CompanyAuthStatusDto;
 import com.devision.job_manager_auth.dto.external.CompanyBasicInfoDto;
 
 import java.util.Optional;
@@ -10,7 +11,7 @@ public interface CompanyExternalService {
 
     Optional<CompanyBasicInfoDto> getCompanyBasicInfoByEmail(String email);
 
-    Optional<CompanyBasicInfoDto> getCompanyAuthStatus(Long companyId);
+    Optional<CompanyAuthStatusDto> getCompanyAuthStatus(Long companyId);
 
     boolean isCompanyActivated(String email);
 

@@ -62,8 +62,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+#    Not using Eureka for NOW
+    fetch-registry: false
+    register-with-eureka: false
   instance:
     prefer-ip-address: true
 
