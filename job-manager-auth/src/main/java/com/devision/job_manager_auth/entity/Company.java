@@ -30,8 +30,9 @@ public class Company {
     @Column(length = 255)
     private String name;
 
-    @Column(nullable = false, length = 100)
-    private String country;
+    @Column(nullable = false, length = 50)
+    @Enumerated(EnumType.STRING)
+    private Country country;
 
     @Column(length = 20)
     private String phone;
@@ -49,6 +50,9 @@ public class Company {
     @Column(length = 50)
     @Enumerated(EnumType.STRING)
     private SsoProvider ssoProvider; // GOOGLE, MICROSOFT, FACEBOOK, GITHUB, NONE
+
+    @Column(length = 255)
+    private String ssoProviderId; // this ID is provided by the SSO Provider
 
     @Column(nullable = false)
     private Boolean isActivated = false;
