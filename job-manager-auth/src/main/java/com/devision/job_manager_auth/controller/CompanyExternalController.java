@@ -1,7 +1,6 @@
 package com.devision.job_manager_auth.controller;
 
 import com.devision.job_manager_auth.dto.external.CompanyBasicInfoDto;
-import com.devision.job_manager_auth.dto.internal.ApiResponse;
 import com.devision.job_manager_auth.service.external.CompanyExternalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

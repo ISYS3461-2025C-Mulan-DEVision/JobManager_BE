@@ -35,7 +35,7 @@ public class OAuth2Controller {
 
         log.info("OAuth2 user: email={}, name={}, ssoProviderId={}", email, name, ssoProviderId);
 
-        // If user exists ---> login. Otherwise ---> register
+        // If user exists --> login, otherwise register
         ApiResponse<AuthResponse> response;
 
         try {

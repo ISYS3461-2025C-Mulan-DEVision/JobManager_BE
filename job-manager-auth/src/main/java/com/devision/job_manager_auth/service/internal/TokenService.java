@@ -1,11 +1,11 @@
 package com.devision.job_manager_auth.service.internal;
 
-import com.devision.job_manager_auth.entity.Company;
+import com.devision.job_manager_auth.entity.CompanyAccount;
 
 public interface TokenService {
-    String generateAccessToken(Company company);
+    String generateAccessToken(CompanyAccount account);
 
-    String generateRefreshToken(Company company);
+    String generateRefreshToken(CompanyAccount account);
 
     Long validateAccessToken(String token);
 

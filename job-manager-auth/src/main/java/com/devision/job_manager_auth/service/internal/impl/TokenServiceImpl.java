@@ -1,6 +1,6 @@
 package com.devision.job_manager_auth.service.internal.impl;
 
-import com.devision.job_manager_auth.entity.Company;
+import com.devision.job_manager_auth.entity.CompanyAccount;
 import com.devision.job_manager_auth.service.internal.TokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -9,7 +9,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -40,35 +39,34 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public String generateAccessToken(Company company) {
+    public String generateAccessToken(CompanyAccount account) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
-        // Generate JWE encrypted token
+        // Generate JWT token
         return Jwts.builder()
                 .header()
-                    .type("JWE")
+                    .type("JWT")
                     .and()
-                .subject(company.getId().toString())
-                .claim("email", company.getEmail())
-                .claim("role", company.getRole().name())
-                .claim("country", company.getCountry().name())
+                .subject(account.getId().toString())
+                .claim("email", account.getEmail())
+                .claim("role", account.getRole().name())
+                .claim("authProvider", account.getAuthProvider().name())
                 .claim("type", "ACCESS")
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
-
     }
 
     @Override
-    public String generateRefreshToken(Company company) {
+    public String generateRefreshToken(CompanyAccount account) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
 
         // Generate a token with longer expiration
         return Jwts.builder()
-                .subject(company.getId().toString())
+                .subject(account.getId().toString())
                 .claim("type", "REFRESH")
                 .issuedAt(now)
                 .expiration(expiryDate)
