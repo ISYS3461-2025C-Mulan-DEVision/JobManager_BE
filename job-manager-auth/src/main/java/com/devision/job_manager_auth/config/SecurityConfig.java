@@ -37,7 +37,10 @@ public class SecurityConfig {
                                 "/api/auth/oauth2/**",
                                 "/api/auth/health",
                                 "/oauth2/**",
-                                "/login/oauth2/**"
+                                "/login/oauth2/**",
+                                "/api/external/**",
+                                "/api/auth/logout",
+                                "/api/auth/refresh"
                         ).permitAll()
 
                         // Requiring authentication endpoints:
@@ -47,11 +50,11 @@ public class SecurityConfig {
 
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/api/auth/oauth2/callback", true)
                 );
+
+//                .oauth2Login(oauth2 -> oauth2
+//                        .defaultSuccessUrl("/api/auth/oauth2/callback", true)
+//                );
         return http.build();
     }
 }

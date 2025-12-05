@@ -45,7 +45,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@RequestParam String token) {
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
         log.info("Logout request received for token: {}", token);
         ApiResponse<String> response = authenticationService.logout(token);
         return ResponseEntity.ok(response);
