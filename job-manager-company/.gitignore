@@ -3,6 +3,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+src/main/resources/devision-job-manager-firebase-adminsdk-fbsvc-ad4c0c89af.json
 
 ### STS ###
 .apt_generated
