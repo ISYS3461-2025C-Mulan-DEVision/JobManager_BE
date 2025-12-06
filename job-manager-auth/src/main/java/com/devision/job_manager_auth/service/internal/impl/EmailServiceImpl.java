@@ -1,6 +1,5 @@
 package com.devision.job_manager_auth.service.internal.impl;
 
-import com.devision.job_manager_auth.entity.Company;
 import com.devision.job_manager_auth.service.internal.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
