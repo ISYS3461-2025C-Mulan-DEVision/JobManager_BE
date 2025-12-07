@@ -152,10 +152,11 @@ public class CompanyMediaController {
             @PathVariable Long companyId,
             @PathVariable Long mediaId,
             @Valid @RequestBody UpdateMediaDisplayOrderRequest request) {
-        log.info("Update display order request for media ID: {}, new order: {}", mediaId, request.getDisplayOrder());
+        log.info("Update display order request for company ID: {}, media ID: {}, new order: {}", 
+                companyId, mediaId, request.getDisplayOrder());
         
         try {
-            companyMediaService.updateDisplayOrder(mediaId, request.getDisplayOrder());
+            companyMediaService.updateDisplayOrder(companyId, mediaId, request.getDisplayOrder());
             return ResponseEntity.ok(ApiResponse.success("Display order updated successfully", null));
         } catch (IllegalArgumentException e) {
             log.error("Failed to update display order: {}", e.getMessage());
@@ -164,6 +165,25 @@ public class CompanyMediaController {
             log.error("Failed to update display order", e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to update display order: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/reorder")
+    public ResponseEntity<ApiResponse<String>> reorderMedia(
+            @PathVariable Long companyId,
+            @RequestBody List<Long> orderedMediaIds) {
+        log.info("Reorder media request for company ID: {}, order: {}", companyId, orderedMediaIds);
+        
+        try {
+            companyMediaService.reorderMedia(companyId, orderedMediaIds);
+            return ResponseEntity.ok(ApiResponse.success("Media reordered successfully", null));
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to reorder media: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to reorder media", e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Failed to reorder media: " + e.getMessage()));
         }
     }
 

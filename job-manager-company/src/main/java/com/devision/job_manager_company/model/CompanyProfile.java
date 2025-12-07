@@ -39,6 +39,9 @@ public class CompanyProfile {
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
+    @Column(name = "banner_url", columnDefinition = "TEXT")
+    private String bannerUrl;
+
     @Column(name = "website_url", length = 512)
     private String websiteUrl;
 
