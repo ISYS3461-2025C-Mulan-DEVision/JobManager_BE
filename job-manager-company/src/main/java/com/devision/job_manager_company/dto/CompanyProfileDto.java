@@ -14,6 +14,7 @@ public class CompanyProfileDto {
     private String aboutUs;
     private String whoWeSeek;
     private String logoUrl;
+    private String bannerUrl;
     private String websiteUrl;
     private String linkedinUrl;
     private String industry;

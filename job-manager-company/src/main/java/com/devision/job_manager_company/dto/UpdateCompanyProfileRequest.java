@@ -15,9 +15,6 @@ public class UpdateCompanyProfileRequest {
     
     private String whoWeSeek;
     
-    @Size(max = 512, message = "Logo URL must be less than 512 characters")
-    private String logoUrl;
-    
     @Size(max = 512, message = "Website URL must be less than 512 characters")
     private String websiteUrl;
     

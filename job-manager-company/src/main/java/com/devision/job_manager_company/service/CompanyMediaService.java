@@ -21,5 +21,7 @@ public interface CompanyMediaService {
 
     void deleteMedia(Long mediaId);
 
-    void updateDisplayOrder(Long mediaId, Integer displayOrder);
+    void updateDisplayOrder(Long companyId, Long mediaId, Integer displayOrder);
+
+    void reorderMedia(Long companyId, List<Long> orderedMediaIds);
 }

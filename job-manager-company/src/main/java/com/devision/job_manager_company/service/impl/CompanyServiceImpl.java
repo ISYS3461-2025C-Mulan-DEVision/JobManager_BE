@@ -103,9 +103,6 @@ public class CompanyServiceImpl implements CompanyService {
         if (updatedProfile.getWhoWeSeek() != null) {
             profile.setWhoWeSeek(updatedProfile.getWhoWeSeek());
         }
-        if (updatedProfile.getLogoUrl() != null) {
-            profile.setLogoUrl(updatedProfile.getLogoUrl());
-        }
         if (updatedProfile.getWebsiteUrl() != null) {
             profile.setWebsiteUrl(updatedProfile.getWebsiteUrl());
         }
