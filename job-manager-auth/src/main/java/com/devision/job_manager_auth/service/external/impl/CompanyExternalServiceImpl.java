@@ -2,9 +2,8 @@ package com.devision.job_manager_auth.service.external.impl;
 
 import com.devision.job_manager_auth.dto.external.CompanyAuthStatusDto;
 import com.devision.job_manager_auth.dto.external.CompanyBasicInfoDto;
-import com.devision.job_manager_auth.entity.Company;
-import com.devision.job_manager_auth.entity.SsoProvider;
-import com.devision.job_manager_auth.repository.CompanyRepository;
+import com.devision.job_manager_auth.entity.CompanyAccount;
+import com.devision.job_manager_auth.repository.CompanyAccountRepository;
 import com.devision.job_manager_auth.service.external.CompanyExternalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +16,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class CompanyExternalServiceImpl implements CompanyExternalService {
-    private final CompanyRepository companyRepository;
+    private final CompanyAccountRepository companyAccountRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Optional<CompanyBasicInfoDto> getCompanyBasicInfo(Long companyId) {
         log.info("External API: Get company basic info for ID: {}", companyId);
 
-        return companyRepository.findById(companyId)
+        return companyAccountRepository.findById(companyId)
                 .map(this::mapToBasicInfoDto);
     }
 
@@ -33,7 +32,7 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
     public Optional<CompanyBasicInfoDto> getCompanyBasicInfoByEmail(String email) {
         log.info("External API: Get company basic info for email: {}", email);
 
-        return companyRepository.findByEmail(email)
+        return companyAccountRepository.findByEmail(email)
                 .map(this::mapToBasicInfoDto);
     }
 
@@ -42,7 +41,7 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
     public Optional<CompanyAuthStatusDto> getCompanyAuthStatus(Long companyId) {
         log.info("External API: Get auth status for company ID: {}", companyId);
 
-        return companyRepository.findById(companyId)
+        return companyAccountRepository.findById(companyId)
                 .map(this::mapToAuthStatusDto);
     }
 
@@ -51,8 +50,8 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
     public boolean isCompanyActivated(String email) {
         log.info("External API: Check if company activated: {}", email);
 
-        return companyRepository.findByEmail(email)
-                .map(Company::getIsActivated)
+        return companyAccountRepository.findByEmail(email)
+                .map(CompanyAccount::getIsActivated)
                 .orElse(false);
     }
 
@@ -61,8 +60,8 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
     public boolean isCompanyLocked(String email) {
         log.info("External API: Check if company locked: {}", email);
 
-        return companyRepository.findByEmail(email)
-                .map(Company::getIsLocked)
+        return companyAccountRepository.findByEmail(email)
+                .map(CompanyAccount::getIsLocked)
                 .orElse(false);
     }
 
@@ -70,27 +69,24 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
      * PRIVATE MAPS
      */
 
-    private CompanyBasicInfoDto mapToBasicInfoDto(Company company) {
+    private CompanyBasicInfoDto mapToBasicInfoDto(CompanyAccount account) {
         return CompanyBasicInfoDto.builder()
-                .id(company.getId())
-                .email(company.getEmail())
-                .companyName(company.getName())
-                .country(company.getCountry())
-                .city(company.getCity())
-                .role(company.getRole())
-                .isActivated(company.getIsActivated())
-                .createdAt(company.getCreatedAt())
+                .id(account.getId())
+                .email(account.getEmail())
+                .role(account.getRole())
+                .authProvider(account.getAuthProvider())
+                .isActivated(account.getIsActivated())
+                .createdAt(account.getCreatedAt())
                 .build();
     }
 
-    private CompanyAuthStatusDto mapToAuthStatusDto(Company company) {
+    private CompanyAuthStatusDto mapToAuthStatusDto(CompanyAccount account) {
         return CompanyAuthStatusDto.builder()
-                .companyId(company.getId())
-                .email(company.getEmail())
-                .isActivated(company.getIsActivated())
-                .isLocked(company.getIsLocked())
-                .isSsoUser(company.getSsoProvider() != SsoProvider.NONE)
+                .companyId(account.getId())
+                .email(account.getEmail())
+                .isActivated(account.getIsActivated())
+                .isLocked(account.getIsLocked())
+                .authProvider(account.getAuthProvider())
                 .build();
     }
-
 }

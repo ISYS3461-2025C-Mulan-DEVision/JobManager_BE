@@ -1,6 +1,6 @@
 package com.devision.job_manager_auth.service.internal.impl;
 
-import com.devision.job_manager_auth.entity.Company;
+import com.devision.job_manager_auth.entity.CompanyAccount;
 import com.devision.job_manager_auth.service.internal.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ public class EmailServiceImpl implements EmailService {
     private String frontendUrl;
 
     @Override
-    public void sendActivationEmail(Company company, String activationToken) {
+    public void sendActivationEmail(CompanyAccount company, String activationToken) {
 
         try {
 
@@ -37,7 +37,7 @@ public class EmailServiceImpl implements EmailService {
                     
                     Welcome to DEVision-JM! Please click the link below to activate your account: %s
                     """,
-                    company.getName() != null ? company.getName() : "there",
+                    company.getEmail() != null ? company.getEmail() : "there",
                     activationLink)
             );
 
@@ -50,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendWelcomeEmail(Company company) {
+    public void sendWelcomeEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(company.getEmail());
@@ -70,7 +70,7 @@ public class EmailServiceImpl implements EmailService {
                 Best regards,
                 DEVision Team
                 """,
-                    company.getName() != null ? company.getName() : "there",
+                    company.getEmail() != null ? company.getEmail() : "there",
                     frontendUrl
             ));
 
@@ -82,7 +82,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendAccountLockedEmail(Company company) {
+    public void sendAccountLockedEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(company.getEmail());
@@ -99,7 +99,7 @@ public class EmailServiceImpl implements EmailService {
                 Best regards,
                 DEVision Security Team
                 """,
-                    company.getName() != null ? company.getName() : "there"
+                    company.getEmail() != null ? company.getEmail() : "there"
             ));
 
             mailSender.send(message);

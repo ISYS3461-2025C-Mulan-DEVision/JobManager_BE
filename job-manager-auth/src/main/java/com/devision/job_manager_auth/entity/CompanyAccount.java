@@ -9,52 +9,44 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+/**
+ * CompanyAccount entity - handles authentication concerns only.
+ * Profile data is managed by the Company service.
+ */
 @Entity
-@Table(name = "companies")
+@Table(name = "company_account")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Company {
+public class CompanyAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
 
-    @Column(nullable = false, unique = true, length = 200)
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(length = 255)
-    private String password;
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
 
-    @Column(length = 255)
-    private String name;
-
-    @Column(nullable = false, length = 50)
+    @Column(name = "auth_provider", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
-    private Country country;
-
-    @Column(length = 20)
-    private String phone;
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @Column(length = 255)
-    private String street;
-
-    @Column(length = 100)
-    private String city;
+    private String ssoProviderId;
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private Role role = Role.COMPANY; // COMPANY or ADMIN
-
-    @Column(length = 50)
-    @Enumerated(EnumType.STRING)
-    private SsoProvider ssoProvider; // GOOGLE, MICROSOFT, FACEBOOK, GITHUB, NONE
-
-    @Column(length = 255)
-    private String ssoProviderId; // this ID is provided by the SSO Provider
+    @Builder.Default
+    private Role role = Role.COMPANY;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActivated = false;
 
     @Column(length = 255)
@@ -64,12 +56,14 @@ public class Company {
     private LocalDateTime activationTokenExpiry;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer failedLoginAttempts = 0;
 
     @Column
     private LocalDateTime lastFailedLoginTime;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isLocked = false;
 
     @CreationTimestamp

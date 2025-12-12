@@ -1,12 +1,12 @@
 package com.devision.job_manager_auth.service.internal;
 
-import com.devision.job_manager_auth.entity.Company;
+import com.devision.job_manager_auth.entity.CompanyAccount;
 
 // Handle email notification to the company
 public interface EmailService {
-    void sendActivationEmail(Company company, String activationToken);
+    void sendActivationEmail(CompanyAccount company, String activationToken);
 
-    void sendWelcomeEmail(Company company);
+    void sendWelcomeEmail(CompanyAccount company);
 
-    void sendAccountLockedEmail(Company company);
+    void sendAccountLockedEmail(CompanyAccount company);
 }

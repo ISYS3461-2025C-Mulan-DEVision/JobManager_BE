@@ -1,21 +1,22 @@
 package com.devision.job_manager_auth.dto.external;
 
+import com.devision.job_manager_auth.entity.AuthProvider;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * DTO for external services to check authentication status.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CompanyAuthStatusDto {
-
-    // This status is needed by other microservices
-
     private Long companyId;
     private String email;
     private boolean isActivated;
     private boolean isLocked;
-    private boolean isSsoUser;
+    private AuthProvider authProvider;
 }
