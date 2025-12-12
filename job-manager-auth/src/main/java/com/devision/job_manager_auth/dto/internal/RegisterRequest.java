@@ -29,18 +29,4 @@ public class RegisterRequest {
     @NotNull(message = "Country is required")
     private Country country;
 
-    @Pattern(
-            regexp = "^\\+\\d{1,3}\\d{1,13}$",
-            message = "Phone must start with country code (e.g., +84) and contain max 13 digits after code"
-    )
-    private String phone;
-
-    @Size(max = 255, message = "Street name is too long")
-    private String street;
-
-    @Size(max = 100, message = "City name is too long")
-    private String city;
-
-    @Size(max = 255, message = "Company's name is too long")
-    private String name;
 }
