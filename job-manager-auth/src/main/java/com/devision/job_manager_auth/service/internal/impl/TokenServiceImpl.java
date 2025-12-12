@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -105,7 +106,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public Long validateRefreshToken(String token) {
+    public UUID validateRefreshToken(String token) {
         try {
             // Check if token is revoked
             if (isTokenRevoked(token)) {

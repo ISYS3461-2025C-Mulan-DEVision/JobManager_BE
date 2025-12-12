@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, Long> {
@@ -20,6 +21,9 @@ public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, 
 
     // Find account by email
     Optional<CompanyAccount> findByEmail(String email);
+
+    // Find account by id
+    Optional<CompanyAccount> findById(UUID id);
 
     // Check if email already exists
     boolean existsByEmail(String email);

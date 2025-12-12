@@ -117,7 +117,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
                 .companyId(account.getId())
                 .email(email)
-                .name(name)
                 .registeredAt(LocalDateTime.now())
                 .build();
 
@@ -357,7 +356,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<AuthResponse> refreshToken(RefreshTokenRequest request) {
         try {
             // Validate refresh token
-            Long accountId = tokenService.validateRefreshToken(request.getRefreshToken());
+            UUID accountId = tokenService.validateRefreshToken(request.getRefreshToken());
 
             // Get account
             CompanyAccount account = companyAccountRepository.findById(accountId)
