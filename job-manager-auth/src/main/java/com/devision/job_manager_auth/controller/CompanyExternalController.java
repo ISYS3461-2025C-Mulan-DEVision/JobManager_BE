@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/external/companies")
 @RequiredArgsConstructor
@@ -16,7 +18,7 @@ public class CompanyExternalController {
     private final CompanyExternalService companyExternalService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<CompanyBasicInfoDto> getCompanyBasicInfo(@PathVariable Long id) {
+    public ResponseEntity<CompanyBasicInfoDto> getCompanyBasicInfo(@PathVariable UUID id) {
         log.info("External request: Get company basic info for ID: {}", id);
         return companyExternalService.getCompanyBasicInfo(id)
                 .map(ResponseEntity::ok)

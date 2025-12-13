@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<CompanyBasicInfoDto> getCompanyBasicInfo(Long companyId) {
+    public Optional<CompanyBasicInfoDto> getCompanyBasicInfo(UUID companyId) {
         log.info("External API: Get company basic info for ID: {}", companyId);
 
         return companyAccountRepository.findById(companyId)
@@ -38,7 +39,7 @@ public class CompanyExternalServiceImpl implements CompanyExternalService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<CompanyAuthStatusDto> getCompanyAuthStatus(Long companyId) {
+    public Optional<CompanyAuthStatusDto> getCompanyAuthStatus(UUID companyId) {
         log.info("External API: Get auth status for company ID: {}", companyId);
 
         return companyAccountRepository.findById(companyId)

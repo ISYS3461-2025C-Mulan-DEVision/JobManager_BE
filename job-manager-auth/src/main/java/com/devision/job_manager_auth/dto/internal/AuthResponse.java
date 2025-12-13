@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,7 +18,7 @@ public class AuthResponse {
     private String refreshToken;
     private String tokenType;
     private Long expiresIn; // seconds until token expires
-    private Long companyId;
+    private UUID companyId;
     private String email;
     private Role role;
     private AuthProvider authProvider;
