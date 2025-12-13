@@ -8,19 +8,18 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Repository
-public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, UUID> {
+public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long> {
 
     // Find recent login attempts for an account
-    List<LoginAttempt> findByAccountIdOrderByAttemptedAtDesc(UUID accountId);
+    List<LoginAttempt> findByAccountIdOrderByAttemptedAtDesc(Long accountId);
 
     // Find login attempts within a time window for security analysis
     @Query("SELECT la FROM LoginAttempt la WHERE la.account.id = :accountId " +
             "AND la.attemptedAt >= :since ORDER BY la.attemptedAt DESC")
     List<LoginAttempt> findRecentAttempts(
-            @Param("accountId") UUID accountId,
+            @Param("accountId") Long accountId,
             @Param("since") LocalDateTime since
     );
 

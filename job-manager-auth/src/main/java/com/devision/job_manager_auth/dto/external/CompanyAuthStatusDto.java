@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 /**
  * DTO for external services to check authentication status.
  */
@@ -16,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class CompanyAuthStatusDto {
-    private UUID companyId;
+    private Long companyId;
     private String email;
     private boolean isActivated;
     private boolean isLocked;

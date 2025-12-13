@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Event published when a company account is locked due to security reasons.
@@ -16,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class CompanyAccountLockedEvent {
-    private UUID companyId;
+    private Long companyId;
     private String email;
     private String reason;
     private LocalDateTime lockedAt;

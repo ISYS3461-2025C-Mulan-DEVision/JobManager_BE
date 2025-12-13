@@ -2,8 +2,6 @@ package com.devision.job_manager_auth.service.internal;
 
 import com.devision.job_manager_auth.entity.CompanyAccount;
 
-import java.util.UUID;
-
 public interface TokenService {
     String generateAccessToken(CompanyAccount account);
 
@@ -11,7 +9,7 @@ public interface TokenService {
 
     Long validateAccessToken(String token);
 
-    UUID validateRefreshToken(String token);
+    Long validateRefreshToken(String token);
 
     void revokeToken(String token);
 

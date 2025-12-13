@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Event published when a new company account is registered.
@@ -17,8 +16,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class CompanyRegisteredEvent {
-    private UUID companyId;
+    private Long companyId;
     private String email;
+    private String name;
+    private String phone;
+    private String streetAddress;
+    private String city;
     private String countryCode;
     private String activationToken;
     private LocalDateTime registeredAt;
