@@ -67,10 +67,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
                 .companyId(account.getId())
                 .email(request.getEmail())
-                .name(request.getName())
-                .phone(request.getPhone())
-                .streetAddress(request.getStreet())
-                .city(request.getCity())
                 .countryCode(request.getCountry() != null ? request.getCountry().getCode() : null)
                 .activationToken(activationToken)
                 .registeredAt(LocalDateTime.now())
@@ -121,7 +117,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
                 .companyId(account.getId())
                 .email(email)
-                .name(name)
                 .registeredAt(LocalDateTime.now())
                 .build();
 
@@ -361,7 +356,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<AuthResponse> refreshToken(RefreshTokenRequest request) {
         try {
             // Validate refresh token
-            Long accountId = tokenService.validateRefreshToken(request.getRefreshToken());
+            UUID accountId = tokenService.validateRefreshToken(request.getRefreshToken());
 
             // Get account
             CompanyAccount account = companyAccountRepository.findById(accountId)
