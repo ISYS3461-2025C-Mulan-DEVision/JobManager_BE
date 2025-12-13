@@ -125,7 +125,7 @@ public class TokenServiceImpl implements TokenService {
                 throw new IllegalArgumentException("Invalid token type");
             }
 
-            return Long.parseLong(claims.getSubject());
+            return UUID.fromString(claims.getSubject());
 
         } catch (ExpiredJwtException e) {
             log.error("Refresh token expired: {}", e.getMessage());

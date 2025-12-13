@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, Long> {
+public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, UUID> {
 
     /**
      * REGISTRATION QUERIES

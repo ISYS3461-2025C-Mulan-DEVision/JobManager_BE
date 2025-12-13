@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * DTO for external services to get basic auth info.
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class CompanyBasicInfoDto {
-    private Long id;
+    private UUID id;
     private String email;
     private Role role;
     private AuthProvider authProvider;
