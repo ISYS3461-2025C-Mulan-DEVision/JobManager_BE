@@ -70,11 +70,11 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-#    Not using Eureka for NOW
     fetch-registry: true
     register-with-eureka: true
   instance:
     prefer-ip-address: true
+    health-check-url-path: /actuator/health
 
 jwt:
   secret: ${JWT_SECRET:YourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
