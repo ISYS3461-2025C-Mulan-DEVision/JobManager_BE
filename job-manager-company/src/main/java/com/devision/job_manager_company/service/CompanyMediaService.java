@@ -6,22 +6,23 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 public interface CompanyMediaService {
 
-    CompanyMedia uploadLogo(Long companyId, MultipartFile file) throws IOException;
+    CompanyMedia uploadLogo(UUID companyId, MultipartFile file) throws IOException;
 
-    CompanyMedia uploadBanner(Long companyId, MultipartFile file) throws IOException;
+    CompanyMedia uploadBanner(UUID companyId, MultipartFile file) throws IOException;
 
-    CompanyMedia uploadMedia(Long companyId, MediaType type, MultipartFile file, String title, String description) throws IOException;
+    CompanyMedia uploadMedia(UUID companyId, MediaType type, MultipartFile file, String title, String description) throws IOException;
 
-    List<CompanyMedia> getCompanyMedia(Long companyId);
+    List<CompanyMedia> getCompanyMedia(UUID companyId);
 
-    List<CompanyMedia> getCompanyMediaByType(Long companyId, MediaType type);
+    List<CompanyMedia> getCompanyMediaByType(UUID companyId, MediaType type);
 
-    void deleteMedia(Long mediaId);
+    void deleteMedia(UUID mediaId);
 
-    void updateDisplayOrder(Long companyId, Long mediaId, Integer displayOrder);
+    void updateDisplayOrder(UUID companyId, UUID mediaId, Integer displayOrder);
 
-    void reorderMedia(Long companyId, List<Long> orderedMediaIds);
+    void reorderMedia(UUID companyId, List<UUID> orderedMediaIds);
 }

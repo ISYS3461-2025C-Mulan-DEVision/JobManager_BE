@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,7 +27,7 @@ public class CompanyMediaController {
 
     @PostMapping("/logo")
     public ResponseEntity<ApiResponse<CompanyMediaDto>> uploadLogo(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam("file") MultipartFile file) {
         log.info("Upload logo request for company ID: {}", companyId);
         
@@ -52,7 +53,7 @@ public class CompanyMediaController {
 
     @PostMapping("/banner")
     public ResponseEntity<ApiResponse<CompanyMediaDto>> uploadBanner(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam("file") MultipartFile file) {
         log.info("Upload banner request for company ID: {}", companyId);
         
@@ -78,7 +79,7 @@ public class CompanyMediaController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CompanyMediaDto>> uploadMedia(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam("file") MultipartFile file,
             @RequestParam("type") MediaType type,
             @RequestParam(value = "title", required = false) String title,
@@ -107,7 +108,7 @@ public class CompanyMediaController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CompanyMediaDto>>> getCompanyMedia(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam(value = "type", required = false) MediaType type) {
         log.info("Get media request for company ID: {}, type: {}", companyId, type);
         
@@ -130,8 +131,8 @@ public class CompanyMediaController {
 
     @DeleteMapping("/{mediaId}")
     public ResponseEntity<ApiResponse<String>> deleteMedia(
-            @PathVariable Long companyId,
-            @PathVariable Long mediaId) {
+            @PathVariable UUID companyId,
+            @PathVariable UUID mediaId) {
         log.info("Delete media request for company ID: {}, media ID: {}", companyId, mediaId);
         
         try {
@@ -149,8 +150,8 @@ public class CompanyMediaController {
 
     @PutMapping("/{mediaId}/display-order")
     public ResponseEntity<ApiResponse<String>> updateDisplayOrder(
-            @PathVariable Long companyId,
-            @PathVariable Long mediaId,
+            @PathVariable UUID companyId,
+            @PathVariable UUID mediaId,
             @Valid @RequestBody UpdateMediaDisplayOrderRequest request) {
         log.info("Update display order request for company ID: {}, media ID: {}, new order: {}", 
                 companyId, mediaId, request.getDisplayOrder());
@@ -170,8 +171,8 @@ public class CompanyMediaController {
 
     @PutMapping("/reorder")
     public ResponseEntity<ApiResponse<String>> reorderMedia(
-            @PathVariable Long companyId,
-            @RequestBody List<Long> orderedMediaIds) {
+            @PathVariable UUID companyId,
+            @RequestBody List<UUID> orderedMediaIds) {
         log.info("Reorder media request for company ID: {}, order: {}", companyId, orderedMediaIds);
         
         try {

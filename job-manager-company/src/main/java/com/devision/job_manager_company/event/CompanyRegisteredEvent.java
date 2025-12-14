@@ -6,22 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Event received when a new company account is registered.
  * Triggers creation of company profile.
+ * Must match the event published by job-manager-auth.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CompanyRegisteredEvent {
-    private Long companyId;
+    private UUID companyId;
     private String email;
-    private String name;
-    private String phone;
-    private String streetAddress;
-    private String city;
     private String countryCode;
     private String activationToken;
     private LocalDateTime registeredAt;

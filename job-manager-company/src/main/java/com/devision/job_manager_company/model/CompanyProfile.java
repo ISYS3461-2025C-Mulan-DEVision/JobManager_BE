@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * CompanyProfile entity - extended profile information for companies.
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 public class CompanyProfile {
     @Id
     @Column(name = "company_id")
-    private Long companyId;
+    private UUID companyId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId

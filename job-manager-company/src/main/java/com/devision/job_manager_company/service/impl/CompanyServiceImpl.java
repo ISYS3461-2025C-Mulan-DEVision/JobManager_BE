@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +33,11 @@ public class CompanyServiceImpl implements CompanyService {
             return companyRepository.findById(event.getCompanyId()).orElseThrow();
         }
 
-        // Create company entity
+        // Create company entity with minimal data from auth event
+        // Other fields (name, phone, etc.) will be set when user updates their profile
         Company company = Company.builder()
                 .id(event.getCompanyId())
-                .name(event.getName() != null ? event.getName() : "")
-                .phone(event.getPhone())
-                .streetAddress(event.getStreetAddress())
-                .city(event.getCity())
+                .name("")  // Will be set when user completes profile
                 .countryCode(event.getCountryCode() != null ? event.getCountryCode() : "XX")
                 .build();
 
@@ -57,18 +56,18 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public Optional<Company> getCompanyById(Long id) {
+    public Optional<Company> getCompanyById(UUID id) {
         return companyRepository.findById(id);
     }
 
     @Override
-    public Optional<Company> getCompanyWithProfile(Long id) {
+    public Optional<Company> getCompanyWithProfile(UUID id) {
         return companyRepository.findByIdWithProfile(id);
     }
 
     @Override
     @Transactional
-    public Company updateCompany(Long id, Company updatedCompany) {
+    public Company updateCompany(UUID id, Company updatedCompany) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + id));
 
@@ -93,7 +92,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional
-    public CompanyProfile updateCompanyProfile(Long companyId, CompanyProfile updatedProfile) {
+    public CompanyProfile updateCompanyProfile(UUID companyId, CompanyProfile updatedProfile) {
         CompanyProfile profile = companyProfileRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found for company ID: " + companyId));
 

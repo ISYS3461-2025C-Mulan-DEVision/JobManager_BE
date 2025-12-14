@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/companies")
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CompanyDto>> getCompany(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CompanyDto>> getCompany(@PathVariable UUID id) {
         log.info("Getting company with ID: {}", id);
         
         return companyService.getCompanyById(id)
@@ -31,7 +33,7 @@ public class CompanyController {
     }
 
     @GetMapping("/{id}/profile")
-    public ResponseEntity<ApiResponse<CompanyProfileDto>> getCompanyProfile(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CompanyProfileDto>> getCompanyProfile(@PathVariable UUID id) {
         log.info("Getting company profile for ID: {}", id);
         
         return companyService.getCompanyWithProfile(id)
@@ -44,7 +46,7 @@ public class CompanyController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CompanyDto>> updateCompany(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateCompanyRequest request) {
         log.info("Updating company with ID: {}", id);
         
@@ -68,7 +70,7 @@ public class CompanyController {
 
     @PutMapping("/{id}/profile")
     public ResponseEntity<ApiResponse<CompanyProfileDto>> updateCompanyProfile(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateCompanyProfileRequest request) {
         log.info("Updating company profile for ID: {}", id);
         

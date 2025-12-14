@@ -5,13 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface CompanyProfileRepository extends JpaRepository<CompanyProfile, Long> {
+public interface CompanyProfileRepository extends JpaRepository<CompanyProfile, UUID> {
 
     // Find profile by company ID
-    Optional<CompanyProfile> findByCompanyId(Long companyId);
+    Optional<CompanyProfile> findByCompanyId(UUID companyId);
 
     // Check if profile exists for company
-    boolean existsByCompanyId(Long companyId);
+    boolean existsByCompanyId(UUID companyId);
 }

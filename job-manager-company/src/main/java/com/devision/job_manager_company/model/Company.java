@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Company entity - represents company profile/business data.
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 public class Company {
     @Id
     // ID is assigned from Auth service (no auto-generation)
-    private Long id;
+    private UUID id;
 
     @Column(nullable = false, length = 255)
     private String name;
