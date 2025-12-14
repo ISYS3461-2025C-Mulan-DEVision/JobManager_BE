@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: job-manager-company
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5433/job_manager_company
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_COMPANY_URL:jdbc:postgresql://localhost:5433/job_manager_company}
+    username: ${POSTGRES_COMPANY_USERNAME:postgres}
+    password: ${POSTGRES_COMPANY_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:

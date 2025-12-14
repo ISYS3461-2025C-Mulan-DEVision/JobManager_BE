@@ -21,9 +21,9 @@ spring:
           protocol: smtp
 
   datasource:
-    url: jdbc:postgresql://localhost:5439/job_manager_auth
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
+    username: ${POSTGRES_AUTH_USERNAME:postgres}
+    password: ${POSTGRES_AUTH_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
