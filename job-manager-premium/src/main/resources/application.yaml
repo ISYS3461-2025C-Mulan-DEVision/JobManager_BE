@@ -4,13 +4,13 @@ server:
 spring:
   application:
     name: job-manager-premium
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5436/job_manager_premium
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_PREMIUM_URL:jdbc:postgresql://localhost:5436/job_manager_premium}
+    username: ${POSTGRES_PREMIUM_USERNAME:postgres}
+    password: ${POSTGRES_PREMIUM_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: update

@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: job-manager-search
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5435/job_manager_search
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_SEARCH_URL:jdbc:postgresql://localhost:5435/job_manager_search}
+    username: ${POSTGRES_SEARCH_USERNAME:postgres}
+    password: ${POSTGRES_SEARCH_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
