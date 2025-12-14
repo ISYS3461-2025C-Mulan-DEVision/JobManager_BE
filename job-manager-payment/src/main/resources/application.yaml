@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: job-manager-payment
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5437/job_manager_payment
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_PAYMENT_URL:jdbc:postgresql://localhost:5437/job_manager_payment}
+    username: ${POSTGRES_PAYMENT_USERNAME:postgres}
+    password: ${POSTGRES_PAYMENT_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -29,6 +29,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
 
 management:
   endpoints:
