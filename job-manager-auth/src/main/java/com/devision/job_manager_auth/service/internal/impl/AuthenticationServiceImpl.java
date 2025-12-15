@@ -9,6 +9,7 @@ import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
 import com.devision.job_manager_auth.event.CompanyRegisteredEvent;
 import com.devision.job_manager_auth.repository.CompanyAccountRepository;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
+import com.devision.job_manager_auth.service.internal.EmailService;
 import com.devision.job_manager_auth.service.internal.EventPublisherService;
 import com.devision.job_manager_auth.service.internal.TokenService;
 import jakarta.transaction.Transactional;
@@ -31,6 +32,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final EventPublisherService eventPublisherService;
+    private final EmailService emailService;
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -72,7 +74,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .registeredAt(LocalDateTime.now())
                 .build();
 
+
         eventPublisherService.publishCompanyRegistered(event);
+
+        emailService.sendActivationEmail(account, activationToken);
 
         return ApiResponse.success(
                 "Registration successful! Please check your email to activate your account.",
@@ -159,6 +164,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
         eventPublisherService.publishCompanyActivated(event);
 
+        emailService.sendWelcomeEmail(account);
+
         return ApiResponse.success("Account activated successfully! You can now login.", null);
     }
 
@@ -195,6 +202,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .registeredAt(LocalDateTime.now())
                 .build();
         eventPublisherService.publishCompanyRegistered(event);
+
+        emailService.sendActivationEmail(account, newToken);
 
         log.info("Activation email resent to: {}", email);
 
@@ -328,6 +337,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .lockedAt(now)
                         .build();
                 eventPublisherService.publishCompanyAccountLocked(event);
+
+                emailService.sendAccountLockedEmail(account);
                 
                 log.warn("Account locked due to brute force: {}", account.getEmail());
             }

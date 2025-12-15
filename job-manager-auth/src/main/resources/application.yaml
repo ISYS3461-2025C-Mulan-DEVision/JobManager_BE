@@ -93,6 +93,6 @@ management:
 
 app:
   base-url: http://localhost:8081
-  frontend-url: http://localhost:3000
+  frontend-url: http://localhost:5173
   activation:
     token-expiration: 86400000 # 24 hours
