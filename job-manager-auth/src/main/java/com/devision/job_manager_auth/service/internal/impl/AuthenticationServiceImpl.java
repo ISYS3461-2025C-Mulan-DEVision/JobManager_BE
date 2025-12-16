@@ -3,6 +3,7 @@ package com.devision.job_manager_auth.service.internal.impl;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.CompanyAccount;
+import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.entity.Role;
 import com.devision.job_manager_auth.event.CompanyActivatedEvent;
 import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
@@ -87,7 +88,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId) {
+    public ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId, Country country) {
 
         // Check if the account already exists
         if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(AuthProvider.GOOGLE, ssoProviderId)) {
@@ -105,6 +106,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CompanyAccount account = CompanyAccount.builder()
                 .email(email)
                 .passwordHash(null) // SSO users don't have passwords
+                .country(country)
                 .authProvider(AuthProvider.GOOGLE)
                 .ssoProviderId(ssoProviderId)
                 .role(Role.COMPANY)
