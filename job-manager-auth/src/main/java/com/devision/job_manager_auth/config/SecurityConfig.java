@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/activate",
                                 "/api/auth/resend-activation",
+                                "/api/auth/countries",
                                 "/api/auth/oauth2/**",
                                 "/api/auth/health",
                                 "/oauth2/**",
