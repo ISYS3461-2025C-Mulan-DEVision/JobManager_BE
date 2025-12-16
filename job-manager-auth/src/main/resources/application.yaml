@@ -35,10 +35,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 60000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
   security:
     oauth2:
@@ -89,6 +93,6 @@ management:
 
 app:
   base-url: http://localhost:8081
-  frontend-url: http://localhost:3000
+  frontend-url: http://localhost:5173
   activation:
     token-expiration: 86400000 # 24 hours
