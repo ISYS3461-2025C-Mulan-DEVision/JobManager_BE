@@ -22,7 +22,7 @@ spring:
         - id: jobpost-service
           uri: lb://job-manager-jobpost
           predicates:
-            - Path=/api/jobposts/**
+            - Path=/api/job-posts/**
         - id: search-service
           uri: lb://job-manager-search
           predicates:

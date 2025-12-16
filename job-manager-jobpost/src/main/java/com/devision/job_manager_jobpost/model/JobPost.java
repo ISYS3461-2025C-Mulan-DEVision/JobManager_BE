@@ -16,6 +16,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "job_post")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class JobPost {
 
     @OneToMany(mappedBy = "jobPost", cascade = CascadeType.ALL, orphanRemoval = true)
