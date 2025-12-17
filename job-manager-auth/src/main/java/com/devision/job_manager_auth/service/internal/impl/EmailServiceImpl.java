@@ -36,12 +36,11 @@ public class EmailServiceImpl implements EmailService {
             message.setSubject("Activate Your DEVision-JM Account");
             message.setText(String.format("""
                     Hello %s,
-                    
+
                     Welcome to DEVision-JM! Please click the link below to activate your account: %s
                     """,
                     company.getEmail() != null ? company.getEmail() : "there",
-                    activationLink)
-            );
+                    activationLink));
 
             mailSender.send(message);
             log.info("Activation email sent to {}", company.getEmail());
@@ -59,23 +58,22 @@ public class EmailServiceImpl implements EmailService {
             message.setTo(company.getEmail());
             message.setSubject("Welcome to DEVision Job Manager!");
             message.setText(String.format("""
-                Hello %s,
-                
-                Your account has been successfully activated!
-                
-                You can now:
-                - Post job opportunities
-                - Search for qualified applicants
-                - Manage your company profile
-                
-                Login here: %s/login
-                
-                Best regards,
-                DEVision Team
-                """,
+                    Hello %s,
+
+                    Your account has been successfully activated!
+
+                    You can now:
+                    - Post job opportunities
+                    - Search for qualified applicants
+                    - Manage your company profile
+
+                    Login here: %s/login
+
+                    Best regards,
+                    DEVision Team
+                    """,
                     company.getEmail() != null ? company.getEmail() : "there",
-                    frontendUrl
-            ));
+                    frontendUrl));
 
             mailSender.send(message);
             log.info("Welcome email sent to: {}", company.getEmail());
@@ -92,19 +90,18 @@ public class EmailServiceImpl implements EmailService {
             message.setTo(company.getEmail());
             message.setSubject("DEVision Account Security Alert - Account Locked");
             message.setText(String.format("""
-                Hello %s,
-                
-                Your account has been temporarily locked due to multiple failed login attempts.
-                
-                If this was you, please wait 60 seconds before trying again.
-                
-                If this wasn't you, please contact our support team immediately.
-                
-                Best regards,
-                DEVision Security Team
-                """,
-                    company.getEmail() != null ? company.getEmail() : "there"
-            ));
+                    Hello %s,
+
+                    Your account has been temporarily locked due to multiple failed login attempts.
+
+                    If this was you, please wait 60 seconds before trying again.
+
+                    If this wasn't you, please contact our support team immediately.
+
+                    Best regards,
+                    DEVision Security Team
+                    """,
+                    company.getEmail() != null ? company.getEmail() : "there"));
 
             mailSender.send(message);
             log.info("Account locked email sent to: {}", company.getEmail());
