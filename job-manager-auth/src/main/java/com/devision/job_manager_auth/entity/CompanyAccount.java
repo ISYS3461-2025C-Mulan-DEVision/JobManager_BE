@@ -33,6 +33,7 @@ public class CompanyAccount {
     private String passwordHash;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Country country;
 
     @Column(name = "auth_provider", nullable = false, length = 32)

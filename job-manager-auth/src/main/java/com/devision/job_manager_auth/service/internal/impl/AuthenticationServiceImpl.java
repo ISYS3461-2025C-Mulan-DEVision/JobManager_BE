@@ -55,6 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .authProvider(AuthProvider.LOCAL)
                 .role(Role.COMPANY)
+                .country(request.getCountry())
                 .isActivated(false)
                 .activationToken(activationToken)
                 .activationTokenExpiry(tokenExpiry)
