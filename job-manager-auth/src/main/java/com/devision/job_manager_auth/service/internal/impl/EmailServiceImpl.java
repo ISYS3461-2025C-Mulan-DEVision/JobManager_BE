@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,6 +24,7 @@ public class EmailServiceImpl implements EmailService {
     private String frontendUrl;
 
     @Override
+    @Async
     public void sendActivationEmail(CompanyAccount company, String activationToken) {
 
         try {
@@ -50,6 +52,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendWelcomeEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -82,6 +85,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void sendAccountLockedEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
