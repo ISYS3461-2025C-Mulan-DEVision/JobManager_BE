@@ -24,7 +24,6 @@ public class JobPostServiceImpl implements JobPostService {
     @Transactional
     public JobPost createJobPost(JobPost jobPost) {
         log.info("Creating job post for companyId={}", jobPost.getCompanyId());
-        // Ensure new posts start unpublished unless explicitly set
         if (!jobPost.isPublished()) {
             jobPost.setPostedAt(null);
         }
@@ -48,7 +47,6 @@ public class JobPostServiceImpl implements JobPostService {
 
     @Override
     public Page<JobPost> getPublishedJobPosts(Pageable pageable) {
-        // Only return non-expired, published posts
         return jobPostRepository.findByPublishedTrueAndExpiryAtAfter(LocalDateTime.now(), pageable);
     }
 
