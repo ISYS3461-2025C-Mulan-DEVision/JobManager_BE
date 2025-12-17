@@ -32,6 +32,10 @@ public class CompanyAccount {
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Country country;
+
     @Column(name = "auth_provider", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
     @Builder.Default

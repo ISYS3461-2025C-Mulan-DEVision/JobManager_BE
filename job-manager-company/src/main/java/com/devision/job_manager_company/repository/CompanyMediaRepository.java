@@ -10,32 +10,33 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface CompanyMediaRepository extends JpaRepository<CompanyMedia, Long> {
+public interface CompanyMediaRepository extends JpaRepository<CompanyMedia, UUID> {
 
     // Find all media for a company
-    List<CompanyMedia> findByCompanyIdOrderByDisplayOrderAsc(Long companyId);
+    List<CompanyMedia> findByCompanyIdOrderByDisplayOrderAsc(UUID companyId);
 
     // Find media by company and type
-    List<CompanyMedia> findByCompanyIdAndTypeOrderByDisplayOrderAsc(Long companyId, MediaType type);
+    List<CompanyMedia> findByCompanyIdAndTypeOrderByDisplayOrderAsc(UUID companyId, MediaType type);
 
     // Delete all media for a company
-    void deleteByCompanyId(Long companyId);
+    void deleteByCompanyId(UUID companyId);
 
     // Count media for a company
-    long countByCompanyId(Long companyId);
+    long countByCompanyId(UUID companyId);
 
     // Find media by ID and company ID (for validation)
     @Query("SELECT m FROM CompanyMedia m WHERE m.id = :mediaId AND m.company.id = :companyId")
-    Optional<CompanyMedia> findByIdAndCompanyId(@Param("mediaId") Long mediaId, @Param("companyId") Long companyId);
+    Optional<CompanyMedia> findByIdAndCompanyId(@Param("mediaId") UUID mediaId, @Param("companyId") UUID companyId);
 
     // Find all media IDs for a company (for bulk reorder validation)
     @Query("SELECT m.id FROM CompanyMedia m WHERE m.company.id = :companyId ORDER BY m.displayOrder ASC")
-    List<Long> findIdsByCompanyId(@Param("companyId") Long companyId);
+    List<UUID> findIdsByCompanyId(@Param("companyId") UUID companyId);
 
     // Update display order for a specific media
     @Modifying
     @Query("UPDATE CompanyMedia m SET m.displayOrder = :displayOrder WHERE m.company.id = :companyId AND m.id = :mediaId")
-    void updateDisplayOrder(@Param("companyId") Long companyId, @Param("mediaId") Long mediaId, @Param("displayOrder") int displayOrder);
+    void updateDisplayOrder(@Param("companyId") UUID companyId, @Param("mediaId") UUID mediaId, @Param("displayOrder") int displayOrder);
 }

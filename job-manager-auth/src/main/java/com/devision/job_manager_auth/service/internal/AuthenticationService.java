@@ -1,6 +1,7 @@
 package com.devision.job_manager_auth.service.internal;
 
 import com.devision.job_manager_auth.dto.internal.*;
+import com.devision.job_manager_auth.entity.Country;
 
 public interface AuthenticationService {
 
@@ -19,7 +20,7 @@ public interface AuthenticationService {
      * @param ssoProviderId
      * @return Success message
      */
-    ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId);
+    ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId, Country country);
 
     /**
      *

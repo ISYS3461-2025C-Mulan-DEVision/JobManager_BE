@@ -25,9 +25,9 @@ public class MediaStorageService {
     /**
      * Upload company logo. Overwrites existing logo.
      */
-    public String uploadCompanyLogo(Long companyId, MultipartFile file) throws IOException {
+    public String uploadCompanyLogo(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
-        String objectName = String.format("companies/%d/logo%s", companyId,
+        String objectName = String.format("companies/%s/logo%s", companyId.toString(),
                 extension != null ? ("." + extension) : "");
 
         log.info("Uploading company logo for company ID: {} to {}", companyId, objectName);
@@ -37,10 +37,10 @@ public class MediaStorageService {
     /**
      * Upload company media (images, videos, documents).
      */
-    public String uploadCompanyMedia(Long companyId, MultipartFile file) throws IOException {
+    public String uploadCompanyMedia(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
         String uuid = UUID.randomUUID().toString();
-        String objectName = String.format("companies/%d/media/%s%s", companyId, uuid,
+        String objectName = String.format("companies/%s/media/%s%s", companyId.toString(), uuid,
                 extension != null ? ("." + extension) : "");
 
         log.info("Uploading company media for company ID: {} to {}", companyId, objectName);
@@ -50,9 +50,9 @@ public class MediaStorageService {
     /**
      * Upload company banner image.
      */
-    public String uploadCompanyBanner(Long companyId, MultipartFile file) throws IOException {
+    public String uploadCompanyBanner(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
-        String objectName = String.format("companies/%d/banner%s", companyId,
+        String objectName = String.format("companies/%s/banner%s", companyId.toString(),
                 extension != null ? ("." + extension) : "");
 
         log.info("Uploading company banner for company ID: {} to {}", companyId, objectName);

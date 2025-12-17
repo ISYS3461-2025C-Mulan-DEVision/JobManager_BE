@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     @Override
     @Transactional
-    public CompanyMedia uploadLogo(Long companyId, MultipartFile file) throws IOException {
+    public CompanyMedia uploadLogo(UUID companyId, MultipartFile file) throws IOException {
         log.info("Uploading logo for company ID: {}", companyId);
         
         Company company = companyRepository.findById(companyId)
@@ -70,7 +71,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     @Override
     @Transactional
-    public CompanyMedia uploadBanner(Long companyId, MultipartFile file) throws IOException {
+    public CompanyMedia uploadBanner(UUID companyId, MultipartFile file) throws IOException {
         log.info("Uploading banner for company ID: {}", companyId);
         
         Company company = companyRepository.findById(companyId)
@@ -111,7 +112,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     @Override
     @Transactional
-    public CompanyMedia uploadMedia(Long companyId, MediaType type, MultipartFile file, 
+    public CompanyMedia uploadMedia(UUID companyId, MediaType type, MultipartFile file, 
                                    String title, String description) throws IOException {
         log.info("Uploading media for company ID: {}, type: {}", companyId, type);
         
@@ -138,20 +139,20 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
     }
 
     @Override
-    public List<CompanyMedia> getCompanyMedia(Long companyId) {
+    public List<CompanyMedia> getCompanyMedia(UUID companyId) {
         log.info("Getting all media for company ID: {}", companyId);
         return companyMediaRepository.findByCompanyIdOrderByDisplayOrderAsc(companyId);
     }
 
     @Override
-    public List<CompanyMedia> getCompanyMediaByType(Long companyId, MediaType type) {
+    public List<CompanyMedia> getCompanyMediaByType(UUID companyId, MediaType type) {
         log.info("Getting media for company ID: {}, type: {}", companyId, type);
         return companyMediaRepository.findByCompanyIdAndTypeOrderByDisplayOrderAsc(companyId, type);
     }
 
     @Override
     @Transactional
-    public void deleteMedia(Long mediaId) {
+    public void deleteMedia(UUID mediaId) {
         log.info("Deleting media with ID: {}", mediaId);
         
         CompanyMedia media = companyMediaRepository.findById(mediaId)
@@ -181,7 +182,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     @Override
     @Transactional
-    public void updateDisplayOrder(Long companyId, Long mediaId, Integer displayOrder) {
+    public void updateDisplayOrder(UUID companyId, UUID mediaId, Integer displayOrder) {
         log.info("Updating display order for media ID: {} to {} for company ID: {}", mediaId, displayOrder, companyId);
         
         CompanyMedia media = companyMediaRepository.findByIdAndCompanyId(mediaId, companyId)
@@ -197,7 +198,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     @Override
     @Transactional
-    public void reorderMedia(Long companyId, List<Long> orderedMediaIds) {
+    public void reorderMedia(UUID companyId, List<UUID> orderedMediaIds) {
         log.info("Reordering media for company ID: {}, new order: {}", companyId, orderedMediaIds);
         
         if (orderedMediaIds == null || orderedMediaIds.isEmpty()) {
@@ -205,7 +206,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
         }
 
         // Validate that all IDs belong to this company
-        List<Long> existingIds = companyMediaRepository.findIdsByCompanyId(companyId);
+        List<UUID> existingIds = companyMediaRepository.findIdsByCompanyId(companyId);
         
         if (!existingIds.containsAll(orderedMediaIds)) {
             throw new IllegalArgumentException("Some media IDs do not belong to this company");
@@ -213,7 +214,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
         // Update display order for each media in the new order
         int order = 0;
-        for (Long mediaId : orderedMediaIds) {
+        for (UUID mediaId : orderedMediaIds) {
             companyMediaRepository.updateDisplayOrder(companyId, mediaId, order++);
         }
         

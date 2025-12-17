@@ -2,7 +2,13 @@ package com.devision.job_manager_auth.controller;
 
 import com.devision.job_manager_auth.dto.internal.ApiResponse;
 import com.devision.job_manager_auth.dto.internal.AuthResponse;
+import com.devision.job_manager_auth.dto.internal.CompleteSsoRegistrationRequest;
+import com.devision.job_manager_auth.dto.internal.PendingSsoRegistration;
+import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
+import com.devision.job_manager_auth.service.internal.SsoRegistrationCacheService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,7 +17,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth/oauth2")
@@ -19,6 +27,7 @@ import java.util.Map;
 @Slf4j
 public class OAuth2Controller {
     private final AuthenticationService authenticationService;
+    private final SsoRegistrationCacheService ssoRegistrationCacheService;
 
     @PostMapping("/callback")
     public ResponseEntity<ApiResponse<AuthResponse>> handleOAuth2Callback(
@@ -53,8 +62,20 @@ public class OAuth2Controller {
                 );
             }
 
+            Country countryEnum = null;
+            if (country != null && !country.isBlank()) {
+                try {
+                    countryEnum = Country.valueOf(country.toUpperCase());
+
+                } catch (IllegalArgumentException ex) {
+                    log.warn("Invalid country code provided during SSO registration: {}", country);
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error("Invalid country code provided:" + country));
+                }
+            }
+
             ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(
-                    email, name, ssoProviderId
+                    email, name, ssoProviderId, countryEnum
             );
 
             // After registration, log the user in
@@ -64,14 +85,69 @@ public class OAuth2Controller {
         }
     }
 
-    // Not necessary
-    @GetMapping("/login/google")
-    public ResponseEntity<ApiResponse<String>> initiateGoogleLogin() {
-
-        // Spring Security will handle the redirect automatically
-        return ResponseEntity.ok(ApiResponse.success(
-                "Redirect to Google OAuth2 authorization",
-                "/oauth2/authorization/google"
-        ));
+    @GetMapping("/google")
+    public void initiateGoogleLogin(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/oauth2/authorization/google");
     }
+
+    @PostMapping("/complete")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeSsoRegistration(
+            @Valid @RequestBody CompleteSsoRegistrationRequest request
+    ) {
+        log.info("Completing SSO registration with token: {}", request.getToken());
+
+        Optional<PendingSsoRegistration> pendingRegistration = ssoRegistrationCacheService.retrieveAndDeletePendingRegistration(request.getToken());
+
+        if (pendingRegistration.isEmpty()) {
+            log.warn("SSO registration completion failed: Invalid or expired token");
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Invalid or expired SSO registration token. Please try again.")
+            );
+        }
+
+        PendingSsoRegistration registration = pendingRegistration.get();
+        log.info("Found pending registration for email: {}", registration.getEmail());
+
+        // Convert country from String to enum
+        Country countryEnum;
+        try {
+            countryEnum = Country.valueOf(request.getCountry().toUpperCase());
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid country code provided: {}", request.getCountry());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Invalid country code: " + request.getCountry())
+            );
+        }
+
+        ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(
+                registration.getEmail(),
+                registration.getName(),
+                registration.getSsoProviderId(),
+                countryEnum
+        );
+
+        if (!registrationResponse.isSuccess()) {
+            log.warn("SSO registration failed: {}", registrationResponse.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error(registrationResponse.getMessage())
+            );
+        }
+
+        // Log user in after successful registration
+        ApiResponse<AuthResponse> loginResponse = authenticationService.loginViaSso(
+                registration.getSsoProviderId()
+        );
+
+        if (!loginResponse.isSuccess()) {
+            log.warn("SSO login after registration failed: {}", loginResponse.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ApiResponse.error("Registration successful but login failed. Please try logging in.")
+            );
+        }
+
+        log.info("SSO registration completed successfully for: {}", registration.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(loginResponse);
+    }
+
 }

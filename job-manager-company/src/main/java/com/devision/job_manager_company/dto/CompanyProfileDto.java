@@ -5,12 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CompanyProfileDto {
-    private Long companyId;
+    private UUID companyId;
     private String aboutUs;
     private String whoWeSeek;
     private String logoUrl;
