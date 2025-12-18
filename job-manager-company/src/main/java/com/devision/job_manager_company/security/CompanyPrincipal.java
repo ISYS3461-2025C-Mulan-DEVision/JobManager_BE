@@ -6,10 +6,6 @@ import lombok.Getter;
 import java.security.Principal;
 import java.util.UUID;
 
-/**
- * Represents the authenticated company from the JWT token.
- * This is stored as the principal in the Spring Security context.
- */
 @Getter
 @AllArgsConstructor
 public class CompanyPrincipal implements Principal {

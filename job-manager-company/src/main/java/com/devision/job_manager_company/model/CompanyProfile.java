@@ -12,10 +12,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * CompanyProfile entity - extended profile information for companies.
- * Contains public-facing content like about us, logo, etc.
- */
 @Entity
 @Table(name = "company_profile")
 @Data
