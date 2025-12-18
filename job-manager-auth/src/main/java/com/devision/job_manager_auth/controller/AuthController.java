@@ -1,6 +1,7 @@
 package com.devision.job_manager_auth.controller;
 
 import com.devision.job_manager_auth.dto.internal.*;
+import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -61,5 +64,13 @@ public class AuthController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Auth Service is running");
+    }
+
+    @GetMapping("/countries")
+    public ResponseEntity<ApiResponse<List<Map<String, String>>>> getCountries() {
+        List<Map<String, String>> countries = Arrays.stream(Country.values())
+            .map(c -> Map.of("code", c.getCode(), "displayName", c.getDisplayName()))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Country list", countries));
     }
 }

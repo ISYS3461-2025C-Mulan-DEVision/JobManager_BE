@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: job-manager-notification
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5438/job_manager_notification
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_NOTIFICATION_URL:jdbc:postgresql://localhost:5438/job_manager_notification}
+    username: ${POSTGRES_NOTIFICATION_USERNAME:postgres}
+    password: ${POSTGRES_NOTIFICATION_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -43,6 +43,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
 
 management:
   endpoints:

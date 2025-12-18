@@ -21,9 +21,9 @@ spring:
           protocol: smtp
 
   datasource:
-    url: jdbc:postgresql://localhost:5439/job_manager_auth
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
+    username: ${POSTGRES_AUTH_USERNAME:postgres}
+    password: ${POSTGRES_AUTH_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -35,10 +35,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 60000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
   security:
     oauth2:
@@ -70,11 +74,11 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-#    Not using Eureka for NOW
     fetch-registry: true
     register-with-eureka: true
   instance:
     prefer-ip-address: true
+    health-check-url-path: /actuator/health
 
 jwt:
   secret: ${JWT_SECRET:YourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
@@ -89,6 +93,6 @@ management:
 
 app:
   base-url: http://localhost:8081
-  frontend-url: http://localhost:3000
+  frontend-url: http://localhost:5173
   activation:
     token-expiration: 86400000 # 24 hours

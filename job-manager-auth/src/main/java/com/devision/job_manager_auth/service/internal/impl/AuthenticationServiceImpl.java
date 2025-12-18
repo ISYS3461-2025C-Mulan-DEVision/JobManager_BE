@@ -3,12 +3,14 @@ package com.devision.job_manager_auth.service.internal.impl;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.CompanyAccount;
+import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.entity.Role;
 import com.devision.job_manager_auth.event.CompanyActivatedEvent;
 import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
 import com.devision.job_manager_auth.event.CompanyRegisteredEvent;
 import com.devision.job_manager_auth.repository.CompanyAccountRepository;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
+import com.devision.job_manager_auth.service.internal.EmailService;
 import com.devision.job_manager_auth.service.internal.EventPublisherService;
 import com.devision.job_manager_auth.service.internal.TokenService;
 import jakarta.transaction.Transactional;
@@ -31,6 +33,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final EventPublisherService eventPublisherService;
+    private final EmailService emailService;
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -52,6 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .authProvider(AuthProvider.LOCAL)
                 .role(Role.COMPANY)
+                .country(request.getCountry())
                 .isActivated(false)
                 .activationToken(activationToken)
                 .activationTokenExpiry(tokenExpiry)
@@ -72,7 +76,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .registeredAt(LocalDateTime.now())
                 .build();
 
+
         eventPublisherService.publishCompanyRegistered(event);
+
+        emailService.sendActivationEmail(account, activationToken);
 
         return ApiResponse.success(
                 "Registration successful! Please check your email to activate your account.",
@@ -82,7 +89,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId) {
+    public ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId, Country country) {
 
         // Check if the account already exists
         if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(AuthProvider.GOOGLE, ssoProviderId)) {
@@ -100,6 +107,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CompanyAccount account = CompanyAccount.builder()
                 .email(email)
                 .passwordHash(null) // SSO users don't have passwords
+                .country(country)
                 .authProvider(AuthProvider.GOOGLE)
                 .ssoProviderId(ssoProviderId)
                 .role(Role.COMPANY)
@@ -159,6 +167,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
         eventPublisherService.publishCompanyActivated(event);
 
+        emailService.sendWelcomeEmail(account);
+
         return ApiResponse.success("Account activated successfully! You can now login.", null);
     }
 
@@ -195,6 +205,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .registeredAt(LocalDateTime.now())
                 .build();
         eventPublisherService.publishCompanyRegistered(event);
+
+        emailService.sendActivationEmail(account, newToken);
 
         log.info("Activation email resent to: {}", email);
 
@@ -328,6 +340,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .lockedAt(now)
                         .build();
                 eventPublisherService.publishCompanyAccountLocked(event);
+
+                emailService.sendAccountLockedEmail(account);
                 
                 log.warn("Account locked due to brute force: {}", account.getEmail());
             }

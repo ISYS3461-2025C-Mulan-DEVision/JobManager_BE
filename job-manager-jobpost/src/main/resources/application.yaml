@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: job-manager-jobpost
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5434/job_manager_jobpost
-    username: postgres
-    password: postgres
+    url: ${POSTGRES_JOBPOST_URL:jdbc:postgresql://localhost:5434/job_manager_jobpost}
+    username: ${POSTGRES_JOBPOST_USERNAME:postgres}
+    password: ${POSTGRES_JOBPOST_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -37,6 +37,9 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
 
 management:
   endpoints:
