@@ -98,7 +98,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Check if email is already used with local registration
         if (companyAccountRepository.existsByEmail(email)) {
             String redirectUrl = String.format(
-                    "%s/signup?sso=google&success=false&error=%s",
+                    "%s/register?sso=google&success=false&error=%s",
                     frontendUrl,
                     java.net.URLEncoder.encode("Email already registered with password login", "UTF-8")
             );
@@ -121,7 +121,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // Redirect to frontend signup with token
         String redirectUrl = String.format(
-                "%s/signup?sso=google&token=%s&email=%s&name=%s",
+                "%s/register?sso=google&token=%s&email=%s&name=%s",
                 frontendUrl,
                 token,
                 java.net.URLEncoder.encode(email, "UTF-8"),
