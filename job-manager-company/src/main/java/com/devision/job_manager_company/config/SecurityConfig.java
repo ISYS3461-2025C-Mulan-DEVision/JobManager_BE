@@ -12,6 +12,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Security configuration for the Company Service.
+ * Validates JWT tokens issued by the Auth Service.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity  // Enables @PreAuthorize, @PostAuthorize annotations
@@ -33,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
 
                         // Allow GET requests to view public company profiles (optional - remove if want all endpoints protected)
-                         .requestMatchers(HttpMethod.GET, "/api/companies/*/profile").permitAll()
+                        // .requestMatchers(HttpMethod.GET, "/api/companies/*/profile").permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()

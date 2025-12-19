@@ -1,5 +1,8 @@
 package com.devision.job_manager_company.model;
 
+/**
+ * Media type enumeration for company media files.
+ */
 public enum MediaType {
     LOGO,           // Company logo
     BANNER,         // Profile banner images
