@@ -32,6 +32,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -60,7 +61,11 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/api/external/**",
                                 "/api/auth/logout",
-                                "/api/auth/refresh"
+                                "/api/auth/refresh",
+                                "/api/auth/complete",
+
+                                // External endpoints
+                                "/api/external/**"
                         ).permitAll()
 
                         // Requiring authentication endpoints:
