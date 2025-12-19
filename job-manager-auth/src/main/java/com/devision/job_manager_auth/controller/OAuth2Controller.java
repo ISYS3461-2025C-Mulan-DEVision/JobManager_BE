@@ -159,5 +159,4 @@ public class OAuth2Controller {
         log.info("SSO registration completed successfully for: {}", registration.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(loginResponse);
     }
-
 }
