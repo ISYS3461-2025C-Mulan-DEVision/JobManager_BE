@@ -1,6 +1,7 @@
 package com.devision.job_manager_jobpost.dto;
 
 import com.devision.job_manager_jobpost.model.SalaryType;
+import com.devision.job_manager_jobpost.validation.ValidSalary;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ValidSalary
 public class CreateJobPostRequest {
 
     @NotNull
