@@ -65,7 +65,8 @@ public class OAuth2Controller {
             Country countryEnum = null;
             if (country != null && !country.isBlank()) {
                 try {
-                    countryEnum = Country.valueOf(country.toUpperCase());
+//                    countryEnum = Country.valueOf(country.toUpperCase());
+                    countryEnum = Country.fromCode(country);
 
                 } catch (IllegalArgumentException ex) {
                     log.warn("Invalid country code provided during SSO registration: {}", country);
@@ -109,11 +110,20 @@ public class OAuth2Controller {
         log.info("Found pending registration for email: {}", registration.getEmail());
 
         // Convert country from String to enum
-        Country countryEnum;
-        try {
-            countryEnum = Country.valueOf(request.getCountry().toUpperCase());
+//        Country countryEnum;
+//        try {
+//            countryEnum = Country.valueOf(request.getCountry().toUpperCase());
+//
+//        } catch (IllegalArgumentException e) {
+//            log.warn("Invalid country code provided: {}", request.getCountry());
+//            return ResponseEntity.badRequest().body(
+//                    ApiResponse.error("Invalid country code: " + request.getCountry())
+//            );
+//        }
 
-        } catch (IllegalArgumentException e) {
+        Country countryEnum = Country.fromCode(request.getCountry());
+
+        if (countryEnum == null) {
             log.warn("Invalid country code provided: {}", request.getCountry());
             return ResponseEntity.badRequest().body(
                     ApiResponse.error("Invalid country code: " + request.getCountry())
@@ -149,5 +159,4 @@ public class OAuth2Controller {
         log.info("SSO registration completed successfully for: {}", registration.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(loginResponse);
     }
-
 }
