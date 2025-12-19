@@ -41,9 +41,6 @@ firebase:
   credentials-file: classpath:firebase-service-account.json
   bucket-name: devision-job-manager.firebasestorage.app
 
-jwt:
-  secret: ${JWT_SECRET:YourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
-
 eureka:
   client:
     service-url:

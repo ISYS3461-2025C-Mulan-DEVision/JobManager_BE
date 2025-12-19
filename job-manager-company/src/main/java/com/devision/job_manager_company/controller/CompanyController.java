@@ -3,14 +3,11 @@ package com.devision.job_manager_company.controller;
 import com.devision.job_manager_company.dto.*;
 import com.devision.job_manager_company.model.Company;
 import com.devision.job_manager_company.model.CompanyProfile;
-import com.devision.job_manager_company.security.SecurityUtils;
 import com.devision.job_manager_company.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -22,14 +19,10 @@ import java.util.UUID;
 public class CompanyController {
 
     private final CompanyService companyService;
-    private final SecurityUtils securityUtils;
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CompanyDto>> getCompany(@PathVariable UUID id) {
         log.info("Getting company with ID: {}", id);
-        
-        // Verify the authenticated company can access this resource
-        securityUtils.verifyCompanyAccess(id);
         
         return companyService.getCompanyById(id)
                 .map(company -> {
@@ -42,9 +35,6 @@ public class CompanyController {
     @GetMapping("/{id}/profile")
     public ResponseEntity<ApiResponse<CompanyProfileDto>> getCompanyProfile(@PathVariable UUID id) {
         log.info("Getting company profile for ID: {}", id);
-        
-        // Verify the authenticated company can access this resource
-        securityUtils.verifyCompanyAccess(id);
         
         return companyService.getCompanyWithProfile(id)
                 .map(company -> {
@@ -59,9 +49,6 @@ public class CompanyController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateCompanyRequest request) {
         log.info("Updating company with ID: {}", id);
-        
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(id);
         
         try {
             Company updatedCompany = Company.builder()
@@ -87,9 +74,6 @@ public class CompanyController {
             @Valid @RequestBody UpdateCompanyProfileRequest request) {
         log.info("Updating company profile for ID: {}", id);
         
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(id);
-        
         try {
             CompanyProfile updatedProfile = CompanyProfile.builder()
                     .aboutUs(request.getAboutUs())
@@ -113,14 +97,6 @@ public class CompanyController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Company Service is running");
-    }
-
-    // Exception handler for AccessDeniedException
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<String>> handleAccessDenied(AccessDeniedException e) {
-        log.warn("Access denied: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(e.getMessage()));
     }
 
     private CompanyDto mapToDto(Company company) {
