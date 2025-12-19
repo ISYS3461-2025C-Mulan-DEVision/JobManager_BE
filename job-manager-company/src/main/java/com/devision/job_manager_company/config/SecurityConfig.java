@@ -33,7 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
 
                         // Allow GET requests to view public company profiles (optional - remove if want all endpoints protected)
-                         .requestMatchers(HttpMethod.GET, "/api/companies/*/profile").permitAll()
+                         // .requestMatchers(HttpMethod.GET, "/api/companies/*/profile").permitAll()
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
