@@ -1,0 +1,21 @@
+package com.devision.job_manager_jobpost.repository;
+
+import com.devision.job_manager_jobpost.model.JobPost;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+
+@Repository
+public interface JobPostRepository extends JpaRepository<JobPost, Long> {
+
+    Page<JobPost> findByCompanyId(Long companyId, Pageable pageable);
+
+    Page<JobPost> findByPublishedTrue(Pageable pageable);
+
+    Page<JobPost> findByPublishedTrueAndCompanyId(Long companyId, Pageable pageable);
+
+    Page<JobPost> findByPublishedTrueAndExpiryAtAfter(LocalDateTime now, Pageable pageable);
+}

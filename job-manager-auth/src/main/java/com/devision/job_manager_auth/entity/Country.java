@@ -49,6 +49,7 @@ public enum Country {
 
     /**
      * Find Country enum by country code
+     *
      * @param code ISO
      * @return Country enum or null
      */
@@ -67,6 +68,7 @@ public enum Country {
 
     /**
      * Find Country enum by name
+     *
      * @param displayName
      * @return Country enum or null
      */

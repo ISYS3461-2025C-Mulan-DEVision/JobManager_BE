@@ -10,6 +10,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * CompanyMedia entity - media files associated with a company.
+ * Supports images, videos, and documents for company profiles.
+ */
 @Entity
 @Table(name = "company_media")
 @Data

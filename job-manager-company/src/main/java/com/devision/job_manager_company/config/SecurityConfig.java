@@ -12,6 +12,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Security configuration for the Company Service.
+ * Validates JWT tokens issued by the Auth Service.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity  // Enables @PreAuthorize, @PostAuthorize annotations
