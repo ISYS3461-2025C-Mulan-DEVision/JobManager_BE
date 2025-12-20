@@ -4,9 +4,9 @@ import com.devision.job_manager_company.model.Company;
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
 import com.devision.job_manager_company.repository.CompanyMediaRepository;
-import com.devision.job_manager_company.repository.CompanyProfileRepository;
 import com.devision.job_manager_company.repository.CompanyRepository;
 import com.devision.job_manager_company.service.CompanyMediaService;
+import com.devision.job_manager_company.service.CompanyService;
 import com.devision.job_manager_company.service.MediaStorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
     private final CompanyMediaRepository companyMediaRepository;
     private final CompanyRepository companyRepository;
-    private final CompanyProfileRepository companyProfileRepository;
+    private final CompanyService companyService;
     private final MediaStorageService mediaStorageService;
 
     @Override
@@ -59,12 +59,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
         CompanyMedia savedLogo = companyMediaRepository.save(logo);
         
-        // Update logoUrl in CompanyProfile
-        companyProfileRepository.findById(companyId).ifPresent(profile -> {
-            profile.setLogoUrl(url);
-            companyProfileRepository.save(profile);
-            log.info("Updated logoUrl in CompanyProfile for company ID: {}", companyId);
-        });
+        companyService.updateProfileLogoUrl(companyId, url);
         
         return savedLogo;
     }
@@ -100,12 +95,7 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
 
         CompanyMedia savedBanner = companyMediaRepository.save(banner);
         
-        // Update bannerUrl in CompanyProfile
-        companyProfileRepository.findById(companyId).ifPresent(profile -> {
-            profile.setBannerUrl(url);
-            companyProfileRepository.save(profile);
-            log.info("Updated bannerUrl in CompanyProfile for company ID: {}", companyId);
-        });
+        companyService.updateProfileBannerUrl(companyId, url);
         
         return savedBanner;
     }
@@ -164,19 +154,10 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
         // Delete from database
         companyMediaRepository.delete(media);
         
-        // Update CompanyProfile if deleting logo or banner
         if (media.getType() == MediaType.LOGO) {
-            companyProfileRepository.findById(media.getCompany().getId()).ifPresent(profile -> {
-                profile.setLogoUrl(null);
-                companyProfileRepository.save(profile);
-                log.info("Cleared logoUrl in CompanyProfile for company ID: {}", media.getCompany().getId());
-            });
+            companyService.updateProfileLogoUrl(media.getCompany().getId(), null);
         } else if (media.getType() == MediaType.BANNER) {
-            companyProfileRepository.findById(media.getCompany().getId()).ifPresent(profile -> {
-                profile.setBannerUrl(null);
-                companyProfileRepository.save(profile);
-                log.info("Cleared bannerUrl in CompanyProfile for company ID: {}", media.getCompany().getId());
-            });
+            companyService.updateProfileBannerUrl(media.getCompany().getId(), null);
         }
     }
 
