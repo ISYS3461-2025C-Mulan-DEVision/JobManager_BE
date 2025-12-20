@@ -18,4 +18,8 @@ public interface CompanyService {
     Company updateCompany(UUID id, Company company);
 
     CompanyProfile updateCompanyProfile(UUID companyId, CompanyProfile profile);
+
+    void updateProfileLogoUrl(UUID companyId, String logoUrl);
+
+    void updateProfileBannerUrl(UUID companyId, String bannerUrl);
 }

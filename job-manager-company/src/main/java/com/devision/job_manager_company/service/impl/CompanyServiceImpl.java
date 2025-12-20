@@ -120,4 +120,26 @@ public class CompanyServiceImpl implements CompanyService {
 
         return companyProfileRepository.save(profile);
     }
+
+    @Override
+    @Transactional
+    public void updateProfileLogoUrl(UUID companyId, String logoUrl) {
+        log.info("Updating logo URL for company ID: {}", companyId);
+        CompanyProfile profile = companyProfileRepository.findByCompanyId(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found for company ID: " + companyId));
+        profile.setLogoUrl(logoUrl);
+        companyProfileRepository.save(profile);
+        log.info("Updated logoUrl in CompanyProfile for company ID: {}", companyId);
+    }
+
+    @Override
+    @Transactional
+    public void updateProfileBannerUrl(UUID companyId, String bannerUrl) {
+        log.info("Updating banner URL for company ID: {}", companyId);
+        CompanyProfile profile = companyProfileRepository.findByCompanyId(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found for company ID: " + companyId));
+        profile.setBannerUrl(bannerUrl);
+        companyProfileRepository.save(profile);
+        log.info("Updated bannerUrl in CompanyProfile for company ID: {}", companyId);
+    }
 }

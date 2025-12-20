@@ -2,6 +2,7 @@ package com.devision.job_manager_company.controller;
 
 import com.devision.job_manager_company.dto.ApiResponse;
 import com.devision.job_manager_company.dto.CompanyMediaDto;
+import com.devision.job_manager_company.dto.PagedResponse;
 import com.devision.job_manager_company.dto.UpdateMediaDisplayOrderRequest;
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
@@ -9,6 +10,10 @@ import com.devision.job_manager_company.service.CompanyMediaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -107,26 +112,56 @@ public class CompanyMediaController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CompanyMediaDto>>> getCompanyMedia(
+    public ResponseEntity<ApiResponse<PagedResponse<CompanyMediaDto>>> getCompanyMedia(
             @PathVariable UUID companyId,
-            @RequestParam(value = "type", required = false) MediaType type) {
-        log.info("Get media request for company ID: {}, type: {}", companyId, type);
+            @RequestParam(value = "type", required = false) MediaType type,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "desc") String sortDir) {
+        log.info("Get media request for company ID: {}, type: {}, page: {}, size: {}, sortBy: {}, sortDir: {}", 
+                companyId, type, page, size, sortBy, sortDir);
         
         try {
-            List<CompanyMedia> mediaList = type != null
-                    ? companyMediaService.getCompanyMediaByType(companyId, type)
-                    : companyMediaService.getCompanyMedia(companyId);
+            // Validate sort field
+            if (!isValidSortField(sortBy)) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid sort field. Allowed: createdAt, displayOrder, title"));
+            }
 
-            List<CompanyMediaDto> dtos = mediaList.stream()
+            Sort sort = sortDir.equalsIgnoreCase("asc") 
+                    ? Sort.by(sortBy).ascending() 
+                    : Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            Page<CompanyMedia> mediaPage = type != null
+                    ? companyMediaService.getCompanyMediaByTypePaginated(companyId, type, pageable)
+                    : companyMediaService.getCompanyMediaPaginated(companyId, pageable);
+
+            List<CompanyMediaDto> dtos = mediaPage.getContent().stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(ApiResponse.success("Media retrieved successfully", dtos));
+            PagedResponse<CompanyMediaDto> pagedResponse = PagedResponse.<CompanyMediaDto>builder()
+                    .content(dtos)
+                    .page(mediaPage.getNumber())
+                    .size(mediaPage.getSize())
+                    .totalElements(mediaPage.getTotalElements())
+                    .totalPages(mediaPage.getTotalPages())
+                    .first(mediaPage.isFirst())
+                    .last(mediaPage.isLast())
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success("Media retrieved successfully", pagedResponse));
         } catch (Exception e) {
             log.error("Failed to get company media", e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to get media: " + e.getMessage()));
         }
+    }
+
+    private boolean isValidSortField(String sortBy) {
+        return sortBy.equals("createdAt") || sortBy.equals("displayOrder") || sortBy.equals("title");
     }
 
     @DeleteMapping("/{mediaId}")

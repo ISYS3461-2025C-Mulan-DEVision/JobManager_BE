@@ -57,7 +57,6 @@ public class MediaStorageService {
     public void deleteFile(String fileUrl) {
         try {
             // Extract object name from URL
-            // URL format: https://storage.googleapis.com/bucket-name/object-name
             String objectName = extractObjectNameFromUrl(fileUrl);
             if (objectName != null) {
                 BlobId blobId = BlobId.of(bucketName, objectName);
@@ -82,7 +81,9 @@ public class MediaStorageService {
 
         storage.create(blobInfo, file.getBytes());
 
-        String publicUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, objectName);
+        // Use Firebase Storage URL format with URL-encoded path
+        String encodedObjectName = java.net.URLEncoder.encode(objectName, java.nio.charset.StandardCharsets.UTF_8);
+        String publicUrl = String.format("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media", bucketName, encodedObjectName);
         log.info("File uploaded successfully: {}", publicUrl);
         return publicUrl;
     }
@@ -101,10 +102,20 @@ public class MediaStorageService {
     private String extractObjectNameFromUrl(String url) {
         if (url == null) return null;
         try {
-            // URL format: https://storage.googleapis.com/bucket-name/object-name
-            String prefix = String.format("https://storage.googleapis.com/%s/", bucketName);
-            if (url.startsWith(prefix)) {
-                return url.substring(prefix.length());
+            String firebasePrefix = String.format("https://firebasestorage.googleapis.com/v0/b/%s/o/", bucketName);
+            if (url.startsWith(firebasePrefix)) {
+                String encodedPath = url.substring(firebasePrefix.length());
+                // Remove query parameters (?alt=media)
+                int queryIndex = encodedPath.indexOf('?');
+                if (queryIndex != -1) {
+                    encodedPath = encodedPath.substring(0, queryIndex);
+                }
+                // URL decode the path
+                return java.net.URLDecoder.decode(encodedPath, java.nio.charset.StandardCharsets.UTF_8);
+            }
+            String legacyPrefix = String.format("https://storage.googleapis.com/%s/", bucketName);
+            if (url.startsWith(legacyPrefix)) {
+                return url.substring(legacyPrefix.length());
             }
         } catch (Exception e) {
             log.error("Failed to extract object name from URL: {}", url, e);
