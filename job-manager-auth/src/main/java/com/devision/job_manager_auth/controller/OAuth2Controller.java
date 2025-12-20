@@ -4,6 +4,8 @@ import com.devision.job_manager_auth.dto.internal.ApiResponse;
 import com.devision.job_manager_auth.dto.internal.AuthResponse;
 import com.devision.job_manager_auth.dto.internal.CompleteSsoRegistrationRequest;
 import com.devision.job_manager_auth.dto.internal.PendingSsoRegistration;
+import com.devision.job_manager_auth.dto.internal.SsoRegisterRequest;
+import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
 import com.devision.job_manager_auth.service.internal.SsoRegistrationCacheService;
@@ -75,9 +77,15 @@ public class OAuth2Controller {
                 }
             }
 
-            ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(
-                    email, name, ssoProviderId, countryEnum
-            );
+            SsoRegisterRequest ssoRequest = SsoRegisterRequest.builder()
+                    .email(email)
+                    .country(countryEnum)
+                    .provider(AuthProvider.GOOGLE)
+                    .ssoProviderId(ssoProviderId)
+                    .name(name)
+                    .build();
+
+            ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(ssoRequest);
 
             // After registration, log the user in
             response = authenticationService.loginViaSso(ssoProviderId);
@@ -130,12 +138,15 @@ public class OAuth2Controller {
             );
         }
 
-        ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(
-                registration.getEmail(),
-                registration.getName(),
-                registration.getSsoProviderId(),
-                countryEnum
-        );
+        SsoRegisterRequest ssoRequest = SsoRegisterRequest.builder()
+                .email(registration.getEmail())
+                .country(countryEnum)
+                .provider(AuthProvider.GOOGLE)
+                .ssoProviderId(registration.getSsoProviderId())
+                .name(registration.getName())
+                .build();
+
+        ApiResponse<String> registrationResponse = authenticationService.registerCompanyViaSso(ssoRequest);
 
         if (!registrationResponse.isSuccess()) {
             log.warn("SSO registration failed: {}", registrationResponse.getMessage());

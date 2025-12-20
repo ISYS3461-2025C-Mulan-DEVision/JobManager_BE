@@ -3,7 +3,6 @@ package com.devision.job_manager_auth.service.internal.impl;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.CompanyAccount;
-import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.entity.Role;
 import com.devision.job_manager_auth.event.CompanyActivatedEvent;
 import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
@@ -68,14 +67,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Company account registered successfully: {}", request.getEmail());
 
         // Publish event for Company Service to create profile and for Email Service to send activation
-        CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
-                .companyId(account.getId())
-                .email(request.getEmail())
-                .countryCode(request.getCountry() != null ? request.getCountry().getCode() : null)
-                .activationToken(activationToken)
-                .registeredAt(LocalDateTime.now())
-                .build();
-
+        CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), activationToken);
 
         eventPublisherService.publishCompanyRegistered(event);
 
@@ -89,29 +81,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId, Country country) {
+    public ApiResponse<String> registerCompanyViaSso(SsoRegisterRequest request) {
 
         // Check if the account already exists
-        if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(AuthProvider.GOOGLE, ssoProviderId)) {
-            log.warn("SSO registration failed: Account already exists - {}", email);
+        if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(request.getProvider(), request.getSsoProviderId())) {
+            log.warn("SSO registration failed: Account already exists - {}", request.getEmail());
             return ApiResponse.error("SSO account already registered");
         }
 
         // Check if email is already used with regular registration
-        if (companyAccountRepository.existsByEmail(email)) {
-            log.warn("SSO registration failed: Email already used with regular registration - {}", email);
+        if (companyAccountRepository.existsByEmail(request.getEmail())) {
+            log.warn("SSO registration failed: Email already used with regular registration - {}", request.getEmail());
             return ApiResponse.error("Email already registered with password login");
         }
 
         // Create company account entity
         CompanyAccount account = CompanyAccount.builder()
-                .email(email)
+                .email(request.getEmail())
                 .passwordHash(null) // SSO users don't have passwords
-                .country(country)
-                .authProvider(AuthProvider.GOOGLE)
-                .ssoProviderId(ssoProviderId)
+                .country(request.getCountry())
+                .authProvider(request.getProvider())
+                .ssoProviderId(request.getSsoProviderId())
                 .role(Role.COMPANY)
-                .isActivated(true) // SSO accounts are pre-activated (verified by Google)
+                .isActivated(true) // SSO accounts are pre-activated (verified by provider)
                 .activationToken(null)
                 .activationTokenExpiry(null)
                 .failedLoginAttempts(0)
@@ -119,14 +111,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
 
         account = companyAccountRepository.save(account);
-        log.info("SSO company account registered successfully: {}", email);
+        log.info("SSO company account registered successfully: {}", request.getEmail());
 
         // Publish event for Company Service to create profile
-        CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
-                .companyId(account.getId())
-                .email(email)
-                .registeredAt(LocalDateTime.now())
-                .build();
+        CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), null);
 
         eventPublisherService.publishCompanyRegistered(event);
 
@@ -404,5 +392,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("Token refresh failed: {}", e.getMessage());
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    /**
+     * Builder for CompanyRegisteredEvent.
+     * Ensures all registration flows emit consistent Kafka events with required fields.
+     *
+     * @param request         Base registration request containing email and country
+     * @param companyId       The generated company ID
+     * @param activationToken Optional activation token (null for SSO registrations)
+     * @return A fully populated CompanyRegisteredEvent
+     */
+    private CompanyRegisteredEvent buildCompanyRegisteredEvent(
+            BaseCompanyRegisterRequest request,
+            UUID companyId,
+            String activationToken
+    ) {
+        return CompanyRegisteredEvent.builder()
+                .companyId(companyId)
+                .email(request.getEmail())
+                .countryCode(request.getCountry() != null ? request.getCountry().getCode() : null)
+                .activationToken(activationToken)
+                .registeredAt(LocalDateTime.now())
+                .build();
     }
 }
