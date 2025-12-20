@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
  */
 public class PhoneNumberValidator implements ConstraintValidator<ValidPhoneNumber, String> {
 
-    // Common international dial codes (ISO 3166-1)
     private static final Set<String> VALID_DIAL_CODES = Set.of(
             // North America
             "1",      // USA, Canada

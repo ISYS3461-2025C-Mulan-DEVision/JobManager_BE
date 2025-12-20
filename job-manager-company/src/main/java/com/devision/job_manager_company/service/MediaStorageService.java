@@ -22,9 +22,7 @@ public class MediaStorageService {
     @Value("${firebase.bucket-name}")
     private String bucketName;
 
-    /**
-     * Upload company logo. Overwrites existing logo.
-     */
+    // Upload company logo, overwrites existing logo
     public String uploadCompanyLogo(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
         String objectName = String.format("companies/%s/logo%s", companyId.toString(),
@@ -34,9 +32,7 @@ public class MediaStorageService {
         return upload(objectName, file);
     }
 
-    /**
-     * Upload company media (images, videos, documents).
-     */
+    // Upload company media (images, videos, documents)
     public String uploadCompanyMedia(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
         String uuid = UUID.randomUUID().toString();
@@ -47,9 +43,7 @@ public class MediaStorageService {
         return upload(objectName, file);
     }
 
-    /**
-     * Upload company banner image.
-     */
+    // Upload company banner image
     public String uploadCompanyBanner(UUID companyId, MultipartFile file) throws IOException {
         String extension = getExtension(file.getOriginalFilename());
         String objectName = String.format("companies/%s/banner%s", companyId.toString(),
@@ -59,9 +53,7 @@ public class MediaStorageService {
         return upload(objectName, file);
     }
 
-    /**
-     * Delete a file from Firebase Storage.
-     */
+    // Delete a file from Firebase Storage
     public void deleteFile(String fileUrl) {
         try {
             // Extract object name from URL
@@ -81,9 +73,7 @@ public class MediaStorageService {
         }
     }
 
-    /**
-     * Upload file to Firebase Storage.
-     */
+    // Upload file to Firebase Storage
     private String upload(String objectName, MultipartFile file) throws IOException {
         BlobId blobId = BlobId.of(bucketName, objectName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
@@ -97,9 +87,7 @@ public class MediaStorageService {
         return publicUrl;
     }
 
-    /**
-     * Extract file extension from filename.
-     */
+    // Extract file extension from filename
     private String getExtension(String filename) {
         if (filename == null) return null;
         int dotIndex = filename.lastIndexOf('.');
@@ -109,9 +97,7 @@ public class MediaStorageService {
         return filename.substring(dotIndex + 1);
     }
 
-    /**
-     * Extract object name from Firebase Storage URL.
-     */
+    // Extract object name from Firebase Storage URL
     private String extractObjectNameFromUrl(String url) {
         if (url == null) return null;
         try {

@@ -16,10 +16,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Company entity - represents company profile/business data.
- * The ID matches the CompanyAccount ID from the Auth service.
- */
 @Entity
 @Table(name = "company")
 @Data
