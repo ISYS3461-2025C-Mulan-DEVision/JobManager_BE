@@ -2,6 +2,8 @@ package com.devision.job_manager_company.repository;
 
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,11 +17,17 @@ import java.util.UUID;
 @Repository
 public interface CompanyMediaRepository extends JpaRepository<CompanyMedia, UUID> {
 
-    // Find all media for a company
+    // Find all media for a company (non-paginated, for reordering)
     List<CompanyMedia> findByCompanyIdOrderByDisplayOrderAsc(UUID companyId);
 
-    // Find media by company and type
+    // Find all media for a company with pagination
+    Page<CompanyMedia> findByCompanyId(UUID companyId, Pageable pageable);
+
+    // Find media by company and type (non-paginated)
     List<CompanyMedia> findByCompanyIdAndTypeOrderByDisplayOrderAsc(UUID companyId, MediaType type);
+
+    // Find media by company and type with pagination
+    Page<CompanyMedia> findByCompanyIdAndType(UUID companyId, MediaType type, Pageable pageable);
 
     // Delete all media for a company
     void deleteByCompanyId(UUID companyId);

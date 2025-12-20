@@ -11,6 +11,8 @@ import com.devision.job_manager_company.service.MediaStorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -135,9 +137,23 @@ public class CompanyMediaServiceImpl implements CompanyMediaService {
     }
 
     @Override
+    public Page<CompanyMedia> getCompanyMediaPaginated(UUID companyId, Pageable pageable) {
+        log.info("Getting paginated media for company ID: {}, page: {}, size: {}", 
+                companyId, pageable.getPageNumber(), pageable.getPageSize());
+        return companyMediaRepository.findByCompanyId(companyId, pageable);
+    }
+
+    @Override
     public List<CompanyMedia> getCompanyMediaByType(UUID companyId, MediaType type) {
         log.info("Getting media for company ID: {}, type: {}", companyId, type);
         return companyMediaRepository.findByCompanyIdAndTypeOrderByDisplayOrderAsc(companyId, type);
+    }
+
+    @Override
+    public Page<CompanyMedia> getCompanyMediaByTypePaginated(UUID companyId, MediaType type, Pageable pageable) {
+        log.info("Getting paginated media for company ID: {}, type: {}, page: {}, size: {}", 
+                companyId, type, pageable.getPageNumber(), pageable.getPageSize());
+        return companyMediaRepository.findByCompanyIdAndType(companyId, type, pageable);
     }
 
     @Override
