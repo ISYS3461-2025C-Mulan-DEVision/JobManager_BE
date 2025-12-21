@@ -1,4 +1,4 @@
-package com.devision.job_manager_premium.config;
+package com.devision.job_manager_subscription.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

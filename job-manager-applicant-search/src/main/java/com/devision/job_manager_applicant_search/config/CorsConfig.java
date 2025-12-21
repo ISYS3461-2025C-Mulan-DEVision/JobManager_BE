@@ -1,4 +1,4 @@
-package com.devision.job_manager_search.config;
+package com.devision.job_manager_applicant_search.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
