@@ -29,6 +29,7 @@ public class JobPost {
     private List<JobPostEmploymentType> employmentTypes = new ArrayList<>();
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "job_post_id")
     private Long jobPostId;
 
