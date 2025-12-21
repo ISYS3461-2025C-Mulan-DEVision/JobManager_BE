@@ -1,0 +1,151 @@
+package com.devision.job_manager_auth.service.internal.impl;
+
+import com.devision.job_manager_auth.config.sharding.ShardContext;
+import com.devision.job_manager_auth.config.sharding.ShardingProperties;
+import com.devision.job_manager_auth.entity.CompanyAccount;
+import com.devision.job_manager_auth.repository.CompanyAccountRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class ShardLookupService {
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ShardingProperties shardingProperties;
+    private final CompanyAccountRepository companyAccountRepository;
+
+    private static final Duration CACHE_TTL = Duration.ofDays(30);
+    private static final String EMAIL_SHARD_PREFIX = "email:shard:";
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+    /**
+     * First checks Redis cache, then falls back to scatter-gather across all shards to find which shard contains the account
+     *
+     */
+    public String findShardByEmail(String email) {
+        String cachedShard = getCachedShard(email);
+        if (cachedShard != null) {
+            log.debug("Cache hit: email '{}' found in shard '{}'", email, cachedShard);
+            return cachedShard;
+        }
+
+        log.debug("Cache miss for email '{}', performing scatter-gather", email);
+        String foundShard = scatterGatherFindByEmail(email);
+        if (foundShard != null) {
+            cacheEmailShard(email, foundShard);
+            log.debug("Cached email '{}' -> shard '{}'", email, foundShard);
+        }
+
+        return foundShard;
+    }
+
+    /**
+     * Find the company account by email, then route to the correct shard
+     *
+     */
+    public Optional<CompanyAccount> findAccountByEmail(String email) {
+        String shardKey = findShardByEmail(email);
+
+        if (shardKey == null) {
+            log.debug("No shard found for email '{}'", email);
+            return Optional.empty();
+        }
+
+        ShardContext.setShardKey(shardKey);
+        try {
+            return companyAccountRepository.findByEmail(email);
+        } finally {
+//            let the interceptor handle it
+        }
+    }
+
+    /**
+     * Query all shards at the same time and return as soon as any shard finds the email
+     */
+    private String scatterGatherFindByEmail(String email) {
+        List<String> shardKeys = new ArrayList<>(shardingProperties.getShards().keySet());
+
+        List<CompletableFuture<Optional<String>>> futures = new ArrayList<>();
+
+        for (String shardKey : shardKeys) {
+            CompletableFuture<Optional<String>> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    ShardContext.setShardKey(shardKey);
+
+                    boolean exists = companyAccountRepository.existsByEmail(email);
+
+                    if (exists) {
+                        log.debug("Email '{}' found in shard '{}'", email, shardKey);
+                        return Optional.of(shardKey);
+                    }
+                    return Optional.empty();
+                } catch (Exception e) {
+                    log.error("Error querying shard '{}' for email '{}': {}",
+                            shardKey, email, e.getMessage());
+                    return Optional.empty();
+                } finally {
+                    ShardContext.clear();
+                }
+            }, executorService);
+            futures.add(future);
+        }
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean emailExistsInAnyShard(String email) {
+        // First check cache
+        String cachedShard = getCachedShard(email);
+        if (cachedShard != null) {
+            return true;
+        }
+
+        // Scatter-gather to check all shards
+        return scatterGatherFindByEmail(email) != null;
+    }
+
+    public void cacheEmailShard(String email, String shardKey) {
+        String key = EMAIL_SHARD_PREFIX + email.toLowerCase();
+        redisTemplate.opsForValue().set(key, shardKey, CACHE_TTL);
+    }
+
+    private String getCachedShard(String email) {
+        String key = EMAIL_SHARD_PREFIX + email.toLowerCase();
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * This is called when an account is deleted or email is changed
+     * @param email
+     */
+    public void invalidateCache(String email) {
+        String key = EMAIL_SHARD_PREFIX + email.toLowerCase();
+        redisTemplate.delete(key);
+        log.debug("Invalidated cache for email '{}'", email);
+    }
+
+    /**
+     * Update cache when user changes their email.
+     */
+    public void updateEmailCache(String oldEmail, String newEmail, String shardKey) {
+        invalidateCache(oldEmail);
+        cacheEmailShard(newEmail, shardKey);
+    }
+}

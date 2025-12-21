@@ -1,6 +1,7 @@
 package com.devision.job_manager_auth.service.internal;
 
 import com.devision.job_manager_auth.entity.CompanyAccount;
+import io.jsonwebtoken.Claims;
 
 import java.util.UUID;
 
@@ -18,4 +19,6 @@ public interface TokenService {
     boolean isTokenRevoked(String token);
 
     String extractTokenFromHeader(String authHeader);
+
+    Claims extractAllClaims(String token);
 }

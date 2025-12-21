@@ -2,6 +2,7 @@ package com.devision.job_manager_auth.config.sharding;
 
 
 import com.devision.job_manager_auth.entity.Country;
+import com.devision.job_manager_auth.service.internal.TokenService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @RequiredArgsConstructor
 public class ShardInterceptor implements HandlerInterceptor {
-    private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
@@ -28,25 +29,28 @@ public class ShardInterceptor implements HandlerInterceptor {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
-                String token = authHeader.substring(7);
-                Claims claims = jwtUtil.extractAllClaims(token);
+                String token = tokenService.extractTokenFromHeader(authHeader);
 
-                // Extract country from JWT claims
-                String countryCode = claims.get("country", String.class);
+                if (token != null) {
+                    Claims claims = tokenService.extractAllClaims(token);
 
-                if (countryCode != null) {
-                    Country country = Country.fromCode(countryCode);
-                    if (country != null) {
-                        String shardKey = country.getShardKey();
-                        ShardContext.setShardKey(shardKey);
-                        log.debug("Shard context set to '{}' for country '{}'", shardKey, countryCode);
+                    // Extract country from JWT claims
+                    String countryCode = claims.get("country", String.class);
+
+                    if (countryCode != null) {
+                        Country country = Country.fromCode(countryCode);
+                        if (country != null) {
+                            String shardKey = country.getShardKey();
+                            ShardContext.setShardKey(shardKey);
+                            log.debug("Shard context set to '{}' for country '{}'", shardKey, countryCode);
+                        } else {
+                            log.debug("Unknown country code '{}', using default shard", countryCode);
+                            ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
+                        }
                     } else {
-                        log.debug("Unknown country code '{}', using default shard", countryCode);
+                        log.debug("No country in JWT claims, using default shard");
                         ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
                     }
-                } else {
-                    log.debug("No country in JWT claims, using default shard");
-                    ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
                 }
             } catch (Exception e) {
                 log.debug("Could not extract shard info from token: {}", e.getMessage());
@@ -54,7 +58,7 @@ public class ShardInterceptor implements HandlerInterceptor {
                 ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
             }
         } else {
-            // No auth header --> this might be a public endpoint (login, register)
+            // No auth header - this might be a public endpoint (login, register)
             // Shard will be set explicitly in the service layer for these cases
             log.debug("No Authorization header, shard will be set by service layer");
         }

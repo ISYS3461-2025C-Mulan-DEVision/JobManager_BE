@@ -1,8 +1,10 @@
 package com.devision.job_manager_auth.service.internal.impl;
 
+import com.devision.job_manager_auth.config.sharding.ShardContext;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.CompanyAccount;
+import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.entity.Role;
 import com.devision.job_manager_auth.event.CompanyActivatedEvent;
 import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -33,6 +36,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final TokenService tokenService;
     private final EventPublisherService eventPublisherService;
     private final EmailService emailService;
+    private final ShardLookupService shardLookupService;
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -40,43 +44,56 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public ApiResponse<String> registerCompany(RegisterRequest request) {
-        if (companyAccountRepository.existsByEmail(request.getEmail())) {
+
+        if (shardLookupService.emailExistsInAnyShard(request.getEmail())) {
             log.warn("Registration failed: Email already exists - {}", request.getEmail());
             return ApiResponse.error("Email already registered");
         }
-        
-        String activationToken = UUID.randomUUID().toString();
-        LocalDateTime tokenExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
 
-        // Create company account entity (auth only)
-        CompanyAccount account = CompanyAccount.builder()
-                .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .authProvider(AuthProvider.LOCAL)
-                .role(Role.COMPANY)
-                .country(request.getCountry())
-                .isActivated(false)
-                .activationToken(activationToken)
-                .activationTokenExpiry(tokenExpiry)
-                .failedLoginAttempts(0)
-                .isLocked(false)
-                .build();
+        Country country = request.getCountry();
+        String shardKey = country.getShardKey();
 
-        // Save account
-        account = companyAccountRepository.save(account);
-        log.info("Company account registered successfully: {}", request.getEmail());
+        // Set shard context BEFORE saving
+        ShardContext.setShardKey(shardKey);
+        log.info("Registering company in shard '{}' for country '{}'", shardKey, country.getDisplayName());
 
-        // Publish event for Company Service to create profile and for Email Service to send activation
-        CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), activationToken);
+        try {
+            String activationToken = UUID.randomUUID().toString();
+            LocalDateTime tokenExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
 
-        eventPublisherService.publishCompanyRegistered(event);
+            CompanyAccount account = CompanyAccount.builder()
+                    .email(request.getEmail())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .authProvider(AuthProvider.LOCAL)
+                    .role(Role.COMPANY)
+                    .country(request.getCountry())
+                    .isActivated(false)
+                    .activationToken(activationToken)
+                    .activationTokenExpiry(tokenExpiry)
+                    .failedLoginAttempts(0)
+                    .isLocked(false)
+                    .build();
 
-        emailService.sendActivationEmail(account, activationToken);
+            // The account is saved to the correct shard
+            account = companyAccountRepository.save(account);
+            log.info("Company account registered successfully in shard '{}': {}", shardKey, request.getEmail());
 
-        return ApiResponse.success(
-                "Registration successful! Please check your email to activate your account.",
-                null
-        );
+            // Cache the email to shard mapping for fast login
+            shardLookupService.cacheEmailShard(request.getEmail(), shardKey);
+
+            // Publish event for Company Service to create profile and for Email Service to send activation link
+            CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), activationToken);
+            eventPublisherService.publishCompanyRegistered(event);
+
+            emailService.sendActivationEmail(account, activationToken);
+
+            return ApiResponse.success(
+                    "Registration successful! Please check your email to activate your account.",
+                    null
+            );
+        } finally {
+            ShardContext.clear();
+        }
     }
 
     @Override
@@ -84,80 +101,101 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<String> registerCompanyViaSso(SsoRegisterRequest request) {
 
         // Check if the account already exists
-        if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(request.getProvider(), request.getSsoProviderId())) {
+        if (shardLookupService.emailExistsInAnyShard(request.getEmail())) {
             log.warn("SSO registration failed: Account already exists - {}", request.getEmail());
             return ApiResponse.error("SSO account already registered");
         }
 
-        // Check if email is already used with regular registration
-        if (companyAccountRepository.existsByEmail(request.getEmail())) {
-            log.warn("SSO registration failed: Email already used with regular registration - {}", request.getEmail());
-            return ApiResponse.error("Email already registered with password login");
+        if (ssoProviderIdExistsInAnyShard(request.getProvider(), request.getSsoProviderId())) {
+            log.warn("SSO registration failed: SSO account already exists - {}", request.getEmail());
+            return ApiResponse.error("SSO account already registered");
         }
 
-        // Create company account entity
-        CompanyAccount account = CompanyAccount.builder()
-                .email(request.getEmail())
-                .passwordHash(null) // SSO users don't have passwords
-                .country(request.getCountry())
-                .authProvider(request.getProvider())
-                .ssoProviderId(request.getSsoProviderId())
-                .role(Role.COMPANY)
-                .isActivated(true) // SSO accounts are pre-activated (verified by provider)
-                .activationToken(null)
-                .activationTokenExpiry(null)
-                .failedLoginAttempts(0)
-                .isLocked(false)
-                .build();
+        Country country = request.getCountry();
+        String shardKey = country.getShardKey();
 
-        account = companyAccountRepository.save(account);
-        log.info("SSO company account registered successfully: {}", request.getEmail());
+        // Set shard context BEFORE saving
+        ShardContext.setShardKey(shardKey);
+        log.info("Registering SSO company in shard '{}' for country '{}'", shardKey, country.getDisplayName());
 
-        // Publish event for Company Service to create profile
-        CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), null);
+        try {
+            CompanyAccount account = CompanyAccount.builder()
+                    .email(request.getEmail())
+                    .passwordHash(null) // SSO users don't have passwords
+                    .country(request.getCountry())
+                    .authProvider(request.getProvider())
+                    .ssoProviderId(request.getSsoProviderId())
+                    .role(Role.COMPANY)
+                    .isActivated(true) // SSO accounts are pre-activated (verified by provider)
+                    .activationToken(null)
+                    .activationTokenExpiry(null)
+                    .failedLoginAttempts(0)
+                    .isLocked(false)
+                    .build();
 
-        eventPublisherService.publishCompanyRegistered(event);
+            account = companyAccountRepository.save(account);
+            log.info("SSO company account registered successfully in shard '{}': {}", shardKey, request.getEmail());
 
-        return ApiResponse.success("SSO registration successful!", null);
+            // Cache the email-to-shard mapping
+            shardLookupService.cacheEmailShard(request.getEmail(), shardKey);
+
+            // Publish event for Company Service to create profile
+            CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), null);
+            eventPublisherService.publishCompanyRegistered(event);
+
+            return ApiResponse.success("SSO registration successful!", null);
+        } finally {
+            ShardContext.clear();
+        }
+
     }
 
     @Override
     @Transactional
     public ApiResponse<String> activateAccount(ActivationRequest request) {
+        // Activation token lookup requires scatter-gather since we don't know the shard
+        // We need to search all shards for the activation token
+        CompanyAccount account = findAccountByActivationToken(request.getToken());
 
-        CompanyAccount account = companyAccountRepository.findByActivationToken(request.getToken())
-                .orElseThrow(() -> {
-                    log.warn("Activation failed: Invalid token");
-                    return new IllegalArgumentException("Invalid activation token");
-                });
-
-        // Check if already activated
-        if (account.getIsActivated()) {
-            log.info("Account already activated: {}", account.getEmail());
-            return ApiResponse.success("Account is already activated", null);
+        if (account == null) {
+            log.warn("Activation failed: Invalid token");
+            throw new IllegalArgumentException("Invalid activation token");
         }
 
-        // Check if token expired
-        if (account.getActivationTokenExpiry().isBefore(LocalDateTime.now())) {
-            log.warn("Activation failed: Token expired for {}", account.getEmail());
-            return ApiResponse.error("Activation token has expired. Please request a new one.");
+        // Set shard context based on the account's country
+        ShardContext.setShardKey(account.getCountry().getShardKey());
+
+        try {
+            // Check if already activated
+            if (account.getIsActivated()) {
+                log.info("Account already activated: {}", account.getEmail());
+                return ApiResponse.success("Account is already activated", null);
+            }
+
+            // Check if token expired
+            if (account.getActivationTokenExpiry().isBefore(LocalDateTime.now())) {
+                log.warn("Activation failed: Token expired for {}", account.getEmail());
+                return ApiResponse.error("Activation token has expired. Please request a new one.");
+            }
+
+            // Activate account
+            companyAccountRepository.activateAccount(account.getEmail());
+            log.info("Account activated successfully: {}", account.getEmail());
+
+            // Publish activation event
+            CompanyActivatedEvent event = CompanyActivatedEvent.builder()
+                    .companyId(account.getId())
+                    .email(account.getEmail())
+                    .activatedAt(LocalDateTime.now())
+                    .build();
+            eventPublisherService.publishCompanyActivated(event);
+
+            emailService.sendWelcomeEmail(account);
+
+            return ApiResponse.success("Account activated successfully! You can now login.", null);
+        } finally {
+            ShardContext.clear();
         }
-
-        // Activate account
-        companyAccountRepository.activateAccount(account.getEmail());
-        log.info("Account activated successfully: {}", account.getEmail());
-
-        // Publish activation event
-        CompanyActivatedEvent event = CompanyActivatedEvent.builder()
-                .companyId(account.getId())
-                .email(account.getEmail())
-                .activatedAt(LocalDateTime.now())
-                .build();
-        eventPublisherService.publishCompanyActivated(event);
-
-        emailService.sendWelcomeEmail(account);
-
-        return ApiResponse.success("Account activated successfully! You can now login.", null);
     }
 
     @Override
@@ -165,100 +203,114 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<String> resendActivationEmail(String email) {
         log.info("Resend activation email requested for: {}", email);
 
-        CompanyAccount account = companyAccountRepository.findByEmail(email)
+        // Use ShardLookupService to find the account
+        CompanyAccount account = shardLookupService.findAccountByEmail(email)
                 .orElseThrow(() -> {
                     log.warn("Resend activation failed: Email not found - {}", email);
                     return new IllegalArgumentException("Email not found");
                 });
 
-        // Check if already activated
-        if (account.getIsActivated()) {
-            log.info("Cannot resend: Account already activated - {}", email);
-            return ApiResponse.error("Account is already activated");
+        // Shard context is already set by findAccountByEmail, but let's be explicit
+        ShardContext.setShardKey(account.getCountry().getShardKey());
+
+        try {
+            // Check if already activated
+            if (account.getIsActivated()) {
+                log.info("Cannot resend: Account already activated - {}", email);
+                return ApiResponse.error("Account is already activated");
+            }
+
+            // Generate new activation token
+            String newToken = UUID.randomUUID().toString();
+            LocalDateTime newExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
+
+            account.setActivationToken(newToken);
+            account.setActivationTokenExpiry(newExpiry);
+            companyAccountRepository.save(account);
+
+            // Publish event for email service to resend activation email
+            CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
+                    .companyId(account.getId())
+                    .email(account.getEmail())
+                    .activationToken(newToken)
+                    .registeredAt(LocalDateTime.now())
+                    .build();
+            eventPublisherService.publishCompanyRegistered(event);
+
+            emailService.sendActivationEmail(account, newToken);
+
+            log.info("Activation email resent to: {}", email);
+
+            return ApiResponse.success("Activation email sent! Please check your inbox.", null);
+        } finally {
+            ShardContext.clear();
         }
-
-        // Generate new activation token
-        String newToken = UUID.randomUUID().toString();
-        LocalDateTime newExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
-
-        account.setActivationToken(newToken);
-        account.setActivationTokenExpiry(newExpiry);
-        companyAccountRepository.save(account);
-
-        // Publish event for email service to resend activation email
-        CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
-                .companyId(account.getId())
-                .email(account.getEmail())
-                .activationToken(newToken)
-                .registeredAt(LocalDateTime.now())
-                .build();
-        eventPublisherService.publishCompanyRegistered(event);
-
-        emailService.sendActivationEmail(account, newToken);
-
-        log.info("Activation email resent to: {}", email);
-
-        return ApiResponse.success("Activation email sent! Please check your inbox.", null);
     }
 
     @Override
     @Transactional
     public ApiResponse<AuthResponse> login(LoginRequest request) {
-
-        // Find account by email
-        CompanyAccount account = companyAccountRepository.findByEmail(request.getEmail())
+        // Use ShardLookupService to find account across all shards
+        CompanyAccount account = shardLookupService.findAccountByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Login failed: Email not found - {}", request.getEmail());
                     return new IllegalArgumentException("Invalid email or password");
                 });
 
-        // Check if account is locked
-        if (account.getIsLocked()) {
-            log.warn("Login failed: Account is locked - {}", request.getEmail());
-            return ApiResponse.error("Account is locked due to multiple failed login attempts. Please try again later.");
+        // Set shard context for subsequent operations
+        ShardContext.setShardKey(account.getCountry().getShardKey());
+
+        try {
+            // Check if account is locked
+            if (account.getIsLocked()) {
+                log.warn("Login failed: Account is locked - {}", request.getEmail());
+                return ApiResponse.error("Account is locked due to multiple failed login attempts. Please try again later.");
+            }
+
+            // Check if account is activated
+            if (!account.getIsActivated()) {
+                log.warn("Login failed: Account not activated - {}", request.getEmail());
+                return ApiResponse.error("Please activate your account first. Check your email for activation link.");
+            }
+
+            // Check if SSO user trying to login with password
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Login failed: SSO user trying to use password login - {}", request.getEmail());
+                return ApiResponse.error("This account uses SSO login. Please login with " + account.getAuthProvider().name());
+            }
+
+            // Verify password
+            if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
+                log.warn("Login failed: Invalid password - {}", request.getEmail());
+                handleFailedLogin(account);
+                return ApiResponse.error("Invalid email or password");
+            }
+
+            // Reset failed login attempts on successful login
+            if (account.getFailedLoginAttempts() > 0) {
+                companyAccountRepository.resetFailedLoginAttempts(account.getEmail());
+            }
+
+            String accessToken = tokenService.generateAccessToken(account);
+            String refreshToken = tokenService.generateRefreshToken(account);
+
+            log.info("Login successful for: {} (shard: {})", request.getEmail(), account.getCountry().getShardKey());
+
+            AuthResponse authResponse = AuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(86400L) // 24 hours in seconds
+                    .companyId(account.getId())
+                    .email(account.getEmail())
+                    .role(account.getRole())
+                    .authProvider(account.getAuthProvider())
+                    .build();
+
+            return ApiResponse.success("Login successful", authResponse);
+        } finally {
+            ShardContext.clear();
         }
-
-        // Check if account is activated
-        if (!account.getIsActivated()) {
-            log.warn("Login failed: Account not activated - {}", request.getEmail());
-            return ApiResponse.error("Please activate your account first. Check your email for activation link.");
-        }
-
-        // Check if SSO user trying to login with password
-        if (account.getAuthProvider() != AuthProvider.LOCAL) {
-            log.warn("Login failed: SSO user trying to use password login - {}", request.getEmail());
-            return ApiResponse.error("This account uses SSO login. Please login with " + account.getAuthProvider().name());
-        }
-
-        // Verify password
-        if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
-            log.warn("Login failed: Invalid password - {}", request.getEmail());
-            handleFailedLogin(account);
-            return ApiResponse.error("Invalid email or password");
-        }
-
-        // Reset failed login attempts on successful login
-        if (account.getFailedLoginAttempts() > 0) {
-            companyAccountRepository.resetFailedLoginAttempts(account.getEmail());
-        }
-
-        String accessToken = tokenService.generateAccessToken(account);
-        String refreshToken = tokenService.generateRefreshToken(account);
-
-        log.info("Login successful for: {}", request.getEmail());
-
-        AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(86400L) // 24 hours in seconds
-                .companyId(account.getId())
-                .email(account.getEmail())
-                .role(account.getRole())
-                .authProvider(account.getAuthProvider())
-                .build();
-
-        return ApiResponse.success("Login successful", authResponse);
     }
 
     @Override
@@ -266,41 +318,50 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<AuthResponse> loginViaSso(String ssoProviderId) {
         log.info("SSO login attempt for provider ID: {}", ssoProviderId);
 
-        CompanyAccount account = companyAccountRepository.findByAuthProviderAndSsoProviderId(AuthProvider.GOOGLE, ssoProviderId)
-                .orElseThrow(() -> {
-                    log.warn("SSO login failed: User not found with provider ID - {}", ssoProviderId);
-                    return new IllegalArgumentException("SSO user not found. Please register first.");
-                });
+        // SSO login requires scatter-gather to find the account
+        CompanyAccount account = findAccountBySsoProviderId(ssoProviderId);
 
-        // Check if account is locked
-        if (account.getIsLocked()) {
-            log.warn("SSO login failed: Account is locked - {}", account.getEmail());
-            return ApiResponse.error("Account is locked. Please contact support.");
+        if (account == null) {
+            log.warn("SSO login failed: User not found with provider ID - {}", ssoProviderId);
+            throw new IllegalArgumentException("SSO user not found. Please register first.");
         }
 
-        if (!account.getIsActivated()) {
-            account.setIsActivated(true);
-            companyAccountRepository.save(account);
+        // Set shard context
+        ShardContext.setShardKey(account.getCountry().getShardKey());
+
+        try {
+            // Check if account is locked
+            if (account.getIsLocked()) {
+                log.warn("SSO login failed: Account is locked - {}", account.getEmail());
+                return ApiResponse.error("Account is locked. Please contact support.");
+            }
+
+            if (!account.getIsActivated()) {
+                account.setIsActivated(true);
+                companyAccountRepository.save(account);
+            }
+
+            // Generate tokens
+            String accessToken = tokenService.generateAccessToken(account);
+            String refreshToken = tokenService.generateRefreshToken(account);
+
+            log.info("SSO login successful for: {} (shard: {})", account.getEmail(), account.getCountry().getShardKey());
+
+            AuthResponse authResponse = AuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(86400L)
+                    .companyId(account.getId())
+                    .email(account.getEmail())
+                    .role(account.getRole())
+                    .authProvider(account.getAuthProvider())
+                    .build();
+
+            return ApiResponse.success("SSO login successful", authResponse);
+        } finally {
+            ShardContext.clear();
         }
-
-        // Generate tokens
-        String accessToken = tokenService.generateAccessToken(account);
-        String refreshToken = tokenService.generateRefreshToken(account);
-
-        log.info("SSO login successful for: {}", account.getEmail());
-
-        AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .expiresIn(86400L)
-                .companyId(account.getId())
-                .email(account.getEmail())
-                .role(account.getRole())
-                .authProvider(account.getAuthProvider())
-                .build();
-
-        return ApiResponse.success("SSO login successful", authResponse);
     }
 
     private void handleFailedLogin(CompanyAccount account) {
@@ -319,7 +380,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     lastFailedTime.isAfter(now.minusSeconds(60))) {
                 // Lock account
                 companyAccountRepository.lockAccount(account.getEmail());
-                
+
                 // Publish account locked event
                 CompanyAccountLockedEvent event = CompanyAccountLockedEvent.builder()
                         .companyId(account.getId())
@@ -330,7 +391,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 eventPublisherService.publishCompanyAccountLocked(event);
 
                 emailService.sendAccountLockedEmail(account);
-                
+
                 log.warn("Account locked due to brute force: {}", account.getEmail());
             }
         }
@@ -357,41 +418,125 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ApiResponse<AuthResponse> refreshToken(RefreshTokenRequest request) {
         try {
-            // Validate refresh token
+            // Validate refresh token and get account ID
             UUID accountId = tokenService.validateRefreshToken(request.getRefreshToken());
 
-            // Get account
-            CompanyAccount account = companyAccountRepository.findById(accountId)
-                    .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+            // Extract country from refresh token to set shard context
+            String countryCode = tokenService.extractAllClaims(request.getRefreshToken())
+                    .get("country", String.class);
 
-            // Check if account is still active
-            if (!account.getIsActivated() || account.getIsLocked()) {
-                log.warn("Token refresh failed: Account inactive or locked - {}", account.getEmail());
-                return ApiResponse.error("Account is not active");
+            if (countryCode != null) {
+                Country country = Country.fromCode(countryCode);
+                if (country != null) {
+                    ShardContext.setShardKey(country.getShardKey());
+                }
             }
 
-            // Generate new access token
-            String newAccessToken = tokenService.generateAccessToken(account);
+            try {
+                // Get account from the correct shard
+                CompanyAccount account = companyAccountRepository.findById(accountId)
+                        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-            log.info("Token refreshed successfully for: {}", account.getEmail());
+                // Check if account is still active
+                if (!account.getIsActivated() || account.getIsLocked()) {
+                    log.warn("Token refresh failed: Account inactive or locked - {}", account.getEmail());
+                    return ApiResponse.error("Account is not active");
+                }
 
-            AuthResponse authResponse = AuthResponse.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(request.getRefreshToken()) // Keep same refresh token
-                    .tokenType("Bearer")
-                    .expiresIn(86400L)
-                    .companyId(account.getId())
-                    .email(account.getEmail())
-                    .role(account.getRole())
-                    .authProvider(account.getAuthProvider())
-                    .build();
+                // Generate new access token
+                String newAccessToken = tokenService.generateAccessToken(account);
 
-            return ApiResponse.success("Token refreshed successfully", authResponse);
+                log.info("Token refreshed successfully for: {}", account.getEmail());
+
+                AuthResponse authResponse = AuthResponse.builder()
+                        .accessToken(newAccessToken)
+                        .refreshToken(request.getRefreshToken()) // Keep same refresh token
+                        .tokenType("Bearer")
+                        .expiresIn(86400L)
+                        .companyId(account.getId())
+                        .email(account.getEmail())
+                        .role(account.getRole())
+                        .authProvider(account.getAuthProvider())
+                        .build();
+
+                return ApiResponse.success("Token refreshed successfully", authResponse);
+            } finally {
+                ShardContext.clear();
+            }
 
         } catch (IllegalArgumentException e) {
             log.error("Token refresh failed: {}", e.getMessage());
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    /**
+     * Find account by activation token across all shards (scatter-gather)
+     */
+    private CompanyAccount findAccountByActivationToken(String token) {
+        // This requires querying all shards since we don't know which shard has the token
+        for (String shardKey : getShardKeys()) {
+            ShardContext.setShardKey(shardKey);
+            try {
+                var account = companyAccountRepository.findByActivationToken(token);
+                if (account.isPresent()) {
+                    return account.get();
+                }
+            } finally {
+                ShardContext.clear();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find account by SSO provider ID across all shards (scatter-gather)
+     */
+    private CompanyAccount findAccountBySsoProviderId(String ssoProviderId) {
+        for (String shardKey : getShardKeys()) {
+            ShardContext.setShardKey(shardKey);
+            try {
+                var account = companyAccountRepository.findByAuthProviderAndSsoProviderId(
+                        AuthProvider.GOOGLE, ssoProviderId);
+                if (account.isPresent()) {
+                    // Cache the email-to-shard mapping for future lookups
+                    shardLookupService.cacheEmailShard(account.get().getEmail(), shardKey);
+                    return account.get();
+                }
+            } finally {
+                ShardContext.clear();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get all shard keys for scatter-gather operations
+     */
+    private List<String> getShardKeys() {
+        return java.util.List.of(
+                "auth_shard_vn",
+                "auth_shard_sg",
+                "auth_shard_asia",
+                "auth_shard_oceania",
+                "auth_shard_na",
+                "auth_shard_eu",
+                "auth_shard_others"
+        );
+    }
+
+    private boolean ssoProviderIdExistsInAnyShard(AuthProvider provider, String ssoProviderId) {
+        for (String shardKey : getShardKeys()) {
+            ShardContext.setShardKey(shardKey);
+            try {
+                if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(provider, ssoProviderId)) {
+                    return true;
+                }
+            } finally {
+                ShardContext.clear();
+            }
+        }
+        return false;
     }
 
     /**
