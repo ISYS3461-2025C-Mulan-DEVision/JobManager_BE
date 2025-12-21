@@ -2,17 +2,19 @@ package com.devision.job_manager_company.controller;
 
 import com.devision.job_manager_company.dto.ApiResponse;
 import com.devision.job_manager_company.dto.CompanyMediaDto;
+import com.devision.job_manager_company.dto.PagedResponse;
 import com.devision.job_manager_company.dto.UpdateMediaDisplayOrderRequest;
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
-import com.devision.job_manager_company.security.SecurityUtils;
 import com.devision.job_manager_company.service.CompanyMediaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,16 +29,12 @@ import java.util.stream.Collectors;
 public class CompanyMediaController {
 
     private final CompanyMediaService companyMediaService;
-    private final SecurityUtils securityUtils;
 
     @PostMapping("/logo")
     public ResponseEntity<ApiResponse<CompanyMediaDto>> uploadLogo(
             @PathVariable UUID companyId,
             @RequestParam("file") MultipartFile file) {
         log.info("Upload logo request for company ID: {}", companyId);
-        
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
         
         try {
             if (file.isEmpty()) {
@@ -63,9 +61,6 @@ public class CompanyMediaController {
             @PathVariable UUID companyId,
             @RequestParam("file") MultipartFile file) {
         log.info("Upload banner request for company ID: {}", companyId);
-        
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
         
         try {
             if (file.isEmpty()) {
@@ -96,9 +91,6 @@ public class CompanyMediaController {
             @RequestParam(value = "description", required = false) String description) {
         log.info("Upload media request for company ID: {}, type: {}", companyId, type);
         
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
-        
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -120,24 +112,47 @@ public class CompanyMediaController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CompanyMediaDto>>> getCompanyMedia(
+    public ResponseEntity<ApiResponse<PagedResponse<CompanyMediaDto>>> getCompanyMedia(
             @PathVariable UUID companyId,
-            @RequestParam(value = "type", required = false) MediaType type) {
-        log.info("Get media request for company ID: {}, type: {}", companyId, type);
-        
-        // Verify the authenticated company can access this resource
-        securityUtils.verifyCompanyAccess(companyId);
+            @RequestParam(value = "type", required = false) MediaType type,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "desc") String sortDir) {
+        log.info("Get media request for company ID: {}, type: {}, page: {}, size: {}, sortBy: {}, sortDir: {}", 
+                companyId, type, page, size, sortBy, sortDir);
         
         try {
-            List<CompanyMedia> mediaList = type != null
-                    ? companyMediaService.getCompanyMediaByType(companyId, type)
-                    : companyMediaService.getCompanyMedia(companyId);
+            // Validate sort field
+            if (!isValidSortField(sortBy)) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid sort field. Allowed: createdAt, displayOrder, title"));
+            }
 
-            List<CompanyMediaDto> dtos = mediaList.stream()
+            Sort sort = sortDir.equalsIgnoreCase("asc") 
+                    ? Sort.by(sortBy).ascending() 
+                    : Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            Page<CompanyMedia> mediaPage = type != null
+                    ? companyMediaService.getCompanyMediaByTypePaginated(companyId, type, pageable)
+                    : companyMediaService.getCompanyMediaPaginated(companyId, pageable);
+
+            List<CompanyMediaDto> dtos = mediaPage.getContent().stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(ApiResponse.success("Media retrieved successfully", dtos));
+            PagedResponse<CompanyMediaDto> pagedResponse = PagedResponse.<CompanyMediaDto>builder()
+                    .content(dtos)
+                    .page(mediaPage.getNumber())
+                    .size(mediaPage.getSize())
+                    .totalElements(mediaPage.getTotalElements())
+                    .totalPages(mediaPage.getTotalPages())
+                    .first(mediaPage.isFirst())
+                    .last(mediaPage.isLast())
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success("Media retrieved successfully", pagedResponse));
         } catch (Exception e) {
             log.error("Failed to get company media", e);
             return ResponseEntity.internalServerError()
@@ -145,14 +160,15 @@ public class CompanyMediaController {
         }
     }
 
+    private boolean isValidSortField(String sortBy) {
+        return sortBy.equals("createdAt") || sortBy.equals("displayOrder") || sortBy.equals("title");
+    }
+
     @DeleteMapping("/{mediaId}")
     public ResponseEntity<ApiResponse<String>> deleteMedia(
             @PathVariable UUID companyId,
             @PathVariable UUID mediaId) {
         log.info("Delete media request for company ID: {}, media ID: {}", companyId, mediaId);
-        
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
         
         try {
             companyMediaService.deleteMedia(mediaId);
@@ -175,9 +191,6 @@ public class CompanyMediaController {
         log.info("Update display order request for company ID: {}, media ID: {}, new order: {}", 
                 companyId, mediaId, request.getDisplayOrder());
         
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
-        
         try {
             companyMediaService.updateDisplayOrder(companyId, mediaId, request.getDisplayOrder());
             return ResponseEntity.ok(ApiResponse.success("Display order updated successfully", null));
@@ -197,9 +210,6 @@ public class CompanyMediaController {
             @RequestBody List<UUID> orderedMediaIds) {
         log.info("Reorder media request for company ID: {}, order: {}", companyId, orderedMediaIds);
         
-        // Verify the authenticated company can modify this resource
-        securityUtils.verifyCompanyAccess(companyId);
-        
         try {
             companyMediaService.reorderMedia(companyId, orderedMediaIds);
             return ResponseEntity.ok(ApiResponse.success("Media reordered successfully", null));
@@ -211,14 +221,6 @@ public class CompanyMediaController {
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to reorder media: " + e.getMessage()));
         }
-    }
-
-    // Exception handler for AccessDeniedException
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<String>> handleAccessDenied(AccessDeniedException e) {
-        log.warn("Access denied: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(e.getMessage()));
     }
 
     private CompanyMediaDto mapToDto(CompanyMedia media) {

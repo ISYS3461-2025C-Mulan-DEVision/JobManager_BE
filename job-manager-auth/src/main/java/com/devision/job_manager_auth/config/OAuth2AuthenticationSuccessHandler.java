@@ -66,15 +66,20 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         if (loginResponse.isSuccess() && loginResponse.getData() != null) {
             AuthResponse authData = loginResponse.getData();
 
-            // Redirect to frontend with JWT token
+            // Redirect to frontend with JWT token and user data
             String redirectUrl = String.format(
-                    "%s/login?sso=google&success=true&accessToken=%s&refreshToken=%s",
+                    "%s/login?sso=google&success=true&accessToken=%s&refreshToken=%s&companyId=%s&email=%s&role=%s&authProvider=%s",
                     frontendUrl,
                     authData.getAccessToken(),
-                    authData.getRefreshToken()
+                    authData.getRefreshToken(),
+                    authData.getCompanyId(),
+                    java.net.URLEncoder.encode(authData.getEmail(), "UTF-8"),
+                    authData.getRole(),
+                    authData.getAuthProvider()
             );
 
-            log.info("Redirecting existing SSO user to frontend with tokens");
+            log.info("Redirecting existing SSO user to frontend with tokens and user data");
+            log.info("Redirect URL: {}", redirectUrl);
             response.sendRedirect(redirectUrl);
         } else {
             // Login failed
@@ -98,7 +103,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Check if email is already used with local registration
         if (companyAccountRepository.existsByEmail(email)) {
             String redirectUrl = String.format(
-                    "%s/signup?sso=google&success=false&error=%s",
+                    "%s/register?sso=google&success=false&error=%s",
                     frontendUrl,
                     java.net.URLEncoder.encode("Email already registered with password login", "UTF-8")
             );
@@ -121,7 +126,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // Redirect to frontend signup with token
         String redirectUrl = String.format(
-                "%s/signup?sso=google&token=%s&email=%s&name=%s",
+                "%s/register?sso=google&token=%s&email=%s&name=%s",
                 frontendUrl,
                 token,
                 java.net.URLEncoder.encode(email, "UTF-8"),

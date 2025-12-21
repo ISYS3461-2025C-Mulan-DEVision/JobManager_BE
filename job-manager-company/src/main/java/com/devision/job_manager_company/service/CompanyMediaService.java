@@ -2,6 +2,8 @@ package com.devision.job_manager_company.service;
 
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -18,7 +20,11 @@ public interface CompanyMediaService {
 
     List<CompanyMedia> getCompanyMedia(UUID companyId);
 
+    Page<CompanyMedia> getCompanyMediaPaginated(UUID companyId, Pageable pageable);
+
     List<CompanyMedia> getCompanyMediaByType(UUID companyId, MediaType type);
+
+    Page<CompanyMedia> getCompanyMediaByTypePaginated(UUID companyId, MediaType type, Pageable pageable);
 
     void deleteMedia(UUID mediaId);
 

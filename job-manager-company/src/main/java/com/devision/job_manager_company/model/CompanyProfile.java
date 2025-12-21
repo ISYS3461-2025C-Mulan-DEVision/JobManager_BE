@@ -12,10 +12,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * CompanyProfile entity - extended profile information for companies.
- * Contains public-facing content like about us, logo, etc.
- */
 @Entity
 @Table(name = "company_profile")
 @Data
@@ -40,7 +36,6 @@ public class CompanyProfile {
     @Size(max = 5000, message = "Who we seek must be less than 5000 characters")
     private String whoWeSeek;
 
-    // Logo and banner URLs are managed by the media service
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 

@@ -1,7 +1,6 @@
 package com.devision.job_manager_auth.service.internal;
 
 import com.devision.job_manager_auth.dto.internal.*;
-import com.devision.job_manager_auth.entity.Country;
 
 public interface AuthenticationService {
 
@@ -14,13 +13,13 @@ public interface AuthenticationService {
     ApiResponse<String> registerCompany(RegisterRequest request);
 
     /**
+     * Register a company via SSO provider (e.g., Google).
      *
-     * @param email
-     * @param name
-     * @param ssoProviderId
+     * @param request SSO registration request containing email, country, provider details
      * @return Success message
+     * @throws IllegalArgumentException if SSO account already exists or email is already registered
      */
-    ApiResponse<String> registerCompanyViaSso(String email, String name, String ssoProviderId, Country country);
+    ApiResponse<String> registerCompanyViaSso(SsoRegisterRequest request);
 
     /**
      *
