@@ -37,6 +37,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
 
+    @Value("${app.password-reset.token-expiration:3600000}") // Default 1 hour
+    private long passwordResetTokenExpiration;
+
     @Override
     @Transactional
     public ApiResponse<String> registerCompany(RegisterRequest request) {
@@ -392,6 +395,81 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("Token refresh failed: {}", e.getMessage());
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> forgotPassword(ForgotPasswordRequest request) {
+        log.info("Password reset requested for email: {}", request.getEmail());
+
+        CompanyAccount account = companyAccountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("Password reset failed: Email not found - {}", request.getEmail());
+                    return new IllegalArgumentException("Email not found");
+                });
+
+        // Check if account is activated
+        if (!account.getIsActivated()) {
+            log.warn("Password reset failed: Account not activated - {}", request.getEmail());
+            return ApiResponse.error("Please activate your account first before resetting password");
+        }
+
+        // Check if account uses SSO
+        if (account.getAuthProvider() != AuthProvider.LOCAL) {
+            log.warn("Password reset failed: SSO account - {}", request.getEmail());
+            return ApiResponse.error("This account uses SSO login. Password reset is not applicable.");
+        }
+
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        LocalDateTime tokenExpiry = LocalDateTime.now().plus(passwordResetTokenExpiration, ChronoUnit.MILLIS);
+
+        account.setPasswordResetToken(resetToken);
+        account.setPasswordResetTokenExpiry(tokenExpiry);
+        companyAccountRepository.save(account);
+
+        // Send reset email
+        emailService.sendPasswordResetEmail(account, resetToken);
+
+        log.info("Password reset email sent to: {}", request.getEmail());
+        return ApiResponse.success(
+                "Password reset instructions have been sent to your email address.",
+                null
+        );
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> resetPassword(ResetPasswordRequest request) {
+        log.info("Password reset attempt with token");
+
+        CompanyAccount account = companyAccountRepository.findByPasswordResetToken(request.getToken())
+                .orElseThrow(() -> {
+                    log.warn("Password reset failed: Invalid token");
+                    return new IllegalArgumentException("Invalid or expired reset token");
+                });
+
+        // Check if token expired
+        if (account.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            log.warn("Password reset failed: Token expired for {}", account.getEmail());
+            return ApiResponse.error("Reset token has expired. Please request a new one.");
+        }
+
+        // Update password
+        account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        account.setPasswordResetToken(null);
+        account.setPasswordResetTokenExpiry(null);
+        
+        // Reset failed login attempts and unlock account if locked
+        account.setFailedLoginAttempts(0);
+        account.setIsLocked(false);
+        
+        companyAccountRepository.save(account);
+
+        emailService.sendPasswordChangedEmail(account);
+
+        log.info("Password reset successfully for: {}", account.getEmail());
+        return ApiResponse.success("Password has been reset successfully. You can now login with your new password.", null);
     }
 
     /**

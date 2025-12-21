@@ -110,4 +110,70 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send account locked email to {}: {}", company.getEmail(), e.getMessage());
         }
     }
+
+    @Override
+    @Async
+    public void sendPasswordResetEmail(CompanyAccount company, String resetToken) {
+        try {
+            String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(company.getEmail());
+            message.setSubject("Reset Your DEVision-JM Password");
+            message.setText(String.format("""
+                    Hello %s,
+
+                    We received a request to reset your password. Click the link below to reset your password:
+
+                    %s
+
+                    This link will expire in 1 hour.
+
+                    If you didn't request this, please ignore this email and your password will remain unchanged.
+
+                    Best regards,
+                    DEVision Team
+                    """,
+                    company.getEmail() != null ? company.getEmail() : "there",
+                    resetLink));
+
+            mailSender.send(message);
+            log.info("Password reset email sent to: {}", company.getEmail());
+
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}: {}", company.getEmail(), e.getMessage());
+        }
+    }
+
+    @Override
+    @Async
+    public void sendPasswordChangedEmail(CompanyAccount company) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(company.getEmail());
+            message.setSubject("DEVision-JM Password Changed Successfully");
+            message.setText(String.format("""
+                    Hello %s,
+
+                    Your password has been successfully changed.
+
+                    If you made this change, you can safely ignore this email.
+
+                    If you didn't change your password, please contact our support team immediately.
+
+                    Login here: %s/login
+
+                    Best regards,
+                    DEVision Security Team
+                    """,
+                    company.getEmail() != null ? company.getEmail() : "there",
+                    frontendUrl));
+
+            mailSender.send(message);
+            log.info("Password changed confirmation email sent to: {}", company.getEmail());
+
+        } catch (Exception e) {
+            log.error("Failed to send password changed email to {}: {}", company.getEmail(), e.getMessage());
+        }
+    }
 }

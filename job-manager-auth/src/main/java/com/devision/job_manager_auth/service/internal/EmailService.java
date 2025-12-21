@@ -9,4 +9,8 @@ public interface EmailService {
     void sendWelcomeEmail(CompanyAccount company);
 
     void sendAccountLockedEmail(CompanyAccount company);
+
+    void sendPasswordResetEmail(CompanyAccount company, String resetToken);
+
+    void sendPasswordChangedEmail(CompanyAccount company);
 }

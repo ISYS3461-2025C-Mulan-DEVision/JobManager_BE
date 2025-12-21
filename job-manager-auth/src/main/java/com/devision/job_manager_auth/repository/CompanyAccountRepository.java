@@ -31,6 +31,9 @@ public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, 
     // Find account by activation token
     Optional<CompanyAccount> findByActivationToken(String activationToken);
 
+    // Find account by password reset token
+    Optional<CompanyAccount> findByPasswordResetToken(String passwordResetToken);
+
     /**
      * SSO QUERIES
      */

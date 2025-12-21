@@ -66,4 +66,22 @@ public interface AuthenticationService {
      * @return Success message
      */
     ApiResponse<String> resendActivationEmail(String email);
+
+    /**
+     * Request a password reset token for a company account
+     *
+     * @param request Forgot password request containing email
+     * @return Success message
+     * @throws IllegalArgumentException if email is not found or account is not activated
+     */
+    ApiResponse<String> forgotPassword(ForgotPasswordRequest request);
+
+    /**
+     * Reset the password using a valid reset token
+     *
+     * @param request Reset password request containing token and new password
+     * @return Success message
+     * @throws IllegalArgumentException if token is invalid, expired, or new password validation fails
+     */
+    ApiResponse<String> resetPassword(ResetPasswordRequest request);
 }

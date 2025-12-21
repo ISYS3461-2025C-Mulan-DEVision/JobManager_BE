@@ -96,3 +96,5 @@ app:
   frontend-url: http://localhost:5173
   activation:
     token-expiration: 86400000 # 24 hours
+  password-reset:
+    token-expiration: 3600000 # 1 hour
