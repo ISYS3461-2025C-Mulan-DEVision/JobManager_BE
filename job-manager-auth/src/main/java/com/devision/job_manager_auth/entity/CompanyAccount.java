@@ -59,6 +59,12 @@ public class CompanyAccount {
     @Column
     private LocalDateTime activationTokenExpiry;
 
+    @Column(length = 255)
+    private String passwordResetToken;
+
+    @Column
+    private LocalDateTime passwordResetTokenExpiry;
+
     @Column(nullable = false)
     @Builder.Default
     private Integer failedLoginAttempts = 0;

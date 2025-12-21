@@ -73,4 +73,18 @@ public class AuthController {
             .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Country list", countries));
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        log.info("Forgot password request received for email: {}", request.getEmail());
+        ApiResponse<String> response = authenticationService.forgotPassword(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Reset password request received");
+        ApiResponse<String> response = authenticationService.resetPassword(request);
+        return ResponseEntity.ok(response);
+    }
 }
