@@ -1,6 +1,5 @@
 package com.devision.job_manager_gateway.config;
 
-import org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions;
 import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,8 +34,8 @@ public class GatewayConfig {
     }
 
     @Bean
-    public RouterFunction<ServerResponse> searchServiceRoute() {
-        return route("search-service")
+    public RouterFunction<ServerResponse> applicantSearchServiceRoute() {
+        return route("applicant-search-service")
                 .route(path("/api/search/**"), HandlerFunctions.http("http://localhost:8084"))
                 .build();
     }
