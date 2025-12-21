@@ -5,26 +5,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface JobPostService {
 
     JobPost createJobPost(JobPost jobPost);
 
-    Optional<JobPost> getJobPostById(Long id);
+    Optional<JobPost> getJobPostById(UUID id);
 
-    Page<JobPost> getCompanyJobPosts(Long companyId, Pageable pageable);
+    Page<JobPost> getCompanyJobPosts(UUID companyId, Pageable pageable);
 
-    Page<JobPost> getPublishedCompanyJobPosts(Long companyId, Pageable pageable);
+    Page<JobPost> getPublishedCompanyJobPosts(UUID companyId, Pageable pageable);
 
     Page<JobPost> getPublishedJobPosts(Pageable pageable);
 
-    JobPost updateJobPost(Long id, JobPost updatedJobPost);
+    JobPost updateJobPost(UUID id, JobPost updatedJobPost);
 
-    JobPost publishJobPost(Long id);
+    JobPost publishJobPost(UUID id);
 
-    JobPost unpublishJobPost(Long id);
+    JobPost unpublishJobPost(UUID id);
 
-    void deleteJobPost(Long id);
+    void deleteJobPost(UUID id);
 }
 
 
