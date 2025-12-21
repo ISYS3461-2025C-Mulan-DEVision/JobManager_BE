@@ -20,12 +20,64 @@ spring:
         transport:
           protocol: smtp
 
-  datasource:
-    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
-    username: ${POSTGRES_AUTH_USERNAME:postgres}
-    password: ${POSTGRES_AUTH_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-  
+#  datasource:
+#    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
+#    username: ${POSTGRES_AUTH_USERNAME:postgres}
+#    password: ${POSTGRES_AUTH_PASSWORD:postgres}
+#    driver-class-name: org.postgresql.Driver
+
+  sharding:
+    default-shard: auth_shard_others
+    shards:
+      auth_shard_vn:
+        url: ${SHARD_VN_URL:jdbc:postgresql://localhost:5439/auth_shard_vn}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_sg:
+        url: ${SHARD_SG_URL:jdbc:postgresql://localhost:5439/auth_shard_sg}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_asia:
+        url: ${SHARD_ASIA_URL:jdbc:postgresql://localhost:5439/auth_shard_asia}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_oceania:
+        url: ${SHARD_OCEANIA_URL:jdbc:postgresql://localhost:5439/auth_shard_oceania}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_na:
+        url: ${SHARD_NA_URL:jdbc:postgresql://localhost:5439/auth_shard_na}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_eu:
+        url: ${SHARD_EU_URL:jdbc:postgresql://localhost:5439/auth_shard_eu}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
+      auth_shard_others:
+        url: ${SHARD_OTHERS_URL:jdbc:postgresql://localhost:5439/auth_shard_others}
+        username: ${NEON_USERNAME:postgres}
+        password: ${NEON_PASSWORD:postgres}
+        maximum-pool-size: 5
+        minimum-idle: 1
+
   jpa:
     hibernate:
       ddl-auto: update
