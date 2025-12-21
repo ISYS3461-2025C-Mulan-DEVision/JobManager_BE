@@ -29,11 +29,12 @@ public class JobPost {
     private List<JobPostEmploymentType> employmentTypes = new ArrayList<>();
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "job_post_id")
-    private Long jobPostId;
+    private UUID jobPostId;
 
     @Column(name = "company_id")
-    private Long companyId;
+    private UUID companyId;
 
     @Column(name = "title", nullable = false, length = 255)
     private String title;

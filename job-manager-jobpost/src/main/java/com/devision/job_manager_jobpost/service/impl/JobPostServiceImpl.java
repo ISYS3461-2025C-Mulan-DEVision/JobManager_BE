@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,17 +32,17 @@ public class JobPostServiceImpl implements JobPostService {
     }
 
     @Override
-    public Optional<JobPost> getJobPostById(Long id) {
+    public Optional<JobPost> getJobPostById(UUID id) {
         return jobPostRepository.findById(id);
     }
 
     @Override
-    public Page<JobPost> getCompanyJobPosts(Long companyId, Pageable pageable) {
+    public Page<JobPost> getCompanyJobPosts(UUID companyId, Pageable pageable) {
         return jobPostRepository.findByCompanyId(companyId, pageable);
     }
 
     @Override
-    public Page<JobPost> getPublishedCompanyJobPosts(Long companyId, Pageable pageable) {
+    public Page<JobPost> getPublishedCompanyJobPosts(UUID companyId, Pageable pageable) {
         return jobPostRepository.findByPublishedTrueAndCompanyId(companyId, pageable);
     }
 
@@ -52,7 +53,7 @@ public class JobPostServiceImpl implements JobPostService {
 
     @Override
     @Transactional
-    public JobPost updateJobPost(Long id, JobPost updatedJobPost) {
+    public JobPost updateJobPost(UUID id, JobPost updatedJobPost) {
         JobPost existing = jobPostRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Job post not found with ID: " + id));
 
@@ -91,7 +92,7 @@ public class JobPostServiceImpl implements JobPostService {
 
     @Override
     @Transactional
-    public JobPost publishJobPost(Long id) {
+    public JobPost publishJobPost(UUID id) {
         JobPost jobPost = jobPostRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Job post not found with ID: " + id));
 
@@ -103,7 +104,7 @@ public class JobPostServiceImpl implements JobPostService {
 
     @Override
     @Transactional
-    public JobPost unpublishJobPost(Long id) {
+    public JobPost unpublishJobPost(UUID id) {
         JobPost jobPost = jobPostRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Job post not found with ID: " + id));
 
@@ -114,7 +115,7 @@ public class JobPostServiceImpl implements JobPostService {
 
     @Override
     @Transactional
-    public void deleteJobPost(Long id) {
+    public void deleteJobPost(UUID id) {
         if (!jobPostRepository.existsById(id)) {
             throw new IllegalArgumentException("Job post not found with ID: " + id);
         }

@@ -20,7 +20,7 @@ import java.util.UUID;
 public class CreateJobPostRequest {
 
     @NotNull
-    private Long companyId;
+    private UUID companyId;
 
     @NotBlank
     @Size(max = 255)
