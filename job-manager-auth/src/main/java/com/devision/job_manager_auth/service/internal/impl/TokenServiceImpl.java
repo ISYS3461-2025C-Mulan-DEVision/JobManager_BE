@@ -53,6 +53,7 @@ public class TokenServiceImpl implements TokenService {
                 .claim("email", account.getEmail())
                 .claim("role", account.getRole().name())
                 .claim("authProvider", account.getAuthProvider().name())
+                .claim("country", account.getCountry().getCode())
                 .claim("type", "ACCESS")
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -68,6 +69,7 @@ public class TokenServiceImpl implements TokenService {
         // Generate a token with longer expiration
         return Jwts.builder()
                 .subject(account.getId().toString())
+                .claim("country", account.getCountry().getCode())
                 .claim("type", "REFRESH")
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -182,6 +184,15 @@ public class TokenServiceImpl implements TokenService {
             return authHeader.substring(7);
         }
         return null;
+    }
+
+    @Override
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
 }
