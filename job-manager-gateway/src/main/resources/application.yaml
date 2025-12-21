@@ -23,14 +23,14 @@ spring:
           uri: lb://job-manager-jobpost
           predicates:
             - Path=/api/job-posts/**
-        - id: search-service
-          uri: lb://job-manager-search
+        - id: applicant-search-service
+          uri: lb://job-manager-applicant-search
           predicates:
-            - Path=/api/search/**
-        - id: premium-service
-          uri: lb://job-manager-premium
+            - Path=/api/applicant-search/**
+        - id: subscription-service
+          uri: lb://job-manager-subscription
           predicates:
-            - Path=/api/premium/**
+            - Path=/api/subscriptions/**
         - id: payment-service
           uri: lb://job-manager-payment
           predicates:

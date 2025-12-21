@@ -1,0 +1,36 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: job-manager-applicant-search
+
+  datasource:
+    url: ${POSTGRES_APPLICANT_SEARCH_URL:jdbc:postgresql://localhost:5435/job_manager_applicant_search}
+    username: ${POSTGRES_APPLICANT_SEARCH_USERNAME:postgres}
+    password: ${POSTGRES_APPLICANT_SEARCH_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

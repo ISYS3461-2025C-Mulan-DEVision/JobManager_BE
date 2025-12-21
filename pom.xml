@@ -19,8 +19,8 @@
         <module>job-manager-auth</module>
         <module>job-manager-company</module>
         <module>job-manager-jobpost</module>
-        <module>job-manager-search</module>
-        <module>job-manager-premium</module>
+        <module>job-manager-applicant-search</module>
+        <module>job-manager-subscription</module>
         <module>job-manager-payment</module>
         <module>job-manager-notification</module>
     </modules>
