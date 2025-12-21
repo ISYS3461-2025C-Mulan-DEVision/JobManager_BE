@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: job-manager-company
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret-key: ${JWT_SECRET:YourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
 
   datasource:
     url: ${POSTGRES_COMPANY_URL:jdbc:postgresql://localhost:5433/job_manager_company}
