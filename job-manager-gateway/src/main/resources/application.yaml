@@ -1,57 +1,24 @@
 server:
-  port: 8080
+    port: 8080
 
 spring:
-  application:
-    name: job-manager-gateway
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      routes:
-        - id: auth-service
-          uri: lb://job-manager-auth
-          predicates:
-            - Path=/api/auth/**
-        - id: company-service
-          uri: lb://job-manager-company
-          predicates:
-            - Path=/api/companies/**
-        - id: jobpost-service
-          uri: lb://job-manager-jobpost
-          predicates:
-            - Path=/api/job-posts/**
-        - id: search-service
-          uri: lb://job-manager-search
-          predicates:
-            - Path=/api/search/**
-        - id: premium-service
-          uri: lb://job-manager-premium
-          predicates:
-            - Path=/api/premium/**
-        - id: payment-service
-          uri: lb://job-manager-payment
-          predicates:
-            - Path=/api/payments/**
-        - id: notification-service
-          uri: lb://job-manager-notification
-          predicates:
-            - Path=/api/notifications/**
+    application:
+        name: job-manager-gateway
+    # Note: Gateway routes are configured in GatewayConfig.java for MVC Gateway
+    # YAML-based configuration is for reactive gateway only
 
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
-    health-check-url-path: /actuator/health
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        prefer-ip-address: true
+        health-check-url-path: /actuator/health
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gateway
+    endpoints:
+        web:
+            exposure:
+                include: health,info,gateway
