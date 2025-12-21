@@ -50,7 +50,7 @@ public class JobPostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<JobPostDto>> getJobPost(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<JobPostDto>> getJobPost(@PathVariable UUID id) {
         log.info("Getting job post with ID: {}", id);
 
         return jobPostService.getJobPostById(id)
@@ -92,7 +92,7 @@ public class JobPostController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<JobPostDto>> updateJobPost(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody UpdateJobPostRequest request) {
         log.info("Updating job post with ID: {}", id);
 
@@ -120,7 +120,7 @@ public class JobPostController {
     }
 
     @PostMapping("/{id}/publish")
-    public ResponseEntity<ApiResponse<JobPostDto>> publishJobPost(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<JobPostDto>> publishJobPost(@PathVariable UUID id) {
         log.info("Publishing job post with ID: {}", id);
         try {
             JobPost jobPost = jobPostService.publishJobPost(id);
@@ -132,7 +132,7 @@ public class JobPostController {
     }
 
     @PostMapping("/{id}/unpublish")
-    public ResponseEntity<ApiResponse<JobPostDto>> unpublishJobPost(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<JobPostDto>> unpublishJobPost(@PathVariable UUID id) {
         log.info("Unpublishing job post with ID: {}", id);
         try {
             JobPost jobPost = jobPostService.unpublishJobPost(id);
@@ -144,7 +144,7 @@ public class JobPostController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteJobPost(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteJobPost(@PathVariable UUID id) {
         log.info("Deleting job post with ID: {}", id);
         try {
             jobPostService.deleteJobPost(id);

@@ -31,7 +31,7 @@ public class JobPost {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "job_post_id")
-    private Long jobPostId;
+    private UUID jobPostId;
 
     @Column(name = "company_id")
     private UUID companyId;

@@ -23,14 +23,14 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
     private final JobPostRepository jobPostRepository;
     
     @Override
-    public Optional<JobPostBasicInfoDto> getJobPostBasicInfo(Long jobPostId) {
+    public Optional<JobPostBasicInfoDto> getJobPostBasicInfo(UUID jobPostId) {
         log.debug("External API: Getting basic info for job post ID: {}", jobPostId);
         return jobPostRepository.findById(jobPostId)
                 .map(this::mapToBasicInfo);
     }
     
     @Override
-    public Optional<JobPostStatusDto> getJobPostStatus(Long jobPostId) {
+    public Optional<JobPostStatusDto> getJobPostStatus(UUID jobPostId) {
         log.debug("External API: Getting status for job post ID: {}", jobPostId);
         return jobPostRepository.findById(jobPostId)
                 .map(jobPost -> JobPostStatusDto.builder()
@@ -42,7 +42,7 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                         .build());
     }
 
-    @Override public Optional<JobPostSummaryDto> getJobPostSummary(Long jobPostId) {
+    @Override public Optional<JobPostSummaryDto> getJobPostSummary(UUID jobPostId) {
         log.debug("External API: Getting summary for job post ID: {}", jobPostId);
         return jobPostRepository.findById(jobPostId)
                 .map(this::mapToSummary);
@@ -57,14 +57,14 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
     }
     
     @Override
-    public boolean isJobPostPublished(Long jobPostId) {
+    public boolean isJobPostPublished(UUID jobPostId) {
         return jobPostRepository.findById(jobPostId)
                 .map(JobPost::isPublished)
                 .orElse(false);
     }
     
     @Override
-    public boolean isJobPostExpired(Long jobPostId) {
+    public boolean isJobPostExpired(UUID jobPostId) {
         return jobPostRepository.findById(jobPostId)
                 .map(this::isExpired)
                 .orElse(true);

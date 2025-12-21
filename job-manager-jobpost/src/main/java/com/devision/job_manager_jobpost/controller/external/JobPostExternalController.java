@@ -28,7 +28,7 @@ public class JobPostExternalController {
     private final JobPostExternalApi jobPostExternalApi;
     
     @GetMapping("/{id}")
-    public ResponseEntity<JobPostBasicInfoDto> getJobPostBasicInfo(@PathVariable Long id) {
+    public ResponseEntity<JobPostBasicInfoDto> getJobPostBasicInfo(@PathVariable UUID id) {
         log.info("External request: Get job post basic info for ID: {}", id);
         return jobPostExternalApi.getJobPostBasicInfo(id)
                 .map(ResponseEntity::ok)
@@ -36,7 +36,7 @@ public class JobPostExternalController {
     }
     
     @GetMapping("/{id}/status")
-    public ResponseEntity<JobPostStatusDto> getJobPostStatus(@PathVariable Long id) {
+    public ResponseEntity<JobPostStatusDto> getJobPostStatus(@PathVariable UUID id) {
         log.info("External request: Get job post status for ID: {}", id);
         return jobPostExternalApi.getJobPostStatus(id)
                 .map(ResponseEntity::ok)
@@ -53,13 +53,13 @@ public class JobPostExternalController {
     }
     
     @GetMapping("/{id}/is-published")
-    public ResponseEntity<Boolean> isJobPostPublished(@PathVariable Long id) {
+    public ResponseEntity<Boolean> isJobPostPublished(@PathVariable UUID id) {
         log.info("External request: Check if job post is published: {}", id);
         return ResponseEntity.ok(jobPostExternalApi.isJobPostPublished(id));
     }
     
     @GetMapping("/{id}/is-expired")
-    public ResponseEntity<Boolean> isJobPostExpired(@PathVariable Long id) {
+    public ResponseEntity<Boolean> isJobPostExpired(@PathVariable UUID id) {
         log.info("External request: Check if job post is expired: {}", id);
         return ResponseEntity.ok(jobPostExternalApi.isJobPostExpired(id));
     }

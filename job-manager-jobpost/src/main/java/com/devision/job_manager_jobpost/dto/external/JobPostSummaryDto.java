@@ -19,7 +19,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class JobPostSummaryDto {
-    private Long id;
+    private UUID id;
     private UUID companyId;
     private String title;
     private String locationCity;

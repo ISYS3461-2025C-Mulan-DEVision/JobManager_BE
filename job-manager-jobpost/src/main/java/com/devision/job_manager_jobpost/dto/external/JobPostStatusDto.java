@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class JobPostStatusDto {
-    private Long id;
+    private UUID id;
     private UUID companyId;
     private boolean isPublished;
     private boolean isExpired;

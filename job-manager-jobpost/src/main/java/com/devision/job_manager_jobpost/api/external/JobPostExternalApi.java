@@ -13,18 +13,18 @@ import java.util.UUID;
 
 public interface JobPostExternalApi {
     
-    Optional<JobPostBasicInfoDto> getJobPostBasicInfo(Long id);
+    Optional<JobPostBasicInfoDto> getJobPostBasicInfo(UUID id);
 
-    Optional<JobPostStatusDto> getJobPostStatus(Long id);
+    Optional<JobPostStatusDto> getJobPostStatus(UUID id);
 
-    Optional<JobPostSummaryDto> getJobPostSummary(Long id);
+    Optional<JobPostSummaryDto> getJobPostSummary(UUID id);
 
     Optional<Page<JobPostSummaryDto>> getPublishedJobPostsByCompany(UUID companyId, Pageable pageable);
 
     
-    boolean isJobPostPublished(Long id);
+    boolean isJobPostPublished(UUID id);
 
-    boolean isJobPostExpired(Long id);
+    boolean isJobPostExpired(UUID id);
 
     long getPublishedJobPostCount(UUID companyId);
 }
