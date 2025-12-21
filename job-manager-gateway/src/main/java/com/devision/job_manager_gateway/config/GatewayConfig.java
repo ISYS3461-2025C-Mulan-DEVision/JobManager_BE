@@ -35,7 +35,7 @@ public class GatewayConfig {
 
     @Bean
     public RouterFunction<ServerResponse> applicantSearchServiceRoute() {
-        return route("applicantsearch-service")
+        return route("applicant-search-service")
                 .route(path("/api/search/**"), HandlerFunctions.http("http://localhost:8084"))
                 .build();
     }
