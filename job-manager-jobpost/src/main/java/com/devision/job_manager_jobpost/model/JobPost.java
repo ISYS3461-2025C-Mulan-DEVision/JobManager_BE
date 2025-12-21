@@ -33,7 +33,7 @@ public class JobPost {
     private Long jobPostId;
 
     @Column(name = "company_id")
-    private Long companyId;
+    private UUID companyId;
 
     @Column(name = "title", nullable = false, length = 255)
     private String title;

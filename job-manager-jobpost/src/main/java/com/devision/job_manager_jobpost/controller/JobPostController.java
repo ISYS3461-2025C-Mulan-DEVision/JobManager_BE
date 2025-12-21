@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
 @RestController
 @RequestMapping("/api/job-posts")
 @RequiredArgsConstructor
@@ -59,7 +60,7 @@ public class JobPostController {
 
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<Page<JobPostDto>>> getCompanyJobPosts(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -70,7 +71,7 @@ public class JobPostController {
 
     @GetMapping("/company/{companyId}/published")
     public ResponseEntity<ApiResponse<Page<JobPostDto>>> getPublishedCompanyJobPosts(
-            @PathVariable Long companyId,
+            @PathVariable UUID companyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);

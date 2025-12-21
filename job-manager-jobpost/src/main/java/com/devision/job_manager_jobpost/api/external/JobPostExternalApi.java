@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.UUID;
 
 
 public interface JobPostExternalApi {
@@ -18,12 +19,12 @@ public interface JobPostExternalApi {
 
     Optional<JobPostSummaryDto> getJobPostSummary(Long id);
 
-    Optional<Page<JobPostSummaryDto>> getPublishedJobPostsByCompany(Long companyId, Pageable pageable);
+    Optional<Page<JobPostSummaryDto>> getPublishedJobPostsByCompany(UUID companyId, Pageable pageable);
 
     
     boolean isJobPostPublished(Long id);
 
     boolean isJobPostExpired(Long id);
 
-    long getPublishedJobPostCount(Long companyId);
+    long getPublishedJobPostCount(UUID companyId);
 }

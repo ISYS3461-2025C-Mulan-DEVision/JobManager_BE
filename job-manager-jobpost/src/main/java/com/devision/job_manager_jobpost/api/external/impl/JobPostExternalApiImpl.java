@@ -11,10 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -41,14 +41,19 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                         .isActive(jobPost.isPublished() && !isExpired(jobPost))
                         .build());
     }
+
+    @Override public Optional<JobPostSummaryDto> getJobPostSummary(Long jobPostId) {
+        log.debug("External API: Getting summary for job post ID: {}", jobPostId);
+        return jobPostRepository.findById(jobPostId)
+                .map(this::mapToSummary);
+    }
     
     @Override
-    public List<JobPostSummaryDto> getPublishedJobPostsByCompany(Long companyId) {
-        log.debug("External API: Getting published job posts for company ID: {}", companyId);
-        return jobPostRepository.findByPublishedTrueAndCompanyId(companyId)
-                .stream()
-                .map(this::mapToSummary)
-                .collect(Collectors.toList());
+
+    public Optional<Page<JobPostSummaryDto>> getPublishedJobPostsByCompany(UUID companyId, Pageable pageable) {
+    Page<JobPost> page = jobPostRepository.findByPublishedTrueAndCompanyId(companyId, pageable);
+    Page<JobPostSummaryDto> dtoPage = page.map(this::mapToSummary);
+     return Optional.ofNullable(dtoPage);
     }
     
     @Override
@@ -66,7 +71,7 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
     }
     
     @Override
-    public long getPublishedJobPostCount(Long companyId) {
+    public long getPublishedJobPostCount(UUID companyId) {
         return jobPostRepository.countByPublishedTrueAndCompanyId(companyId);
     }
     
@@ -80,9 +85,6 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                 .isPublished(jobPost.isPublished())
                 .isFresher(jobPost.isFresher())
                 .locationCity(jobPost.getLocationCity())
-                .countryId(jobPost.getCountryId())
-                .postedAt(jobPost.getPostedAt())
-                .expiryAt(jobPost.getExpiryAt())
                 .build();
     }
     

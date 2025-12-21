@@ -15,9 +15,13 @@ import java.util.UUID;
 @Builder
 public class JobPostBasicInfoDto {
     private Long id;
+    private UUID companyId;
     private String title;
     private String description;
-    private String salaryType;
-    private Double salaryMin;
-    private Double salaryMax;
+    private boolean isPublished;
+    private boolean isFresher;
+    private String locationCity;
+    private UUID countryId;
+    private LocalDateTime postedAt;
+    private LocalDateTime expiryAt;
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,12 +37,12 @@ public class JobPostServiceImpl implements JobPostService {
     }
 
     @Override
-    public Page<JobPost> getCompanyJobPosts(Long companyId, Pageable pageable) {
+    public Page<JobPost> getCompanyJobPosts(UUID companyId, Pageable pageable) {
         return jobPostRepository.findByCompanyId(companyId, pageable);
     }
 
     @Override
-    public Page<JobPost> getPublishedCompanyJobPosts(Long companyId, Pageable pageable) {
+    public Page<JobPost> getPublishedCompanyJobPosts(UUID companyId, Pageable pageable) {
         return jobPostRepository.findByPublishedTrueAndCompanyId(companyId, pageable);
     }
 

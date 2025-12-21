@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import java.util.UUID;
 
 /**
  * External API controller for other microservices
@@ -42,11 +44,12 @@ public class JobPostExternalController {
     }
     
     @GetMapping("/company/{companyId}")
-    public ResponseEntity<List<JobPostSummaryDto>> getPublishedJobPostsByCompany(
-            @PathVariable Long companyId) {
+    public ResponseEntity<Page<JobPostSummaryDto>> getPublishedJobPostsByCompany(@PathVariable UUID companyId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
         log.info("External request: Get published job posts for company ID: {}", companyId);
-        Page<JobPostSummaryDto> jobPosts = jobPostExternalApi.getPublishedJobPostsByCompany(companyId, pageable);
-        return ResponseEntity.ok(jobPosts);
+        return jobPostExternalApi.getPublishedJobPostsByCompany(companyId, pageable)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/{id}/is-published")
@@ -62,7 +65,7 @@ public class JobPostExternalController {
     }
     
     @GetMapping("/company/{companyId}/count")
-    public ResponseEntity<Long> getPublishedJobPostCount(@PathVariable Long companyId) {
+    public ResponseEntity<Long> getPublishedJobPostCount(@PathVariable UUID companyId) {
         log.info("External request: Get published job post count for company ID: {}", companyId);
         return ResponseEntity.ok(jobPostExternalApi.getPublishedJobPostCount(companyId));
     }
