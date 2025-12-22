@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableAsync
-@ConfigurationPropertiesScan("com.devision.job_manager_auth.config.sharding")
+@ConfigurationPropertiesScan
 public class JobManagerAuthApplication {
 
 	public static void main(String[] args) {
@@ -17,3 +17,5 @@ public class JobManagerAuthApplication {
 	}
 
 }
+
+//@ConfigurationPropertiesScan("com.devision.job_manager_auth.config.sharding")
