@@ -9,6 +9,7 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -33,6 +34,7 @@ import java.util.Map;
 )
 public class ShardingDataSourceConfig {
     private final ShardingProperties shardingProperties;
+    private final Environment environment;
 
     /**
      * Creates the routing datasource that delegates to shard-specific datasources
@@ -40,15 +42,34 @@ public class ShardingDataSourceConfig {
     @Bean
     @Primary
     public DataSource dataSource() {
+        log.info("=== SPRING ENVIRONMENT DEBUG ===");
+        log.info("env.SHARD_VN_URL: {}", environment.getProperty("env.SHARD_VN_URL"));
+        log.info("env.SHARD_OTHERS_URL: {}", environment.getProperty("env.SHARD_OTHERS_URL"));
+        log.info("env.NEON_USERNAME: {}", environment.getProperty("env.NEON_USERNAME"));
+        log.info("SHARD_VN_URL (no prefix): {}", environment.getProperty("SHARD_VN_URL"));
+        log.info("SHARD_OTHERS_URL (no prefix): {}", environment.getProperty("SHARD_OTHERS_URL"));
+        log.info("GOOGLE_CLIENT_ID: {}", environment.getProperty("GOOGLE_CLIENT_ID"));
+        log.info("=== END SPRING ENV DEBUG ===");
+
         ShardRoutingDataSource routingDataSource = new ShardRoutingDataSource();
 
         Map<Object, Object> targetDataSources = new HashMap<>();
 
+        log.info("=== SHARDING CONFIGURATION START ===");
+        log.info("Number of shards configured: {}", shardingProperties.getShards().size());
+        log.info("Default shard: {}", shardingProperties.getDefaultShard());
+
+        log.info("=== SHARDING PROPERTIES DEBUG ===");
         shardingProperties.getShards().forEach((shardKey, shardProps) -> {
             log.info("Configuring datasource for shard: {}", shardKey);
             HikariDataSource ds = createHikariDataSource(shardKey, shardProps);
+            log.info("Shard {}: URL = {}", shardKey, shardProps.getUrl());
             targetDataSources.put(shardKey, ds);
         });
+
+        log.info("Total shards configured: {}", targetDataSources.size());
+        log.info("Available shard keys: {}", targetDataSources.keySet());
+        log.info("=== SHARDING CONFIGURATION END ===");
 
         routingDataSource.setTargetDataSources(targetDataSources);
 

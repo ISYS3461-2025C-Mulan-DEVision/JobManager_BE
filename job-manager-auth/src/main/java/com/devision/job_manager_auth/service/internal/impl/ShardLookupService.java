@@ -72,42 +72,54 @@ public class ShardLookupService {
     }
 
     /**
-     * Query all shards at the same time and return as soon as any shard finds the email
+     * Since querying all shards at once runs into problems, I query all shards sequentially to find the email
      */
     private String scatterGatherFindByEmail(String email) {
         List<String> shardKeys = new ArrayList<>(shardingProperties.getShards().keySet());
 
-        List<CompletableFuture<Optional<String>>> futures = new ArrayList<>();
+        log.debug("Scatter-gather searching for email '{}' across {} shards", email, shardKeys.size());
 
         for (String shardKey : shardKeys) {
-            CompletableFuture<Optional<String>> future = CompletableFuture.supplyAsync(() -> {
-                try {
-                    ShardContext.setShardKey(shardKey);
+//            CompletableFuture<Optional<String>> future = CompletableFuture.supplyAsync(() -> {
+//                try {
+//                    ShardContext.setShardKey(shardKey);
+//
+//                    boolean exists = companyAccountRepository.existsByEmail(email);
+//
+//                    if (exists) {
+//                        log.debug("Email '{}' found in shard '{}'", email, shardKey);
+//                        return Optional.of(shardKey);
+//                    }
+//                    return Optional.empty();
+//                } catch (Exception e) {
+//                    log.error("Error querying shard '{}' for email '{}': {}",
+//                            shardKey, email, e.getMessage());
+//                    return Optional.empty();
+//                } finally {
+//                    ShardContext.clear();
+//                }
+//            }, executorService);
+//            futures.add(future);
 
-                    boolean exists = companyAccountRepository.existsByEmail(email);
-
-                    if (exists) {
-                        log.debug("Email '{}' found in shard '{}'", email, shardKey);
-                        return Optional.of(shardKey);
-                    }
-                    return Optional.empty();
-                } catch (Exception e) {
-                    log.error("Error querying shard '{}' for email '{}': {}",
-                            shardKey, email, e.getMessage());
-                    return Optional.empty();
-                } finally {
-                    ShardContext.clear();
+            try {
+                ShardContext.setShardKey(shardKey);
+                log.debug("Checking shard '{}' for email '{}'", shardKey, email);
+                boolean exists = companyAccountRepository.existsByEmail(email);
+                if (exists) {
+                    log.info("Email '{}' found in shard '{}'", email, shardKey);
+                    return shardKey;
                 }
-            }, executorService);
-            futures.add(future);
+            } catch (Exception e) {
+                log.error("Error querying shard '{}' for email '{}': {}", shardKey, email, e.getMessage());
+
+            } finally {
+                ShardContext.clear();
+            }
         }
 
-        return futures.stream()
-                .map(CompletableFuture::join)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst()
-                .orElse(null);
+        log.debug("Email '{}' not found in any shard", email);
+
+        return null;
     }
 
     public boolean emailExistsInAnyShard(String email) {
