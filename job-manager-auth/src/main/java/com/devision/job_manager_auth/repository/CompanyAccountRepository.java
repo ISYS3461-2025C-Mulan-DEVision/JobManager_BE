@@ -2,6 +2,7 @@ package com.devision.job_manager_auth.repository;
 
 import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.entity.CompanyAccount;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -63,6 +64,7 @@ public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, 
 
     // Increment failed login attempts
     @Modifying
+    @Transactional
     @Query("UPDATE CompanyAccount c SET c.failedLoginAttempts = c.failedLoginAttempts + 1, " +
             "c.lastFailedLoginTime = :failedTime WHERE c.email = :email")
     void incrementFailedLoginAttempts(
@@ -72,22 +74,26 @@ public interface CompanyAccountRepository extends JpaRepository<CompanyAccount, 
 
     // Reset failed login attempts on successful login
     @Modifying
+    @Transactional
     @Query("UPDATE CompanyAccount c SET c.failedLoginAttempts = 0, c.lastFailedLoginTime = null " +
             "WHERE c.email = :email")
     void resetFailedLoginAttempts(@Param("email") String email);
 
     // Lock account
     @Modifying
+    @Transactional
     @Query("UPDATE CompanyAccount c SET c.isLocked = true WHERE c.email = :email")
     void lockAccount(@Param("email") String email);
 
     // Unlock account
     @Modifying
+    @Transactional
     @Query("UPDATE CompanyAccount c SET c.isLocked = false, c.failedLoginAttempts = 0 WHERE c.email = :email")
     void unlockAccount(@Param("email") String email);
 
     // Activate account
     @Modifying
+    @Transactional
     @Query("UPDATE CompanyAccount c SET c.isActivated = true, c.activationToken = null, " +
             "c.activationTokenExpiry = null WHERE c.email = :email")
     void activateAccount(@Param("email") String email);

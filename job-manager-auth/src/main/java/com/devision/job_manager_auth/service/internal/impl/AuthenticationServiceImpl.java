@@ -97,7 +97,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> registerCompanyViaSso(SsoRegisterRequest request) {
 
         // Check if the account already exists
@@ -151,7 +150,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> activateAccount(ActivationRequest request) {
         // Activation token lookup requires scatter-gather since we don't know the shard
         // We need to search all shards for the activation token
@@ -163,7 +161,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         // Set shard context based on the account's country
-        ShardContext.setShardKey(account.getCountry().getShardKey());
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+        log.info("Activating account in shard '{}' for email '{}'", shardKey, account.getEmail());
 
         try {
             // Check if already activated
@@ -178,7 +178,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return ApiResponse.error("Activation token has expired. Please request a new one.");
             }
 
-            // Activate account
+            // Activate account - this will use the shard context we just set
             companyAccountRepository.activateAccount(account.getEmail());
             log.info("Account activated successfully: {}", account.getEmail());
 
@@ -199,7 +199,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> resendActivationEmail(String email) {
         log.info("Resend activation email requested for: {}", email);
 
@@ -248,7 +247,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<AuthResponse> login(LoginRequest request) {
         // Use ShardLookupService to find account across all shards
         CompanyAccount account = shardLookupService.findAccountByEmail(request.getEmail())
@@ -314,7 +312,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<AuthResponse> loginViaSso(String ssoProviderId) {
         log.info("SSO login attempt for provider ID: {}", ssoProviderId);
 
