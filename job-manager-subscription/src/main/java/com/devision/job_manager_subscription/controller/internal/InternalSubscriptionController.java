@@ -4,7 +4,7 @@ import com.devision.job_manager_subscription.dto.ApiResponse;
 import com.devision.job_manager_subscription.dto.internal.CreateSubscriptionRequest;
 import com.devision.job_manager_subscription.dto.internal.SubscriptionResponse;
 import com.devision.job_manager_subscription.dto.internal.UpdateSubscriptionRequest;
-import com.devision.job_manager_subscription.service.impl.SubscriptionServiceImpl;
+import com.devision.job_manager_subscription.service.SubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,33 +19,33 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InternalSubscriptionController {
 
-    private final SubscriptionServiceImpl subscriptionServiceImpl;
+    private final SubscriptionService subscriptionService;
 
     // Get all subscriptions (admin)
     @GetMapping
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getAll() {
-        List<SubscriptionResponse> subscriptions = subscriptionServiceImpl.getAll();
+        List<SubscriptionResponse> subscriptions = subscriptionService.getAll();
         return ResponseEntity.ok(ApiResponse.success("Subscriptions retrieved", subscriptions));
     }
 
     // Get subscription by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getById(@PathVariable UUID id) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.getById(id);
+        SubscriptionResponse subscription = subscriptionService.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription retrieved", subscription));
     }
 
     // Get subscription by company ID
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> getByCompanyId(@PathVariable UUID companyId) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.getByCompanyId(companyId);
+        SubscriptionResponse subscription = subscriptionService.getByCompanyId(companyId);
         return ResponseEntity.ok(ApiResponse.success("Subscription retrieved", subscription));
     }
 
     // Check if a company is premium
     @GetMapping("/company/{companyId}/premium")
     public ResponseEntity<ApiResponse<Boolean>> isPremium(@PathVariable UUID companyId) {
-        boolean isPremium = subscriptionServiceImpl.isPremium(companyId);
+        boolean isPremium = subscriptionService.isPremium(companyId);
         return ResponseEntity.ok(ApiResponse.success("Premium status checked", isPremium));
     }
 
@@ -53,7 +53,7 @@ public class InternalSubscriptionController {
     @PostMapping
     public ResponseEntity<ApiResponse<SubscriptionResponse>> create(
             @Valid @RequestBody CreateSubscriptionRequest request) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.create(request);
+        SubscriptionResponse subscription = subscriptionService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Subscription created", subscription));
     }
@@ -63,35 +63,35 @@ public class InternalSubscriptionController {
     public ResponseEntity<ApiResponse<SubscriptionResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateSubscriptionRequest request) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.update(id, request);
+        SubscriptionResponse subscription = subscriptionService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Subscription updated", subscription));
     }
 
     // Activate a subscription
     @PatchMapping("/{id}/activate")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> activate(@PathVariable UUID id) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.activate(id);
+        SubscriptionResponse subscription = subscriptionService.activate(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription activated", subscription));
     }
 
     // Deactivate a subscription
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> deactivate(@PathVariable UUID id) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.deactivate(id);
+        SubscriptionResponse subscription = subscriptionService.deactivate(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription deactivated", subscription));
     }
 
     // Cancel a subscription
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<SubscriptionResponse>> cancel(@PathVariable UUID id) {
-        SubscriptionResponse subscription = subscriptionServiceImpl.cancel(id);
+        SubscriptionResponse subscription = subscriptionService.cancel(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription cancelled", subscription));
     }
 
     // Delete a subscription
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
-        subscriptionServiceImpl.delete(id);
+        subscriptionService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Subscription deleted", null));
     }
 }

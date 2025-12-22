@@ -5,7 +5,7 @@ import com.devision.job_manager_applicant_search.dto.internal.CreateSearchProfil
 import com.devision.job_manager_applicant_search.dto.internal.SearchProfileResponse;
 import com.devision.job_manager_applicant_search.dto.internal.UpdateSearchProfileRequest;
 import com.devision.job_manager_applicant_search.dto.internal.UpdateStatusRequest;
-import com.devision.job_manager_applicant_search.service.impl.SearchProfileServiceImpl;
+import com.devision.job_manager_applicant_search.service.SearchProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InternalSearchProfileController {
 
-    private final SearchProfileServiceImpl searchProfileServiceImpl;
+    private final SearchProfileService searchProfileService;
 
     /**
      * Create a new search profile.
@@ -29,7 +29,7 @@ public class InternalSearchProfileController {
     @PostMapping
     public ResponseEntity<ApiResponse<SearchProfileResponse>> create(
             @Valid @RequestBody CreateSearchProfileRequest request) {
-        SearchProfileResponse profile = searchProfileServiceImpl.create(request);
+        SearchProfileResponse profile = searchProfileService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Search profile created", profile));
     }
@@ -37,7 +37,7 @@ public class InternalSearchProfileController {
     // Get a search profile by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<SearchProfileResponse>> getById(@PathVariable UUID id) {
-        SearchProfileResponse profile = searchProfileServiceImpl.getById(id);
+        SearchProfileResponse profile = searchProfileService.getById(id);
         return ResponseEntity.ok(ApiResponse.success("Search profile retrieved", profile));
     }
 
@@ -46,14 +46,14 @@ public class InternalSearchProfileController {
     public ResponseEntity<ApiResponse<SearchProfileResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateSearchProfileRequest request) {
-        SearchProfileResponse profile = searchProfileServiceImpl.update(id, request);
+        SearchProfileResponse profile = searchProfileService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Search profile updated", profile));
     }
 
     // Delete a search profile
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
-        searchProfileServiceImpl.delete(id);
+        searchProfileService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Search profile deleted", null));
     }
 
@@ -61,7 +61,7 @@ public class InternalSearchProfileController {
     @GetMapping("/company/{companyId}")
     public ResponseEntity<ApiResponse<List<SearchProfileResponse>>> getByCompanyId(
             @PathVariable UUID companyId) {
-        List<SearchProfileResponse> profiles = searchProfileServiceImpl.getByCompanyId(companyId);
+        List<SearchProfileResponse> profiles = searchProfileService.getByCompanyId(companyId);
         return ResponseEntity.ok(ApiResponse.success("Search profiles retrieved", profiles));
     }
 
@@ -69,7 +69,7 @@ public class InternalSearchProfileController {
     @GetMapping("/company/{companyId}/active")
     public ResponseEntity<ApiResponse<List<SearchProfileResponse>>> getActiveByCompanyId(
             @PathVariable UUID companyId) {
-        List<SearchProfileResponse> profiles = searchProfileServiceImpl.getActiveByCompanyId(companyId);
+        List<SearchProfileResponse> profiles = searchProfileService.getActiveByCompanyId(companyId);
         return ResponseEntity.ok(ApiResponse.success("Active search profiles retrieved", profiles));
     }
 
@@ -81,7 +81,7 @@ public class InternalSearchProfileController {
     public ResponseEntity<ApiResponse<SearchProfileResponse>> updateStatus(
             @PathVariable UUID id,
             @RequestBody UpdateStatusRequest request) {
-        SearchProfileResponse profile = searchProfileServiceImpl.updateStatus(id, request.getIsActive());
+        SearchProfileResponse profile = searchProfileService.updateStatus(id, request.getIsActive());
         return ResponseEntity.ok(ApiResponse.success("Search profile status updated", profile));
     }
 }

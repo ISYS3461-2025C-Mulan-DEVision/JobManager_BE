@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -18,9 +18,9 @@ public class SubscriptionUpdatedEvent {
     
     private String status;
     
-    private OffsetDateTime endAt;
+    private LocalDateTime endAt;
     
     private boolean isPremium;
     
-    private OffsetDateTime timestamp;
+    private LocalDateTime timestamp;
 }

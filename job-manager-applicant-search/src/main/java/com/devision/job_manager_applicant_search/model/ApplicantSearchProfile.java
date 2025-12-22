@@ -1,15 +1,12 @@
 package com.devision.job_manager_applicant_search.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,10 +16,13 @@ import java.util.UUID;
     @Index(name = "idx_asp_company_id", columnList = "company_id"),
     @Index(name = "idx_asp_is_active", columnList = "is_active")
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"skills", "employmentTypes"})
+@EqualsAndHashCode(exclude = {"skills", "employmentTypes"})
 public class ApplicantSearchProfile {
 
     @Id
@@ -62,11 +62,11 @@ public class ApplicantSearchProfile {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
     // Helper methods for managing collections
     public void addSkill(UUID skillId) {

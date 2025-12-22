@@ -1,5 +1,7 @@
 package com.devision.job_manager_applicant_search.config;
 
+import com.devision.job_manager_applicant_search.event.ApplicantProfileUpdatedEvent;
+import com.devision.job_manager_applicant_search.event.SubscriptionUpdatedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -49,6 +51,16 @@ public class KafkaConfig {
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        // Map external class names and type aliases to local classes
+        configProps.put(JsonDeserializer.TYPE_MAPPINGS, 
+                // Type alias mappings (used when producer sends with TYPE_MAPPINGS)
+                "subscriptionUpdated:" + SubscriptionUpdatedEvent.class.getName() + "," +
+                "applicantProfileUpdated:" + ApplicantProfileUpdatedEvent.class.getName() + "," +
+                // Full class name mappings (for backwards compatibility with old messages)
+                "com.devision.job_manager_subscription.event.SubscriptionUpdatedEvent:" + 
+                        SubscriptionUpdatedEvent.class.getName() + "," +
+                "com.devision.job_manager_applicant.event.ApplicantProfileUpdatedEvent:" + 
+                        ApplicantProfileUpdatedEvent.class.getName());
         return new DefaultKafkaConsumerFactory<>(configProps);
     }
 

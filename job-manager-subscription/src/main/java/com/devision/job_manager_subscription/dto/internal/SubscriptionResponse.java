@@ -7,12 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Full subscription response DTO for internal APIs.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,11 +19,11 @@ public class SubscriptionResponse {
     private UUID id;
     private UUID companyId;
     private SubscriptionStatus status;
-    private OffsetDateTime startAt;
-    private OffsetDateTime endAt;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
     private boolean isPremium;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static SubscriptionResponse fromEntity(CompanySubscription subscription) {
         return SubscriptionResponse.builder()

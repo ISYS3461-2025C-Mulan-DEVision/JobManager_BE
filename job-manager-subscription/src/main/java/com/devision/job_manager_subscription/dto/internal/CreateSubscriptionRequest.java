@@ -7,12 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Request DTO for creating a new subscription.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,7 +21,7 @@ public class CreateSubscriptionRequest {
 
     private SubscriptionStatus status;
 
-    private OffsetDateTime startAt;
+    private LocalDateTime startAt;
 
-    private OffsetDateTime endAt;
+    private LocalDateTime endAt;
 }

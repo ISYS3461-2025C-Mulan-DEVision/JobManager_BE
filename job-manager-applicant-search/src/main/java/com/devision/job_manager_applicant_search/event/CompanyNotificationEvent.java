@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -24,7 +24,7 @@ public class CompanyNotificationEvent {
     
     private UUID searchProfileId;
     
-    private OffsetDateTime timestamp;
+    private LocalDateTime timestamp;
 
     public static CompanyNotificationEvent applicantMatch(
             UUID companyId,
@@ -38,7 +38,7 @@ public class CompanyNotificationEvent {
                 .message("A new applicant matches your saved search: " + profileName)
                 .applicantId(applicantId)
                 .searchProfileId(searchProfileId)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 }

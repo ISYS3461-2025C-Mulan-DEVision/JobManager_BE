@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -29,8 +29,8 @@ public class SearchProfileResponse {
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
     private Boolean isActive;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static SearchProfileResponse fromEntity(ApplicantSearchProfile profile) {
         return SearchProfileResponse.builder()

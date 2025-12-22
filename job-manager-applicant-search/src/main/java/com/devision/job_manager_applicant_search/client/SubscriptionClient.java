@@ -6,14 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Client for checking subscription/premium status.
- * Uses Redis cache populated by Kafka events from the Subscription Service.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,7 +53,7 @@ public class SubscriptionClient {
         
         // Also check if subscription has expired based on endAt
         if (isPremium && event.getEndAt() != null) {
-            isPremium = event.getEndAt().isAfter(OffsetDateTime.now());
+            isPremium = event.getEndAt().isAfter(LocalDateTime.now());
         }
         
         redisTemplate.opsForValue().set(cacheKey, isPremium, CACHE_TTL_MINUTES, TimeUnit.MINUTES);

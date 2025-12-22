@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -35,18 +35,18 @@ public class CompanySubscription {
 
     @Column(name = "start_at", nullable = false)
     @Builder.Default
-    private OffsetDateTime startAt = OffsetDateTime.now();
+    private LocalDateTime startAt = LocalDateTime.now();
 
     @Column(name = "end_at")
-    private OffsetDateTime endAt;
+    private LocalDateTime endAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
     // Checks if the subscription is currently premium (active and not expired)
     public boolean isPremium() {
@@ -56,6 +56,6 @@ public class CompanySubscription {
         if (endAt == null) {
             return true;
         }
-        return endAt.isAfter(OffsetDateTime.now());
+        return endAt.isAfter(LocalDateTime.now());
     }
 }

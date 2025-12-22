@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -17,14 +17,14 @@ public class SubscriptionUpdatedEvent {
 
     private UUID companyId;
     private SubscriptionStatus status;
-    private OffsetDateTime endAt;
+    private LocalDateTime endAt;
     private boolean isPremium;
-    private OffsetDateTime timestamp;
+    private LocalDateTime timestamp;
 
     public static SubscriptionUpdatedEvent fromSubscription(
             UUID companyId, 
             SubscriptionStatus status, 
-            OffsetDateTime endAt, 
+            LocalDateTime endAt, 
             boolean isPremium
     ) {
         return SubscriptionUpdatedEvent.builder()
@@ -32,7 +32,7 @@ public class SubscriptionUpdatedEvent {
                 .status(status)
                 .endAt(endAt)
                 .isPremium(isPremium)
-                .timestamp(OffsetDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 }

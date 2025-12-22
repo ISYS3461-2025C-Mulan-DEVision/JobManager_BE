@@ -1,7 +1,7 @@
 package com.devision.job_manager_applicant_search.kafka;
 
 import com.devision.job_manager_applicant_search.event.ApplicantProfileUpdatedEvent;
-import com.devision.job_manager_applicant_search.service.impl.MatchingServiceImpl;
+import com.devision.job_manager_applicant_search.service.MatchingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ApplicantEventConsumer {
 
-    private final MatchingServiceImpl matchingServiceImpl;
+    private final MatchingService matchingService;
 
     /**
      * Consumes applicant profile updated events and triggers matching.
@@ -37,7 +37,7 @@ public class ApplicantEventConsumer {
         log.info("Received applicant profile updated event: {}", event.getApplicantId());
         
         try {
-            matchingServiceImpl.processApplicantUpdate(event);
+            matchingService.processApplicantUpdate(event);
             log.info("Successfully processed applicant update: {}", event.getApplicantId());
         } catch (Exception e) {
             log.error("Error processing applicant update for {}: {}", 

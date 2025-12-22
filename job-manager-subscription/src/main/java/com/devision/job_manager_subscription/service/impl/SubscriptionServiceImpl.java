@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -105,10 +105,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                     "Subscription already exists for company: " + request.getCompanyId());
         }
 
+        LocalDateTime startAt = request.getStartAt() != null 
+                ? request.getStartAt() 
+                : LocalDateTime.now();
+
         CompanySubscription subscription = CompanySubscription.builder()
                 .companyId(request.getCompanyId())
                 .status(request.getStatus() != null ? request.getStatus() : SubscriptionStatus.ACTIVE)
-                .startAt(request.getStartAt() != null ? request.getStartAt() : OffsetDateTime.now())
+                .startAt(startAt)
                 .endAt(request.getEndAt())
                 .build();
 
@@ -137,6 +141,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         if (request.getStatus() != null) {
             subscription.setStatus(request.getStatus());
+        }
+        if (request.getStartAt() != null) {
+            subscription.setStartAt(request.getStartAt());
         }
         if (request.getEndAt() != null) {
             subscription.setEndAt(request.getEndAt());

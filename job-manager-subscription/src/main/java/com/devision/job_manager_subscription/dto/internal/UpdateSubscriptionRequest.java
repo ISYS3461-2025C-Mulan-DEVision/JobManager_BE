@@ -6,11 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
-/**
- * Request DTO for updating an existing subscription.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,5 +16,7 @@ public class UpdateSubscriptionRequest {
 
     private SubscriptionStatus status;
 
-    private OffsetDateTime endAt;
+    private LocalDateTime startAt;
+
+    private LocalDateTime endAt;
 }
