@@ -4,7 +4,10 @@ server:
 spring:
   application:
     name: job-manager-auth
-  
+
+  config:
+    import: optional:dotenv:.env
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -30,51 +33,51 @@ sharding:
   default-shard: auth_shard_others
   shards:
     auth_shard_vn:
-      url: ${SHARD_VN_URL:jdbc:postgresql://localhost:5439/auth_shard_vn}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_VN_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_sg:
-      url: ${SHARD_SG_URL:jdbc:postgresql://localhost:5439/auth_shard_sg}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_SG_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_asia:
-      url: ${SHARD_ASIA_URL:jdbc:postgresql://localhost:5439/auth_shard_asia}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_ASIA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_oceania:
-      url: ${SHARD_OCEANIA_URL:jdbc:postgresql://localhost:5439/auth_shard_oceania}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_OCEANIA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_na:
-      url: ${SHARD_NA_URL:jdbc:postgresql://localhost:5439/auth_shard_na}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_NA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_eu:
-      url: ${SHARD_EU_URL:jdbc:postgresql://localhost:5439/auth_shard_eu}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_EU_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
     auth_shard_others:
-      url: ${SHARD_OTHERS_URL:jdbc:postgresql://localhost:5439/auth_shard_others}
-      username: ${NEON_USERNAME:postgres}
-      password: ${NEON_PASSWORD:postgres}
+      url: ${SHARD_OTHERS_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
       maximum-pool-size: 5
       minimum-idle: 1
 
@@ -101,8 +104,8 @@ sharding:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:__MISSING__}
-            client-secret: ${GOOGLE_CLIENT_SECRET:__MISSING__}
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
@@ -148,3 +151,9 @@ app:
   frontend-url: http://localhost:5173
   activation:
     token-expiration: 86400000 # 24 hours
+
+logging:
+  level:
+    com.devision.job_manager_auth.config.sharding: DEBUG
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc: DEBUG

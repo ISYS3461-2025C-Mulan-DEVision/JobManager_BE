@@ -55,45 +55,42 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         // Set shard context BEFORE saving
         ShardContext.setShardKey(shardKey);
-        log.info("Registering company in shard '{}' for country '{}'", shardKey, country.getDisplayName());
 
-        try {
-            String activationToken = UUID.randomUUID().toString();
-            LocalDateTime tokenExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
 
-            CompanyAccount account = CompanyAccount.builder()
-                    .email(request.getEmail())
-                    .passwordHash(passwordEncoder.encode(request.getPassword()))
-                    .authProvider(AuthProvider.LOCAL)
-                    .role(Role.COMPANY)
-                    .country(request.getCountry())
-                    .isActivated(false)
-                    .activationToken(activationToken)
-                    .activationTokenExpiry(tokenExpiry)
-                    .failedLoginAttempts(0)
-                    .isLocked(false)
-                    .build();
+        String activationToken = UUID.randomUUID().toString();
+        LocalDateTime tokenExpiry = LocalDateTime.now().plus(activationTokenExpiration, ChronoUnit.MILLIS);
 
-            // The account is saved to the correct shard
-            account = companyAccountRepository.save(account);
-            log.info("Company account registered successfully in shard '{}': {}", shardKey, request.getEmail());
+        CompanyAccount account = CompanyAccount.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .authProvider(AuthProvider.LOCAL)
+                .role(Role.COMPANY)
+                .country(request.getCountry())
+                .isActivated(false)
+                .activationToken(activationToken)
+                .activationTokenExpiry(tokenExpiry)
+                .failedLoginAttempts(0)
+                .isLocked(false)
+                .build();
 
-            // Cache the email to shard mapping for fast login
-            shardLookupService.cacheEmailShard(request.getEmail(), shardKey);
+        // The account is saved to the correct shard
+        account = companyAccountRepository.save(account);
+        log.info("Company account registered successfully in shard '{}': {}", shardKey, request.getEmail());
 
-            // Publish event for Company Service to create profile and for Email Service to send activation link
-            CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), activationToken);
-            eventPublisherService.publishCompanyRegistered(event);
+        // Cache the email to shard mapping for fast login
+        shardLookupService.cacheEmailShard(request.getEmail(), shardKey);
 
-            emailService.sendActivationEmail(account, activationToken);
+        // Publish event for Company Service to create profile and for Email Service to send activation link
+        CompanyRegisteredEvent event = buildCompanyRegisteredEvent(request, account.getId(), activationToken);
+        eventPublisherService.publishCompanyRegistered(event);
 
-            return ApiResponse.success(
-                    "Registration successful! Please check your email to activate your account.",
-                    null
-            );
-        } finally {
-            ShardContext.clear();
-        }
+        emailService.sendActivationEmail(account, activationToken);
+
+        return ApiResponse.success(
+                "Registration successful! Please check your email to activate your account.",
+                null
+        );
+
     }
 
     @Override
