@@ -1,7 +1,9 @@
 package com.devision.job_manager_auth.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +23,7 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
 
@@ -70,6 +73,7 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/auth/refresh",
                                 "/api/auth/complete",
+                                "/api/auth/diagnostics/**",
 
                                 // External endpoints
                                 "/api/external/**"
@@ -82,22 +86,17 @@ public class SecurityConfig {
 
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
+                        .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
                 );
 
-//                .oauth2Login(oauth2 -> oauth2
-//                        .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
-//                        .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
-//                        .successHandler(oAuth2AuthenticationSuccessHandler)
-//                );
 
-        if (clientRegistrationRepository != null) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
-                    .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
-                    .successHandler(oAuth2AuthenticationSuccessHandler)
-            );
-        }
 
         return http.build();
     }
+
 }
