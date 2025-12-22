@@ -126,7 +126,20 @@ public class ShardLookupService {
         // First check cache
         String cachedShard = getCachedShard(email);
         if (cachedShard != null) {
-            return true;
+            // Go verify if the account still exists in the database
+            ShardContext.setShardKey(cachedShard);
+            try {
+                boolean exists = companyAccountRepository.existsByEmail(email);
+                if (!exists) {
+                    log.warn("Email '{}' not found in shard '{}'", email, cachedShard);
+                    invalidateCache(email);
+                    return false;
+                }
+                return true;
+            } finally {
+                ShardContext.clear();
+            }
+
         }
 
         // Scatter-gather to check all shards
