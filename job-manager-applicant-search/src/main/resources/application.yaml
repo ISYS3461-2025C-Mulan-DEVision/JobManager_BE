@@ -21,10 +21,12 @@ spring:
 
   data:
     redis:
-      # Use URL format for flexibility (supports both local and cloud Redis)
-      # Local: redis://localhost:6379
-      # Upstash: rediss://:password@host:port
-      url: ${REDIS_URL:redis://localhost:6379}
+      # Upstash Redis configuration with SSL
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
       timeout: 5000ms
 
   kafka:
