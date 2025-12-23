@@ -1,5 +1,6 @@
 package com.devision.job_manager_auth.controller;
 
+import com.devision.job_manager_auth.config.sharding.ShardContext;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
@@ -21,9 +22,19 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
+
         log.info("Registration request received for email: {}", request.getEmail());
-        ApiResponse<String> response = authenticationService.registerCompany(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        String shardKey = request.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+        log.info("Shard context set to '{}' for country '{}'", shardKey, request.getCountry().getDisplayName());
+
+        try {
+            ApiResponse<String> response = authenticationService.registerCompany(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } finally {
+            ShardContext.clear();
+        }
+
     }
 
     @PostMapping("/activate")

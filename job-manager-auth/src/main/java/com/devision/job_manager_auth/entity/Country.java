@@ -7,19 +7,17 @@ public enum Country {
     // Southeast Asia
     VIETNAM("VN", "Vietnam", "auth_shard_vn"),
     SINGAPORE("SG", "Singapore", "auth_shard_sg"),
-    MALAYSIA("MY", "Malaysia", "auth_shard_sea"),
-    THAILAND("TH", "Thailand", "auth_shard_sea"),
-    PHILIPPINES("PH", "Philippines", "auth_shard_sea"),
-    INDONESIA("ID", "Indonesia", "auth_shard_sea"),
-
-    // East Asia
-    JAPAN("JP", "Japan", "auth_shard_ea"),
-    SOUTH_KOREA("KR", "South Korea", "auth_shard_ea"),
-    CHINA("CN", "China", "auth_shard_ea"),
+    MALAYSIA("MY", "Malaysia", "auth_shard_asia"),
+    THAILAND("TH", "Thailand", "auth_shard_asia"),
+    PHILIPPINES("PH", "Philippines", "auth_shard_asia"),
+    INDONESIA("ID", "Indonesia", "auth_shard_asia"),
+    JAPAN("JP", "Japan", "auth_shard_asia"),
+    SOUTH_KOREA("KR", "South Korea", "auth_shard_asia"),
+    CHINA("CN", "China", "auth_shard_asia"),
 
     // Oceania
-    AUSTRALIA("AU", "Australia", "auth_shard_oc"),
-    NEW_ZEALAND("NZ", "New Zealand", "auth_shard_oc"),
+    AUSTRALIA("AU", "Australia", "auth_shard_oceania"),
+    NEW_ZEALAND("NZ", "New Zealand", "auth_shard_oceania"),
 
     // North America
     UNITED_STATES("US", "United States", "auth_shard_na"),
@@ -30,9 +28,6 @@ public enum Country {
     GERMANY("DE", "Germany", "auth_shard_eu"),
     FRANCE("FR", "France", "auth_shard_eu"),
     NETHERLANDS("NL", "Netherlands", "auth_shard_eu"),
-
-    // South Asia
-    INDIA("IN", "India", "auth_shard_sa"),
 
     // Other
     OTHER("XX", "Other", "auth_shard_others");

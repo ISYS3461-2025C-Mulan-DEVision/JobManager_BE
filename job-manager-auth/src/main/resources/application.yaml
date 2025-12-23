@@ -4,7 +4,10 @@ server:
 spring:
   application:
     name: job-manager-auth
-  
+
+  config:
+    import: optional:dotenv:.env
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -20,12 +23,64 @@ spring:
         transport:
           protocol: smtp
 
-  datasource:
-    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
-    username: ${POSTGRES_AUTH_USERNAME:postgres}
-    password: ${POSTGRES_AUTH_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-  
+#  datasource:
+#    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
+#    username: ${POSTGRES_AUTH_USERNAME:postgres}
+#    password: ${POSTGRES_AUTH_PASSWORD:postgres}
+#    driver-class-name: org.postgresql.Driver
+
+sharding:
+  default-shard: auth_shard_others
+  shards:
+    auth_shard_vn:
+      url: ${SHARD_VN_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_sg:
+      url: ${SHARD_SG_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_asia:
+      url: ${SHARD_ASIA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_oceania:
+      url: ${SHARD_OCEANIA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_na:
+      url: ${SHARD_NA_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_eu:
+      url: ${SHARD_EU_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+    auth_shard_others:
+      url: ${SHARD_OTHERS_URL}
+      username: ${NEON_USERNAME}
+      password: ${NEON_PASSWORD}
+      maximum-pool-size: 5
+      minimum-idle: 1
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -49,8 +104,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
-            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
@@ -98,3 +153,9 @@ app:
     token-expiration: 86400000 # 24 hours
   password-reset:
     token-expiration: 3600000 # 1 hour
+
+logging:
+  level:
+    com.devision.job_manager_auth.config.sharding: DEBUG
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc: DEBUG

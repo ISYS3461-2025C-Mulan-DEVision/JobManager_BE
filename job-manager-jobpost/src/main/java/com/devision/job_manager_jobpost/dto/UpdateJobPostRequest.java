@@ -1,6 +1,7 @@
 package com.devision.job_manager_jobpost.dto;
 
 import com.devision.job_manager_jobpost.model.SalaryType;
+import com.devision.job_manager_jobpost.validation.ValidSalary;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ValidSalary
 public class UpdateJobPostRequest {
 
     @Size(max = 255)
