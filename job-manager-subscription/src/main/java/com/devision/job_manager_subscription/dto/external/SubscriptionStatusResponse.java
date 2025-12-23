@@ -30,9 +30,7 @@ public class SubscriptionStatusResponse {
                 .build();
     }
 
-    /**
-     * Creates a non-premium response for companies without subscriptions.
-     */
+    // Creates a non-premium response for companies without subscriptions
     public static SubscriptionStatusResponse notPremium(UUID companyId) {
         return SubscriptionStatusResponse.builder()
                 .companyId(companyId)

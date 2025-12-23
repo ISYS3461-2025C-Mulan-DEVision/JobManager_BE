@@ -39,6 +39,11 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+# External service URLs
+subscription:
+  service:
+    url: ${SUBSCRIPTION_SERVICE_URL:http://localhost:8085}
+
 eureka:
   client:
     service-url:

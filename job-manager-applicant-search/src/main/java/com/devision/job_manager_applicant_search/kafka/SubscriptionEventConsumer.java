@@ -21,6 +21,8 @@ public class SubscriptionEventConsumer {
 
     /**
      * Consumes subscription updated events and updates local cache.
+     * Throws exceptions to prevent message acknowledgment on failure,
+     * allowing for retry via Kafka's consumer retry mechanism.
      * 
      * @param event the subscription updated event
      */
@@ -34,12 +36,14 @@ public class SubscriptionEventConsumer {
         
         try {
             subscriptionClient.updatePremiumStatus(event);
-            log.info("Updated subscription cache for company {}: isPremium={}", 
+            log.info("Successfully updated subscription cache for company {}: isPremium={}", 
                     event.getCompanyId(), event.isPremium());
         } catch (Exception e) {
-            log.error("Error updating subscription cache for company {}: {}", 
+            log.error("Failed to update subscription cache for company {}: {}", 
                     event.getCompanyId(), e.getMessage(), e);
-            // In production, consider retry mechanism
+            // Rethrow to prevent message acknowledgment and trigger retry
+            throw new RuntimeException("Failed to process subscription update for company: " + 
+                    event.getCompanyId(), e);
         }
     }
 }
