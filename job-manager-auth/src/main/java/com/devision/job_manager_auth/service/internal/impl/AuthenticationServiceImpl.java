@@ -10,10 +10,8 @@ import com.devision.job_manager_auth.event.CompanyActivatedEvent;
 import com.devision.job_manager_auth.event.CompanyAccountLockedEvent;
 import com.devision.job_manager_auth.event.CompanyRegisteredEvent;
 import com.devision.job_manager_auth.repository.CompanyAccountRepository;
-import com.devision.job_manager_auth.service.internal.AuthenticationService;
-import com.devision.job_manager_auth.service.internal.EmailService;
-import com.devision.job_manager_auth.service.internal.EventPublisherService;
-import com.devision.job_manager_auth.service.internal.TokenService;
+import com.devision.job_manager_auth.service.internal.*;
+import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +31,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final CompanyAccountRepository companyAccountRepository;
     private final PasswordEncoder passwordEncoder;
-    private final TokenService tokenService;
+    private final JweTokenService jweTokenService;
     private final EventPublisherService eventPublisherService;
     private final EmailService emailService;
     private final ShardLookupService shardLookupService;
@@ -289,8 +287,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 companyAccountRepository.resetFailedLoginAttempts(account.getEmail());
             }
 
-            String accessToken = tokenService.generateAccessToken(account);
-            String refreshToken = tokenService.generateRefreshToken(account);
+            String accessToken = jweTokenService.generateAccessToken(account);
+            String refreshToken = jweTokenService.generateRefreshToken(account);
 
             log.info("Login successful for: {} (shard: {})", request.getEmail(), account.getCountry().getShardKey());
 
@@ -339,8 +337,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             // Generate tokens
-            String accessToken = tokenService.generateAccessToken(account);
-            String refreshToken = tokenService.generateRefreshToken(account);
+            String accessToken = jweTokenService.generateAccessToken(account);
+            String refreshToken = jweTokenService.generateRefreshToken(account);
 
             log.info("SSO login successful for: {} (shard: {})", account.getEmail(), account.getCountry().getShardKey());
 
@@ -396,18 +394,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public ApiResponse<String> logout(String authHeader) {
-
-        // Extract token from header
-        String token = tokenService.extractTokenFromHeader(authHeader);
-
-        if (token == null) {
-            log.warn("Logout failed: No token provided");
-            return ApiResponse.error("No token provided");
+        // Extract token from the header but remove the prefix
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.warn("Logout failed: Invalid authorization header");
+            return ApiResponse.error("Invalid authorization header");
         }
 
-        // Revoke token
-        tokenService.revokeToken(token);
+        String token = authHeader.substring(7);
 
+        jweTokenService.revokeToken(token);
         log.info("Logout successful, token revoked");
         return ApiResponse.success("Logout successful", null);
     }
@@ -415,13 +410,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ApiResponse<AuthResponse> refreshToken(RefreshTokenRequest request) {
         try {
-            // Validate refresh token and get account ID
-            UUID accountId = tokenService.validateRefreshToken(request.getRefreshToken());
+            // validate the refresh token and get claims
+            JWTClaimsSet claims = jweTokenService.isValidRefreshToken(request.getRefreshToken());
 
-            // Extract country from refresh token to set shard context
-            String countryCode = tokenService.extractAllClaims(request.getRefreshToken())
-                    .get("country", String.class);
+            if (claims == null) {
+                log.warn("Token refresh failed: Invalid or expired refresh token");
+                return ApiResponse.error("Invalid or expired refresh token");
+            }
 
+            // Get the user Id and country code
+            UUID accountId = jweTokenService.extractUserId(claims);
+            String countryCode = jweTokenService.extractCountryCode(claims);
+
+            // Set shard context
             if (countryCode != null) {
                 Country country = Country.fromCode(countryCode);
                 if (country != null) {
@@ -432,22 +433,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 // Get account from the correct shard
                 CompanyAccount account = companyAccountRepository.findById(accountId)
-                        .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+                        .orElseThrow(() -> new IllegalArgumentException("Account not found in shard: " + countryCode));
 
-                // Check if account is still active
+                // Check if account is still alive
                 if (!account.getIsActivated() || account.getIsLocked()) {
                     log.warn("Token refresh failed: Account inactive or locked - {}", account.getEmail());
                     return ApiResponse.error("Account is not active");
                 }
 
                 // Generate new access token
-                String newAccessToken = tokenService.generateAccessToken(account);
-
+                String newAccessToken = jweTokenService.generateAccessToken(account);
                 log.info("Token refreshed successfully for: {}", account.getEmail());
 
                 AuthResponse authResponse = AuthResponse.builder()
                         .accessToken(newAccessToken)
-                        .refreshToken(request.getRefreshToken()) // Keep same refresh token
+                        .refreshToken(request.getRefreshToken())
                         .tokenType("Bearer")
                         .expiresIn(86400L)
                         .companyId(account.getId())
@@ -460,10 +460,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             } finally {
                 ShardContext.clear();
             }
-
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             log.error("Token refresh failed: {}", e.getMessage());
-            return ApiResponse.error(e.getMessage());
+            return ApiResponse.error("Can't refresh token: " + e.getMessage());
         }
     }
 
@@ -529,11 +528,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         account.setPasswordResetToken(null);
         account.setPasswordResetTokenExpiry(null);
-        
+
         // Reset failed login attempts and unlock account if locked
         account.setFailedLoginAttempts(0);
         account.setIsLocked(false);
-        
+
         companyAccountRepository.save(account);
 
         emailService.sendPasswordChangedEmail(account);
