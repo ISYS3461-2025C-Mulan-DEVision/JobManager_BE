@@ -3,9 +3,7 @@ package com.devision.job_manager_auth.config.sharding;
 
 import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.JweTokenService;
-import com.devision.job_manager_auth.service.internal.TokenService;
 import com.nimbusds.jwt.JWTClaimsSet;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
