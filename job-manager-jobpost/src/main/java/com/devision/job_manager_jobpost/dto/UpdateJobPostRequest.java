@@ -36,7 +36,7 @@ public class UpdateJobPostRequest {
     @Size(max = 128)
     private String locationCity;
 
-    private UUID countryId;
+    // private UUID countryId;
 
     private Boolean fresher;
 

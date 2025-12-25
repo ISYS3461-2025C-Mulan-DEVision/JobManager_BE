@@ -43,8 +43,8 @@ public class CreateJobPostRequest {
     @Size(max = 128)
     private String locationCity;
 
-    @NotNull
-    private UUID countryId;
+    // @NotNull
+    // private UUID countryId;
 
     private boolean fresher;
 

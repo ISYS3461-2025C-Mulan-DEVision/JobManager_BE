@@ -94,7 +94,7 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                 .companyId(jobPost.getCompanyId())
                 .title(jobPost.getTitle())
                 .locationCity(jobPost.getLocationCity())
-                .countryId(jobPost.getCountryId())
+                // .countryId(jobPost.getCountryId())
                 .isFresher(jobPost.isFresher())
                 .postedAt(jobPost.getPostedAt())
                 .salary(JobPostSummaryDto.SalaryInfoDto.builder()
