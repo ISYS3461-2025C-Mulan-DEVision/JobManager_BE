@@ -23,7 +23,7 @@ public class JobPostSummaryDto {
     private UUID companyId;
     private String title;
     private String locationCity;
-    private UUID countryId;
+    // private UUID countryId;
     private SalaryInfoDto salary;
     private boolean isFresher;
     private LocalDateTime postedAt;

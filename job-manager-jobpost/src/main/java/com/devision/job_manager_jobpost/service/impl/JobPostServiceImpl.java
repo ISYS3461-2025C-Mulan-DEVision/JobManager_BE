@@ -78,9 +78,9 @@ public class JobPostServiceImpl implements JobPostService {
         if (updatedJobPost.getLocationCity() != null) {
             existing.setLocationCity(updatedJobPost.getLocationCity());
         }
-        if (updatedJobPost.getCountryId() != null) {
-            existing.setCountryId(updatedJobPost.getCountryId());
-        }
+        // if (updatedJobPost.getCountryId() != null) {
+        //     existing.setCountryId(updatedJobPost.getCountryId());
+        // }
         // Flags and dates can be updated explicitly
         existing.setFresher(updatedJobPost.isFresher());
         if (updatedJobPost.getExpiryAt() != null) {
