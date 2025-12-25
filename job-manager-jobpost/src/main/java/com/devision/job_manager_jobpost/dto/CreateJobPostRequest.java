@@ -1,5 +1,6 @@
 package com.devision.job_manager_jobpost.dto;
 
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.SalaryType;
 import com.devision.job_manager_jobpost.validation.ValidSalary;
 import jakarta.validation.constraints.NotBlank;
@@ -51,6 +52,9 @@ public class CreateJobPostRequest {
     private boolean aPrivate;
 
     private LocalDateTime expiryAt;
+    
+    // Employment type - single value (frontend sends single type)
+    private EmploymentType employmentType;
 }
 
 

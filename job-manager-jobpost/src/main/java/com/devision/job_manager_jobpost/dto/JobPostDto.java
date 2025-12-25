@@ -1,5 +1,6 @@
 package com.devision.job_manager_jobpost.dto;
 
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.SalaryType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -38,6 +39,9 @@ public class JobPostDto {
     
     private LocalDateTime postedAt;
     private LocalDateTime expiryAt;
+    
+    // Employment types - return single value for frontend compatibility
+    private EmploymentType employmentType;
 }
 
 

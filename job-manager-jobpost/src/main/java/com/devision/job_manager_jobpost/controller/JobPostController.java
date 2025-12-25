@@ -4,7 +4,9 @@ import com.devision.job_manager_jobpost.dto.CreateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.JobPostDto;
 import com.devision.job_manager_jobpost.dto.UpdateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.ApiResponse;
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
+import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
 import com.devision.job_manager_jobpost.service.JobPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,15 @@ public class JobPostController {
                 .aPrivate(request.isAPrivate())
                 .expiryAt(request.getExpiryAt())
                 .build();
+
+        // Add employment type if provided
+        if (request.getEmploymentType() != null) {
+            JobPostEmploymentType empType = new JobPostEmploymentType();
+            empType.setId(UUID.randomUUID());
+            empType.setJobPost(jobPost);
+            empType.setType(request.getEmploymentType());
+            jobPost.getEmploymentTypes().add(empType);
+        }
 
         JobPost created = jobPostService.createJobPost(jobPost);
         JobPostDto dto = mapToDto(created);
@@ -156,6 +167,12 @@ public class JobPostController {
     }
 
     private JobPostDto mapToDto(JobPost jobPost) {
+        // Get first employment type if available (frontend expects single value)
+        EmploymentType employmentType = null;
+        if (jobPost.getEmploymentTypes() != null && !jobPost.getEmploymentTypes().isEmpty()) {
+            employmentType = jobPost.getEmploymentTypes().get(0).getType();
+        }
+        
         return JobPostDto.builder()
                 .id(jobPost.getJobPostId())
                 .companyId(jobPost.getCompanyId())
@@ -171,6 +188,7 @@ public class JobPostController {
                 .aPrivate(jobPost.isAPrivate())
                 .postedAt(jobPost.getPostedAt())
                 .expiryAt(jobPost.getExpiryAt())
+                .employmentType(employmentType)
                 .build();
     }
 }
