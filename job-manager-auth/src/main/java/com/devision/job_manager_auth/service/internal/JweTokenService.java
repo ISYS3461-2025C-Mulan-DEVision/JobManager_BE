@@ -22,6 +22,8 @@ public interface JweTokenService {
     String extractCountryCode(JWTClaimsSet claims);
     String extractTokenType(JWTClaimsSet claims);
     String extractTokenId(JWTClaimsSet claims); // need the token ID for redis storage and revocation
-    boolean isValidAccessToken(String token);
-    boolean isValidRefreshToken(String token);
+    JWTClaimsSet isValidAccessToken(String token);
+    JWTClaimsSet isValidRefreshToken(String token);
+    void revokeToken(String token);
+    boolean isTokenRevoked(String token);
 }
