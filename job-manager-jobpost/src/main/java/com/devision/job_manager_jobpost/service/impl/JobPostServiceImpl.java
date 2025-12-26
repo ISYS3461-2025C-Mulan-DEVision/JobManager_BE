@@ -1,8 +1,11 @@
 package com.devision.job_manager_jobpost.service.impl;
 
+import com.devision.job_manager_jobpost.event.JobPostSkillsChangedEvent;
 import com.devision.job_manager_jobpost.model.JobPost;
+import com.devision.job_manager_jobpost.model.JobPostSkill;
 import com.devision.job_manager_jobpost.repository.JobPostRepository;
 import com.devision.job_manager_jobpost.service.JobPostService;
+import com.devision.job_manager_jobpost.service.internal.EventPublisherService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +24,7 @@ import java.util.UUID;
 public class JobPostServiceImpl implements JobPostService {
 
     private final JobPostRepository jobPostRepository;
+    private final EventPublisherService eventPublisher;
 
     @Override
     @Transactional
@@ -120,6 +125,69 @@ public class JobPostServiceImpl implements JobPostService {
             throw new IllegalArgumentException("Job post not found with ID: " + id);
         }
         jobPostRepository.deleteById(id);
+    }
+
+    /**
+     * Update job post skills and publish Kafka event for Ultimo 4.3.1
+     * CRITICAL: This enables instant notifications to matching applicants
+     */
+    @Override
+    @Transactional
+    public JobPost updateJobPostSkills(UUID jobPostId, List<UUID> newSkillIds) {
+        log.info("Updating skills for job post ID: {}", jobPostId);
+
+        JobPost jobPost = jobPostRepository.findById(jobPostId)
+                .orElseThrow(() -> new IllegalArgumentException("Job post not found with ID: " + jobPostId));
+
+        // Get current skills before update
+        List<UUID> currentSkillIds = jobPost.getSkills().stream()
+                .map(JobPostSkill::getSkillId)
+                .toList();
+
+        // Calculate what changed
+        List<UUID> addedSkills = newSkillIds.stream()
+                .filter(skillId -> !currentSkillIds.contains(skillId))
+                .toList();
+
+        List<UUID> removedSkills = currentSkillIds.stream()
+                .filter(skillId -> !newSkillIds.contains(skillId))
+                .toList();
+
+        // Update the database
+        jobPost.getSkills().clear();
+        newSkillIds.forEach(skillId -> {
+            JobPostSkill jobPostSkill = new JobPostSkill();
+            jobPostSkill.setId(UUID.randomUUID());
+            jobPostSkill.setJobPost(jobPost);
+            jobPostSkill.setSkillId(skillId);
+            jobPost.getSkills().add(jobPostSkill);
+        });
+
+        JobPost savedJobPost = jobPostRepository.save(jobPost);
+
+        // CRITICAL: Publish Kafka event AFTER database commit for Ultimo 4.3.1
+        if (!addedSkills.isEmpty() || !removedSkills.isEmpty()) {
+            log.info("Publishing skills changed event. Added: {}, Removed: {}",
+                    addedSkills.size(), removedSkills.size());
+
+            JobPostSkillsChangedEvent event = JobPostSkillsChangedEvent.builder()
+                    .jobPostId(savedJobPost.getJobPostId())
+                    .companyId(savedJobPost.getCompanyId())
+                    .title(savedJobPost.getTitle())
+                    .locationCity(savedJobPost.getLocationCity())
+                    .countryCode(null) // TODO: Add country code field to JobPost model
+                    .addedSkills(addedSkills)
+                    .removedSkills(removedSkills)
+                    .currentSkills(newSkillIds)
+                    .changedAt(LocalDateTime.now())
+                    .build();
+
+            eventPublisher.publishJobPostSkillsChanged(event);
+        } else {
+            log.info("No skills changed for job post ID: {}", jobPostId);
+        }
+
+        return savedJobPost;
     }
 }
 
