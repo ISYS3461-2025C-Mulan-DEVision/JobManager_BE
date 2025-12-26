@@ -3,6 +3,7 @@ package com.devision.job_manager_jobpost.dto;
 import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.SalaryType;
 import com.devision.job_manager_jobpost.validation.ValidSalary;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -49,6 +50,7 @@ public class CreateJobPostRequest {
 
     private boolean fresher;
 
+    @JsonProperty("isPrivate")
     private boolean aPrivate;
 
     private LocalDateTime expiryAt;
