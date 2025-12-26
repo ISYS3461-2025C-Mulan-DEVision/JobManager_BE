@@ -3,6 +3,7 @@ package com.devision.job_manager_jobpost.controller;
 import com.devision.job_manager_jobpost.dto.CreateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.JobPostDto;
 import com.devision.job_manager_jobpost.dto.UpdateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.UpdateSkillsRequest;
 import com.devision.job_manager_jobpost.dto.ApiResponse;
 import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
@@ -162,6 +163,32 @@ public class JobPostController {
             return ResponseEntity.ok(ApiResponse.success("Job post deleted successfully", null));
         } catch (IllegalArgumentException e) {
             log.error("Failed to delete job post: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Update job post skills - CRITICAL for Ultimo 4.3.1
+     * This endpoint triggers Kafka event for instant applicant notifications
+     *
+     * @param id The job post ID
+     * @param request Contains the list of skill UUIDs
+     * @return Updated job post with success message
+     */
+    @PutMapping("/{id}/skills")
+    public ResponseEntity<ApiResponse<JobPostDto>> updateJobPostSkills(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateSkillsRequest request) {
+        log.info("Updating skills for job post ID: {} with {} skills", id, request.getSkillIds().size());
+
+        try {
+            JobPost updated = jobPostService.updateJobPostSkills(id, request.getSkillIds());
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Job post skills updated successfully. Notifications sent to matching applicants.",
+                    mapToDto(updated)
+            ));
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to update job post skills: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
