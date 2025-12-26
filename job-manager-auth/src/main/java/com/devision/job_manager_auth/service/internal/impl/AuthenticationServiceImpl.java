@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,6 +36,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EventPublisherService eventPublisherService;
     private final EmailService emailService;
     private final ShardLookupService shardLookupService;
+    private final ShardDirectQueryService shardDirectQueryService;
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -223,7 +225,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             account.setActivationToken(newToken);
             account.setActivationTokenExpiry(newExpiry);
-            companyAccountRepository.save(account);
+            companyAccountRepository.saveAndFlush(account);
 
             // Publish event for email service to resend activation email
             CompanyRegisteredEvent event = CompanyRegisteredEvent.builder()
@@ -545,19 +547,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * Find account by activation token across all shards (scatter-gather)
      */
     private CompanyAccount findAccountByActivationToken(String token) {
-        // This requires querying all shards since we don't know which shard has the token
-        for (String shardKey : getShardKeys()) {
-            ShardContext.setShardKey(shardKey);
-            try {
-                var account = companyAccountRepository.findByActivationToken(token);
-                if (account.isPresent()) {
-                    return account.get();
-                }
-            } finally {
-                ShardContext.clear();
-            }
-        }
-        return null;
+        return shardDirectQueryService.findByActivationTokenAcrossShards(token)
+                .orElse(null);
     }
 
     /**
