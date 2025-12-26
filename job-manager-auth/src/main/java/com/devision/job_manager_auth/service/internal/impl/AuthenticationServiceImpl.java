@@ -198,6 +198,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
+    private CompanyAccount findAccountByPasswordResetToken(String token) {
+        return shardDirectQueryService.findByPasswordResetTokenAcrossShards(token)
+                .orElse(null);
+    }
+
     @Override
     public ApiResponse<String> resendActivationEmail(String email) {
         log.info("Resend activation email requested for: {}", email);
@@ -469,78 +474,95 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> forgotPassword(ForgotPasswordRequest request) {
         log.info("Password reset requested for email: {}", request.getEmail());
 
-        CompanyAccount account = companyAccountRepository.findByEmail(request.getEmail())
+        // Use ShardLookupService to find the account across shards
+        CompanyAccount account = shardLookupService.findAccountByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Password reset failed: Email not found - {}", request.getEmail());
                     return new IllegalArgumentException("Email not found");
                 });
 
-        // Check if account is activated
-        if (!account.getIsActivated()) {
-            log.warn("Password reset failed: Account not activated - {}", request.getEmail());
-            return ApiResponse.error("Please activate your account first before resetting password");
+        // Set shard context for subsequent operations
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // Check if account is activated
+            if (!account.getIsActivated()) {
+                log.warn("Password reset failed: Account not activated - {}", request.getEmail());
+                return ApiResponse.error("Please activate your account first before resetting password");
+            }
+
+            // Check if account uses SSO
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Password reset failed: SSO account - {}", request.getEmail());
+                return ApiResponse.error("This account uses SSO login. Password reset is not applicable.");
+            }
+
+            // Generate reset token
+            String resetToken = UUID.randomUUID().toString();
+            LocalDateTime tokenExpiry = LocalDateTime.now().plus(passwordResetTokenExpiration, ChronoUnit.MILLIS);
+
+            account.setPasswordResetToken(resetToken);
+            account.setPasswordResetTokenExpiry(tokenExpiry);
+            companyAccountRepository.save(account);
+
+            // Send reset email
+            emailService.sendPasswordResetEmail(account, resetToken);
+
+            log.info("Password reset email sent to: {}", request.getEmail());
+            return ApiResponse.success(
+                    "Password reset instructions have been sent to your email address.",
+                    null
+            );
+        } finally {
+            ShardContext.clear();
         }
-
-        // Check if account uses SSO
-        if (account.getAuthProvider() != AuthProvider.LOCAL) {
-            log.warn("Password reset failed: SSO account - {}", request.getEmail());
-            return ApiResponse.error("This account uses SSO login. Password reset is not applicable.");
-        }
-
-        // Generate reset token
-        String resetToken = UUID.randomUUID().toString();
-        LocalDateTime tokenExpiry = LocalDateTime.now().plus(passwordResetTokenExpiration, ChronoUnit.MILLIS);
-
-        account.setPasswordResetToken(resetToken);
-        account.setPasswordResetTokenExpiry(tokenExpiry);
-        companyAccountRepository.save(account);
-
-        // Send reset email
-        emailService.sendPasswordResetEmail(account, resetToken);
-
-        log.info("Password reset email sent to: {}", request.getEmail());
-        return ApiResponse.success(
-                "Password reset instructions have been sent to your email address.",
-                null
-        );
     }
 
     @Override
-    @Transactional
     public ApiResponse<String> resetPassword(ResetPasswordRequest request) {
         log.info("Password reset attempt with token");
 
-        CompanyAccount account = companyAccountRepository.findByPasswordResetToken(request.getToken())
-                .orElseThrow(() -> {
-                    log.warn("Password reset failed: Invalid token");
-                    return new IllegalArgumentException("Invalid or expired reset token");
-                });
+        // Find account by reset token across all shards using direct JDBC
+        CompanyAccount account = findAccountByPasswordResetToken(request.getToken());
 
-        // Check if token expired
-        if (account.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            log.warn("Password reset failed: Token expired for {}", account.getEmail());
-            return ApiResponse.error("Reset token has expired. Please request a new one.");
+        if (account == null) {
+            log.warn("Password reset failed: Invalid token");
+            throw new IllegalArgumentException("Invalid or expired reset token");
         }
 
-        // Update password
-        account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        account.setPasswordResetToken(null);
-        account.setPasswordResetTokenExpiry(null);
+        // Set shard context for the update operation
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
 
-        // Reset failed login attempts and unlock account if locked
-        account.setFailedLoginAttempts(0);
-        account.setIsLocked(false);
+        try {
+            // Check if token expired
+            if (account.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
+                log.warn("Password reset failed: Token expired for {}", account.getEmail());
+                return ApiResponse.error("Reset token has expired. Please request a new one.");
+            }
 
-        companyAccountRepository.save(account);
+            // Update password
+            account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            account.setPasswordResetToken(null);
+            account.setPasswordResetTokenExpiry(null);
 
-        emailService.sendPasswordChangedEmail(account);
+            // Reset failed login attempts and unlock account if locked
+            account.setFailedLoginAttempts(0);
+            account.setIsLocked(false);
 
-        log.info("Password reset successfully for: {}", account.getEmail());
-        return ApiResponse.success("Password has been reset successfully. You can now login with your new password.", null);
+            companyAccountRepository.save(account);
+
+            emailService.sendPasswordChangedEmail(account);
+
+            log.info("Password reset successfully for: {}", account.getEmail());
+            return ApiResponse.success("Password has been reset successfully. You can now login with your new password.", null);
+        } finally {
+            ShardContext.clear();
+        }
     }
 
     /**
@@ -555,20 +577,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * Find account by SSO provider ID across all shards (scatter-gather)
      */
     private CompanyAccount findAccountBySsoProviderId(String ssoProviderId) {
-        for (String shardKey : getShardKeys()) {
-            ShardContext.setShardKey(shardKey);
-            try {
-                var account = companyAccountRepository.findByAuthProviderAndSsoProviderId(
-                        AuthProvider.GOOGLE, ssoProviderId);
-                if (account.isPresent()) {
-                    // Cache the email-to-shard mapping for future lookups
-                    shardLookupService.cacheEmailShard(account.get().getEmail(), shardKey);
-                    return account.get();
-                }
-            } finally {
-                ShardContext.clear();
-            }
+        Optional<CompanyAccount> accountOpt = shardDirectQueryService
+                .findBySsoProviderIdAcrossShards(AuthProvider.GOOGLE, ssoProviderId);
+
+        if (accountOpt.isPresent()) {
+            CompanyAccount account = accountOpt.get();
+            // Cache the email-to-shard mapping for future lookups
+            shardLookupService.cacheEmailShard(
+                    account.getEmail(),
+                    account.getCountry().getShardKey()
+            );
+            return account;
         }
+
         return null;
     }
 
@@ -588,17 +609,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private boolean ssoProviderIdExistsInAnyShard(AuthProvider provider, String ssoProviderId) {
-        for (String shardKey : getShardKeys()) {
-            ShardContext.setShardKey(shardKey);
-            try {
-                if (companyAccountRepository.existsByAuthProviderAndSsoProviderId(provider, ssoProviderId)) {
-                    return true;
-                }
-            } finally {
-                ShardContext.clear();
-            }
-        }
-        return false;
+        return shardDirectQueryService.ssoProviderIdExistsInAnyShard(provider, ssoProviderId);
     }
 
     /**
