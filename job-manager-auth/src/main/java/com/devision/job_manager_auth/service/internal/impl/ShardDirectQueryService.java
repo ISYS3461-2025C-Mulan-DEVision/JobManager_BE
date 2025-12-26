@@ -31,6 +31,11 @@ public class ShardDirectQueryService {
             "auth_shard_others"
     );
 
+    private static final String EXISTS_BY_EMAIL_SQL = """
+        SELECT COUNT(*) FROM company_account
+        WHERE email = ?
+        """;
+
     private static final String FIND_BY_ACTIVATION_TOKEN_SQL = """
             SELECT id, email, password_hash, country, auth_provider, sso_provider_id,
                    role, is_activated, activation_token, activation_token_expiry,
@@ -202,6 +207,33 @@ public class ShardDirectQueryService {
             }
         }
 
+        return false;
+    }
+
+    public boolean emailExistsInAnyShard(String email) {
+        log.debug("Checking if email '{}' exists in any shard", email);
+
+        for (String shardKey : SHARD_KEYS) {
+            JdbcTemplate jdbcTemplate = shardJdbcTemplates.get(shardKey);
+            if (jdbcTemplate == null) continue;
+
+            try {
+                Integer count = jdbcTemplate.queryForObject(
+                        EXISTS_BY_EMAIL_SQL,
+                        Integer.class,
+                        email
+                );
+
+                if (count != null && count > 0) {
+                    log.info("Email '{}' already exists in shard '{}'", email, shardKey);
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("Error checking shard '{}' for email: {}", shardKey, e.getMessage());
+            }
+        }
+
+        log.debug("Email '{}' not found in any shard", email);
         return false;
     }
 

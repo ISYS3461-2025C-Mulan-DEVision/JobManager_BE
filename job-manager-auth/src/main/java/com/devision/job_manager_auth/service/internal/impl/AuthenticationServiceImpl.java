@@ -48,9 +48,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     public ApiResponse<String> registerCompany(RegisterRequest request) {
 
-        if (shardLookupService.emailExistsInAnyShard(request.getEmail())) {
-            log.warn("Registration failed: Email already exists - {}", request.getEmail());
-            return ApiResponse.error("Email already registered");
+        if (shardDirectQueryService.emailExistsInAnyShard(request.getEmail())) {
+            log.warn("Registration failed: Email '{}' already exists in another shard", request.getEmail());
+            throw new IllegalArgumentException("Email already in use");
         }
 
         Country country = request.getCountry();
@@ -100,7 +100,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ApiResponse<String> registerCompanyViaSso(SsoRegisterRequest request) {
 
         // Check if the account already exists
-        if (shardLookupService.emailExistsInAnyShard(request.getEmail())) {
+        if (shardDirectQueryService.emailExistsInAnyShard(request.getEmail())) {
             log.warn("SSO registration failed: Account already exists - {}", request.getEmail());
             return ApiResponse.error("SSO account already registered");
         }
