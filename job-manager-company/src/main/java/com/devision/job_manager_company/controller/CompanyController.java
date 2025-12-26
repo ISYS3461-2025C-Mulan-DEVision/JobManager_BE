@@ -94,6 +94,19 @@ public class CompanyController {
         }
     }
 
+    /**
+     * Get company country code - lightweight endpoint for JobPost service integration
+     * Used by JobPost service to derive country for Kafka events (Ultimo 4.3.1)
+     */
+    @GetMapping("/{id}/country")
+    public ResponseEntity<String> getCompanyCountry(@PathVariable UUID id) {
+        log.info("Getting country code for company ID: {}", id);
+
+        return companyService.getCompanyById(id)
+                .map(company -> ResponseEntity.ok(company.getCountryCode()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Company Service is running");
