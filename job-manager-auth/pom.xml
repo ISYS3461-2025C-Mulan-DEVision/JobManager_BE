@@ -120,7 +120,11 @@
             <artifactId>spring-dotenv</artifactId>
             <version>4.0.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>10.6</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
