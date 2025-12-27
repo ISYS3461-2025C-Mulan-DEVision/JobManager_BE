@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/internal/api/subscriptions")
+@RequestMapping("/api/internal/subscriptions")
 @RequiredArgsConstructor
 public class InternalSubscriptionController {
 

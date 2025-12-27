@@ -2,6 +2,7 @@ package com.devision.job_manager_subscription.dto.internal;
 
 import com.devision.job_manager_subscription.model.CompanySubscription;
 import com.devision.job_manager_subscription.model.SubscriptionStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,8 @@ public class SubscriptionResponse {
     private SubscriptionStatus status;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+
+    @JsonProperty("isPremium")
     private boolean isPremium;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

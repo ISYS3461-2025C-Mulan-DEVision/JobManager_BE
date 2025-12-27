@@ -36,4 +36,10 @@ public interface ApplicantSearchProfileRepository extends JpaRepository<Applican
 
     // Check if a company has any profiles
     boolean existsByCompanyId(UUID companyId);
+
+    // Check if a profile with the same name exists for a company
+    boolean existsByCompanyIdAndProfileName(UUID companyId, String profileName);
+
+    // Check if a profile with the same name exists for a company, excluding a specific profile (for updates)
+    boolean existsByCompanyIdAndProfileNameAndIdNot(UUID companyId, String profileName, UUID id);
 }

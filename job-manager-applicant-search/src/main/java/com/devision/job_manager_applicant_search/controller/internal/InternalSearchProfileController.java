@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/internal/api/search-profiles")
+@RequestMapping("/api/internal/search-profiles")
 @RequiredArgsConstructor
 public class InternalSearchProfileController {
 

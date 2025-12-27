@@ -4,6 +4,7 @@ import com.devision.job_manager_applicant_search.client.SubscriptionClient;
 import com.devision.job_manager_applicant_search.dto.internal.CreateSearchProfileRequest;
 import com.devision.job_manager_applicant_search.dto.internal.SearchProfileResponse;
 import com.devision.job_manager_applicant_search.dto.internal.UpdateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.exception.DuplicateProfileNameException;
 import com.devision.job_manager_applicant_search.exception.PremiumRequiredException;
 import com.devision.job_manager_applicant_search.exception.SearchProfileNotFoundException;
 import com.devision.job_manager_applicant_search.model.ApplicantSearchProfile;
@@ -35,11 +36,15 @@ public class SearchProfileServiceImpl implements SearchProfileService {
      * @param request the create request
      * @return the created profile response
      * @throws PremiumRequiredException if company is not premium
+     * @throws DuplicateProfileNameException if profile name already exists for this company
      */
     @Override
     public SearchProfileResponse create(CreateSearchProfileRequest request) {
         // Validate premium status
         validatePremiumStatus(request.getCompanyId());
+
+        // Validate unique profile name
+        validateUniqueProfileName(request.getCompanyId(), request.getProfileName(), null);
 
         ApplicantSearchProfile profile = ApplicantSearchProfile.builder()
                 .companyId(request.getCompanyId())
@@ -121,6 +126,7 @@ public class SearchProfileServiceImpl implements SearchProfileService {
      * @param request the update request
      * @return the updated profile response
      * @throws SearchProfileNotFoundException if not found
+     * @throws DuplicateProfileNameException if profile name already exists for this company
      */
     @Override
     public SearchProfileResponse update(UUID id, UpdateSearchProfileRequest request) {
@@ -129,6 +135,8 @@ public class SearchProfileServiceImpl implements SearchProfileService {
 
         // Update fields if provided
         if (request.getProfileName() != null) {
+            // Validate unique profile name (excluding current profile)
+            validateUniqueProfileName(profile.getCompanyId(), request.getProfileName(), id);
             profile.setProfileName(request.getProfileName());
         }
         if (request.getCountryCode() != null) {
@@ -251,6 +259,24 @@ public class SearchProfileServiceImpl implements SearchProfileService {
             log.warn("Premium validation failed for company: {}", companyId);
             throw new PremiumRequiredException(
                     "Premium subscription required to manage search profiles. Company: " + companyId);
+        }
+    }
+
+    /**
+     * Validates that the profile name is unique for the company.
+     * @param companyId the company UUID
+     * @param profileName the profile name to check
+     * @param excludeId profile ID to exclude (for updates), or null for create
+     */
+    private void validateUniqueProfileName(UUID companyId, String profileName, UUID excludeId) {
+        boolean exists;
+        if (excludeId == null) {
+            exists = profileRepository.existsByCompanyIdAndProfileName(companyId, profileName);
+        } else {
+            exists = profileRepository.existsByCompanyIdAndProfileNameAndIdNot(companyId, profileName, excludeId);
+        }
+        if (exists) {
+            throw new DuplicateProfileNameException("A profile with this name already exists for your company.");
         }
     }
 }

@@ -37,7 +37,7 @@ public class GatewayConfig {
     public RouterFunction<ServerResponse> applicantSearchServiceRoute() {
         return route("applicant-search-service")
                 .route(path("/api/search-profiles/**"), HandlerFunctions.http("http://localhost:8084"))
-                .route(path("/internal/api/search-profiles/**"), HandlerFunctions.http("http://localhost:8084"))
+                .route(path("/api/internal/search-profiles/**"), HandlerFunctions.http("http://localhost:8084"))
                 .build();
     }
 
@@ -46,7 +46,7 @@ public class GatewayConfig {
         return route("subscription-service")
                 .route(path("/api/subscriptions/**"), HandlerFunctions.http("http://localhost:8085"))
                 .route(path("/api/external/subscriptions/**"), HandlerFunctions.http("http://localhost:8085"))
-                .route(path("/internal/api/subscriptions/**"), HandlerFunctions.http("http://localhost:8085"))
+                .route(path("/api/internal/subscriptions/**"), HandlerFunctions.http("http://localhost:8085"))
                 .build();
     }
 
