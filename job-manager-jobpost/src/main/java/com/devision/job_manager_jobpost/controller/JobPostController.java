@@ -3,8 +3,11 @@ package com.devision.job_manager_jobpost.controller;
 import com.devision.job_manager_jobpost.dto.CreateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.JobPostDto;
 import com.devision.job_manager_jobpost.dto.UpdateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.UpdateSkillsRequest;
 import com.devision.job_manager_jobpost.dto.ApiResponse;
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
+import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
 import com.devision.job_manager_jobpost.service.JobPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,11 +41,20 @@ public class JobPostController {
                 .salaryMax(request.getSalaryMax())
                 .salaryNote(request.getSalaryNote())
                 .locationCity(request.getLocationCity())
-                .countryId(request.getCountryId())
+                // .countryId(request.getCountryId())
                 .fresher(request.isFresher())
                 .aPrivate(request.isAPrivate())
                 .expiryAt(request.getExpiryAt())
                 .build();
+
+        // Add employment type if provided
+        if (request.getEmploymentType() != null) {
+            JobPostEmploymentType empType = new JobPostEmploymentType();
+            empType.setId(UUID.randomUUID());
+            empType.setJobPost(jobPost);
+            empType.setType(request.getEmploymentType());
+            jobPost.getEmploymentTypes().add(empType);
+        }
 
         JobPost created = jobPostService.createJobPost(jobPost);
         JobPostDto dto = mapToDto(created);
@@ -105,7 +117,7 @@ public class JobPostController {
                     .salaryMax(request.getSalaryMax())
                     .salaryNote(request.getSalaryNote())
                     .locationCity(request.getLocationCity())
-                    .countryId(request.getCountryId())
+                    // .countryId(request.getCountryId())
                     .fresher(request.getFresher() != null && request.getFresher())
                     .aPrivate(request.getAPrivate() != null && request.getAPrivate())
                     .expiryAt(request.getExpiryAt())
@@ -155,7 +167,39 @@ public class JobPostController {
         }
     }
 
+    /**
+     * Update job post skills - CRITICAL for Ultimo 4.3.1
+     * This endpoint triggers Kafka event for instant applicant notifications
+     *
+     * @param id The job post ID
+     * @param request Contains the list of skill UUIDs
+     * @return Updated job post with success message
+     */
+    @PutMapping("/{id}/skills")
+    public ResponseEntity<ApiResponse<JobPostDto>> updateJobPostSkills(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateSkillsRequest request) {
+        log.info("Updating skills for job post ID: {} with {} skills", id, request.getSkillIds().size());
+
+        try {
+            JobPost updated = jobPostService.updateJobPostSkills(id, request.getSkillIds());
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Job post skills updated successfully. Notifications sent to matching applicants.",
+                    mapToDto(updated)
+            ));
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to update job post skills: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     private JobPostDto mapToDto(JobPost jobPost) {
+        // Get first employment type if available (frontend expects single value)
+        EmploymentType employmentType = null;
+        if (jobPost.getEmploymentTypes() != null && !jobPost.getEmploymentTypes().isEmpty()) {
+            employmentType = jobPost.getEmploymentTypes().get(0).getType();
+        }
+        
         return JobPostDto.builder()
                 .id(jobPost.getJobPostId())
                 .companyId(jobPost.getCompanyId())
@@ -171,6 +215,7 @@ public class JobPostController {
                 .aPrivate(jobPost.isAPrivate())
                 .postedAt(jobPost.getPostedAt())
                 .expiryAt(jobPost.getExpiryAt())
+                .employmentType(employmentType)
                 .build();
     }
 }

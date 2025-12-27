@@ -22,9 +22,11 @@ import java.time.LocalDateTime;
 @Builder
 public class JobPost {
 
+    @Builder.Default
     @OneToMany(mappedBy = "jobPost", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobPostSkill> skills = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "jobPost", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobPostEmploymentType> employmentTypes = new ArrayList<>();
 
@@ -61,8 +63,8 @@ public class JobPost {
     @Column(name = "location_city", length = 128)
     private String locationCity;
 
-    @Column(name = "country_id", nullable = false)
-    private UUID countryId;
+    // @Column(name = "country_id", nullable = false)
+    // // private UUID countryId;
 
     @Column(name = "is_published", nullable = false)
     private boolean published;
