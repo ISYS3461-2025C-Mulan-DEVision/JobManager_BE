@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  * When an applicant updates their profile, this consumer triggers the matching algorithm
  * to find search profiles that match and sends notifications to companies.
  * 
- * TODO – Applicant Data Dependency:
+ * TODO: Applicant Data Dependency:
  * The exact structure of the event payload is owned by the Job Applicant team.
  * This consumer must be updated if the event schema changes.
  */

@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Kafka event received when an applicant updates their profile.
  * 
- * TODO – Applicant Data Dependency:
+ * TODO: Applicant Data Dependency:
  * The exact structure of applicant data (profile fields, skills representation,
  * education mapping, etc.) is owned by the Job Applicant team.
  * Field names, enum values, and nesting may change once the Job Applicant subsystem is finalized.
