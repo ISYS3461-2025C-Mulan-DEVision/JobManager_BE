@@ -1,63 +1,52 @@
 package com.devision.job_manager_gateway.config;
 
-import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.function.RouterFunction;
-import org.springframework.web.servlet.function.ServerResponse;
-
-import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
-import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
 
 @Configuration
 public class GatewayConfig {
 
     @Bean
-    public RouterFunction<ServerResponse> authServiceRoute() {
-        return route("auth-service")
-                .route(path("/api/auth/**"), HandlerFunctions.http("http://localhost:8081"))
-                .build();
-    }
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+                // Auth Service Route
+                .route("auth-service", r -> r
+                        .path("/api/auth/**")
+                        .uri("http://localhost:8081"))
 
-    @Bean
-    public RouterFunction<ServerResponse> companyServiceRoute() {
-        return route("company-service")
-                .route(path("/api/companies/**"), HandlerFunctions.http("http://localhost:8082"))
-                .build();
-    }
+                // Company Service Route
+                .route("company-service", r -> r
+                        .path("/api/companies/**")
+                        .uri("http://localhost:8082"))
 
-    @Bean
-    public RouterFunction<ServerResponse> jobpostServiceRoute() {
-        return route("jobpost-service")
-                .route(path("/api/job-posts/**"), HandlerFunctions.http("http://localhost:8083"))
-                .build();
-    }
+                // Job Post Service Route
+                .route("jobpost-service", r -> r
+                        .path("/api/job-posts/**")
+                        .uri("http://localhost:8083"))
 
-    @Bean
-    public RouterFunction<ServerResponse> applicantSearchServiceRoute() {
-        return route("applicant-search-service")
-                .route(path("/api/search/**"), HandlerFunctions.http("http://localhost:8084"))
-                .build();
-    }
+                // Search Application Service Route
+                .route("search-applicant-service", r -> r
+                        .path("api/search-applicant/**")
+                        .uri("http://localhost:8084"))
 
-    @Bean
-    public RouterFunction<ServerResponse> premiumServiceRoute() {
-        return route("premium-service")
-                .route(path("/api/premium/**"), HandlerFunctions.http("http://localhost:8085"))
-                .build();
-    }
+                // Notification Service Route
+                .route("notification-service", r -> r
+                        .path("api/notification/**")
+                        .uri("http://localhost:8087"))
 
-    @Bean
-    public RouterFunction<ServerResponse> paymentServiceRoute() {
-        return route("payment-service")
-                .route(path("/api/payments/**"), HandlerFunctions.http("http://localhost:8086"))
-                .build();
-    }
+                // Payment Service Route
+                .route("payment-service", r -> r
+                        .path("api/payment/**")
+                        .uri("http://localhost:8086"))
 
-    @Bean
-    public RouterFunction<ServerResponse> notificationServiceRoute() {
-        return route("notification-service")
-                .route(path("/api/notifications/**"), HandlerFunctions.http("http://localhost:8087"))
+                // Subscription Service Route
+                .route("subscription-service", r -> r
+                        .path("api/subscription/**")
+                        .uri("http://localhost:8085"))
+
+                // Build more routes as needed
                 .build();
     }
 }

@@ -4,9 +4,136 @@ server:
 spring:
   application:
     name: job-manager-gateway
-    # Note: Gateway routes are configured in GatewayConfig.java for MVC Gateway
-    # YAML-based configuration is for reactive gateway only
 
+  config:
+    import: optional:dotenv:.env
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      # Global CORS configuration
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:5173"
+              - "http://localhost:5174"
+              - "http://localhost:5175"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            exposedHeaders:
+              - "Authorization"
+
+      # Route definitions for reactive gateway
+      routes:
+#        # Auth Service Route (No authentication filter - handles its own auth)
+#        - id: auth-service
+#          uri: lb://job-manager-auth
+#          predicates:
+#            - Path=/api/auth/**
+#          filters:
+#            - RemoveRequestHeader=Cookie
+#            - RewritePath=/api/auth/(?<segment>.*), /api/auth/${segment}
+#
+#        # Company Service Route (Protected)
+#        - id: company-service
+#          uri: lb://job-manager-company
+#          predicates:
+#            - Path=/api/companies/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/companies/(?<segment>.*), /api/companies/${segment}
+#
+#        # JobPost Service Route (Protected)
+#        - id: jobpost-service
+#          uri: lb://job-manager-jobpost
+#          predicates:
+#            - Path=/api/job-posts/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/job-posts/(?<segment>.*), /api/job-posts/${segment}
+#
+#        # Search Service Route (some endpoints public, some protected)
+#        - id: applicant-search-service
+#          uri: lb://job-manager-applicant-search
+#          predicates:
+#            - Path=/api/applicant-search/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/applicant-search/(?<segment>.*), /api/applicant-search/${segment}
+#
+#        # Payment Service Route (Protected)
+#        - id: payment-service
+#          uri: lb://job-manager-payment
+#          predicates:
+#            - Path=/api/payments/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/payments/(?<segment>.*), /api/payments/${segment}
+#
+#        # Notification Service Route (Protected)
+#        - id: notification-service
+#          uri: lb://job-manager-notification
+#          predicates:
+#            - Path=/api/notifications/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/notifications/(?<segment>.*), /api/notifications/${segment}
+#
+#        # Subscription Service Route (Protected)
+#        - id: subscription-service
+#          uri: lb://job-manager-subscription
+#          predicates:
+#            - Path=/api/subscription/**
+#          filters:
+#            - name: JwtAuthenticationGatewayFilter
+#            - RewritePath=/api/subscription/(?<segment>.*), /api/subscriptiion/${segment}
+#
+#        # External API Route (For Job Applicant system)
+#        - id: external-api
+#          uri: lb://job-manager-auth
+#          predicates:
+#            - Path=/api/external/**
+#          filters:
+#            - RemoveRequestHeader=Cookie
+#            - RewritePath=/api/external/(?<segment>.*), /api/external/${segment}
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+
+        - id: company-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/companies/**
+
+        # Actuator endpoints (Public)
+        - id: actuator
+          uri: lb://job-manager-gateway
+          predicates:
+            - Path=/actuator/**
+
+      # Default filters applied to all routes
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+
+# JWT configuration for token validation
+jwt:
+  jwe:
+    validate-via-auth-service: true
+
+# Eureka configuration
 eureka:
   client:
     service-url:
@@ -16,9 +143,28 @@ eureka:
   instance:
     prefer-ip-address: true
     health-check-url-path: /actuator/health
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
 
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,metrics
+  endpoint:
+    gateway:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.devision.job_manager_gateway: DEBUG
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.route: TRACE
+    reactor.netty: INFO
+
+# Reactive configuration
+spring.cloud.gateway.httpclient:
+  connect-timeout: 5000
+  response-timeout: 5s
