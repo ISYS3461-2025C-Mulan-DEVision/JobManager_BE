@@ -176,4 +176,39 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send password changed email to {}: {}", company.getEmail(), e.getMessage());
         }
     }
+
+    @Override
+    @Async
+    public void sendEmailChangeVerification(String newEmail, String changeToken) {
+        try {
+            String verificationLink = frontendUrl + "/verify-email-change?token=" + changeToken;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(newEmail);
+            message.setSubject("Verify Your New Email Address - DEVision-JM");
+            message.setText(String.format("""
+                    Hello,
+
+                    We received a request to change the email address for your DEVision-JM account.
+
+                    Please click the link below to verify your new email address and complete the change:
+
+                    %s
+
+                    This link will expire in 1 hour.
+
+                    If you didn't request this change, please ignore this email and your email address will remain unchanged.
+
+                    Best regards,
+                    DEVision Security Team
+                    """,
+                    verificationLink));
+
+            mailSender.send(message);
+            log.info("Email change verification sent to: {}", newEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send email change verification to {}: {}", newEmail, e.getMessage());
+        }
+    }
 }

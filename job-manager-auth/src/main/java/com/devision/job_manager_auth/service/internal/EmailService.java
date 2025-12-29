@@ -13,4 +13,6 @@ public interface EmailService {
     void sendPasswordResetEmail(CompanyAccount company, String resetToken);
 
     void sendPasswordChangedEmail(CompanyAccount company);
+
+    void sendEmailChangeVerification(String newEmail, String changeToken);
 }

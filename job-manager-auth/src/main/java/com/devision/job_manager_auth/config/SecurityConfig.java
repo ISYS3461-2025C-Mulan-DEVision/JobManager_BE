@@ -48,6 +48,7 @@ public class SecurityConfig {
                                 "/api/auth/resend-activation",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
+                                "/api/auth/verify-email-change",
                                 "/api/auth/countries",
                                 "/api/auth/oauth2/**",
                                 "/api/auth/health",
@@ -62,6 +63,12 @@ public class SecurityConfig {
                                 // External endpoints
                                 "/api/external/**"
                         ).permitAll()
+
+                        // JWT-authenticated endpoints (change-password, change-email require JWT token)
+                        .requestMatchers(
+                                "/api/auth/change-password",
+                                "/api/auth/change-email"
+                        ).authenticated()
 
                         // Requiring authentication endpoints:
                         .anyRequest().authenticated()

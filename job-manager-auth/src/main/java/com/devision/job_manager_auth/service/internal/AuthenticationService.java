@@ -2,6 +2,8 @@ package com.devision.job_manager_auth.service.internal;
 
 import com.devision.job_manager_auth.dto.internal.*;
 
+import java.util.UUID;
+
 public interface AuthenticationService {
 
     /**
@@ -84,4 +86,33 @@ public interface AuthenticationService {
      * @throws IllegalArgumentException if token is invalid, expired, or new password validation fails
      */
     ApiResponse<String> resetPassword(ResetPasswordRequest request);
+
+    /**
+     * Change password for authenticated user
+     *
+     * @param companyId The company account ID
+     * @param request Change password request containing current and new passwords
+     * @return Success message
+     * @throws IllegalArgumentException if current password is incorrect, account is SSO-based, or validation fails
+     */
+    ApiResponse<String> changePassword(UUID companyId, ChangePasswordRequest request);
+
+    /**
+     * Request email change - sends verification link to new email
+     *
+     * @param companyId The company account ID
+     * @param request Change email request containing new email and current password
+     * @return Success message
+     * @throws IllegalArgumentException if password is incorrect, email is already in use, or account is SSO-based
+     */
+    ApiResponse<String> changeEmail(UUID companyId, ChangeEmailRequest request);
+
+    /**
+     * Verify and complete email change using token
+     *
+     * @param request Verify email change request containing token
+     * @return Success message
+     * @throws IllegalArgumentException if token is invalid or expired
+     */
+    ApiResponse<String> verifyEmailChange(VerifyEmailChangeRequest request);
 }

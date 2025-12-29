@@ -634,4 +634,175 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .registeredAt(LocalDateTime.now())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> changePassword(UUID companyId, ChangePasswordRequest request) {
+        log.info("Password change requested for company ID: {}", companyId);
+
+        // Find account by ID - need to check all shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(companyId)
+                .orElseThrow(() -> {
+                    log.warn("Password change failed: Account not found - {}", companyId);
+                    return new IllegalArgumentException("Account not found");
+                });
+
+        // Set shard context for the update operation
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // Check if account uses SSO
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Password change failed: SSO account - {}", account.getEmail());
+                return ApiResponse.error("Password change is not available for SSO accounts");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Password change failed: Incorrect current password - {}", account.getEmail());
+                return ApiResponse.error("Current password is incorrect");
+            }
+
+            // Check if new password is same as current
+            if (passwordEncoder.matches(request.getNewPassword(), account.getPasswordHash())) {
+                log.warn("Password change failed: New password same as current - {}", account.getEmail());
+                return ApiResponse.error("New password must be different from current password");
+            }
+
+            // Update password
+            account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            companyAccountRepository.save(account);
+
+            // Send confirmation email
+            emailService.sendPasswordChangedEmail(account);
+
+            log.info("Password changed successfully for: {}", account.getEmail());
+            return ApiResponse.success("Password changed successfully", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> changeEmail(UUID companyId, ChangeEmailRequest request) {
+        log.info("Email change requested for company ID: {}", companyId);
+
+        // Find account by ID - need to check all shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(companyId)
+                .orElseThrow(() -> {
+                    log.warn("Email change failed: Account not found - {}", companyId);
+                    return new IllegalArgumentException("Account not found");
+                });
+
+        // Set shard context for the operation
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // Check if account uses SSO
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Email change failed: SSO account - {}", account.getEmail());
+                return ApiResponse.error("Email change is not available for SSO accounts");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Email change failed: Incorrect password - {}", account.getEmail());
+                return ApiResponse.error("Current password is incorrect");
+            }
+
+            // Check if new email is same as current
+            if (request.getNewEmail().equalsIgnoreCase(account.getEmail())) {
+                log.warn("Email change failed: New email same as current - {}", account.getEmail());
+                return ApiResponse.error("New email must be different from current email");
+            }
+
+            // Check if new email already exists across all shards
+            Optional<CompanyAccount> existingAccount = shardLookupService.findAccountByEmail(request.getNewEmail());
+            if (existingAccount.isPresent()) {
+                log.warn("Email change failed: Email already in use - {}", request.getNewEmail());
+                return ApiResponse.error("This email address is already registered");
+            }
+
+            // Generate email change verification token
+            String changeToken = UUID.randomUUID().toString();
+            LocalDateTime tokenExpiry = LocalDateTime.now().plus(passwordResetTokenExpiration, ChronoUnit.MILLIS);
+
+            // Store the new email and token temporarily (reusing password reset fields)
+            // Format: "EMAIL_CHANGE:<newEmail>"
+            account.setPasswordResetToken(changeToken);
+            account.setPasswordResetTokenExpiry(tokenExpiry);
+            companyAccountRepository.save(account);
+
+            // Store the new email with token for verification
+            // Using Redis cache with token as key and new email as value
+            shardLookupService.cacheEmailShard(changeToken, request.getNewEmail());
+
+            // Send verification email to NEW email address
+            emailService.sendEmailChangeVerification(request.getNewEmail(), changeToken);
+
+            log.info("Email change verification sent to: {}", request.getNewEmail());
+            return ApiResponse.success(
+                    "A verification link has been sent to your new email address. Please check your inbox to complete the change.",
+                    null
+            );
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> verifyEmailChange(VerifyEmailChangeRequest request) {
+        log.info("Email change verification attempt with token");
+
+        // Find account by token across all shards (reusing password reset token field)
+        CompanyAccount account = findAccountByPasswordResetToken(request.getToken());
+
+        if (account == null) {
+            log.warn("Email change verification failed: Invalid token");
+            throw new IllegalArgumentException("Invalid or expired verification token");
+        }
+
+        // Set shard context for the update operation
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // Check if token expired
+            if (account.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
+                log.warn("Email change verification failed: Token expired for {}", account.getEmail());
+                return ApiResponse.error("Verification token has expired. Please request a new email change.");
+            }
+
+            // Get the new email from cache
+            // The cached value under token key is the new email
+            String cachedValue = shardLookupService.findShardByEmail(request.getToken());
+            if (cachedValue == null) {
+                log.warn("Email change verification failed: New email not found in cache");
+                return ApiResponse.error("Invalid verification token or session expired");
+            }
+
+            // The cached value IS the new email (we stored token -> newEmail mapping)
+            String newEmail = cachedValue;
+
+            // Update email
+            String oldEmail = account.getEmail();
+            account.setEmail(newEmail);
+            account.setPasswordResetToken(null);
+            account.setPasswordResetTokenExpiry(null);
+            companyAccountRepository.save(account);
+
+            // Update email-to-shard cache
+            shardLookupService.updateEmailCache(oldEmail, newEmail, shardKey);
+
+            log.info("Email changed successfully from {} to {}", oldEmail, newEmail);
+            return ApiResponse.success("Email address has been changed successfully", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
 }
+

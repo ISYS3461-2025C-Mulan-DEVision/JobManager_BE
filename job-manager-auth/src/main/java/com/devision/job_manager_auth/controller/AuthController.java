@@ -4,6 +4,8 @@ import com.devision.job_manager_auth.config.sharding.ShardContext;
 import com.devision.job_manager_auth.dto.internal.*;
 import com.devision.job_manager_auth.entity.Country;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
+import com.devision.job_manager_auth.service.internal.JweTokenService;
+import com.nimbusds.jwt.JWTClaimsSet;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AuthController {
     private final AuthenticationService authenticationService;
+    private final JweTokenService jweTokenService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
@@ -97,5 +100,51 @@ public class AuthController {
         log.info("Reset password request received");
         ApiResponse<String> response = authenticationService.resetPassword(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        log.info("Change password request received");
+        
+        // Extract company ID from JWT token
+        String token = authHeader.replace("Bearer ", "");
+        UUID companyId = extractCompanyIdFromToken(token);
+        
+        ApiResponse<String> response = authenticationService.changePassword(companyId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-email")
+    public ResponseEntity<ApiResponse<String>> changeEmail(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody ChangeEmailRequest request) {
+        log.info("Change email request received");
+        
+        // Extract company ID from JWT token
+        String token = authHeader.replace("Bearer ", "");
+        UUID companyId = extractCompanyIdFromToken(token);
+        
+        ApiResponse<String> response = authenticationService.changeEmail(companyId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/verify-email-change")
+    public ResponseEntity<ApiResponse<String>> verifyEmailChange(@Valid @RequestBody VerifyEmailChangeRequest request) {
+        log.info("Verify email change request received");
+        ApiResponse<String> response = authenticationService.verifyEmailChange(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Helper method to extract company ID from JWT token
+    private UUID extractCompanyIdFromToken(String token) {
+        try {
+            JWTClaimsSet claims = jweTokenService.validateAndDecryptToken(token);
+            return jweTokenService.extractUserId(claims);
+        } catch (Exception e) {
+            log.error("Failed to extract company ID from token: {}", e.getMessage());
+            throw new IllegalArgumentException("Invalid authentication token");
+        }
     }
 }
