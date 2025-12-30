@@ -147,6 +147,12 @@ public class MatchingServiceImpl implements MatchingService {
      * Salary filter:
      * - If minSalary exists and applicant salary < minSalary → reject
      * - If maxSalary exists and applicant salary > maxSalary → reject
+     * 
+     * TODO: Salary Data Availability
+     * This method uses desiredSalary from ApplicantProfileUpdatedEvent (Kafka).
+     * Note: JA's REST API (/api/v1/users/search) does NOT include salary fields.
+     * Salary filtering only works for Kafka-based matching, not API search.
+     * When JA adds salary to UserResponse, update ApplicantSearchServiceImpl.
      */
     private boolean matchesSalary(ApplicantSearchProfile profile, ApplicantProfileUpdatedEvent applicant) {
         BigDecimal applicantSalary = applicant.getDesiredSalary();
