@@ -1,7 +1,7 @@
 package com.devision.job_manager_auth.controller;
 
 
-import com.devision.job_manager_auth.dto.internal.TokenValidationResponse;
+import com.devision.job_manager_auth.dto.external.TokenValidationResponse;
 import com.devision.job_manager_auth.service.internal.JweTokenService;
 import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.devision.job_manager_auth.dto.internal;
+package com.devision.job_manager_auth.dto.external;
 
 
 import lombok.AllArgsConstructor;

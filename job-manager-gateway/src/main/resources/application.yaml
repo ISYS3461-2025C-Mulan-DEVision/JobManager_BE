@@ -15,10 +15,30 @@ spring:
           uri: http://localhost:8081/
           predicates:
             - Path=/api/auth/**
+          metadata:
+            public-paths:
+              - /api/auth/register
+              - /api/auth/login
+              - /api/auth/activate
+              - /api/auth/resend-activation
+              - /api/auth/forgot-password
+              - /api/auth/reset-password
+              - /api/auth/countries
+              - /api/auth/oauth2/**
+              - /api/auth/health
+              - /oauth2/**
+              - /login/oauth2/**
+              - /api/auth/refresh
+              - /api/auth/diagnostics/**
+              - /api/auth/validate-token
+
         - id: job-manager-company
           uri: http://localhost:8082/
           predicates:
             - Path=/api/companies/**
+          filters:
+            - Authentication
+
 
 # JWT configuration for token validation
 jwt:
