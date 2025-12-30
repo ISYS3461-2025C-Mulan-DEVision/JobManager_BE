@@ -2,6 +2,7 @@ package com.devision.job_manager_jobpost.dto;
 
 import com.devision.job_manager_jobpost.model.SalaryType;
 import com.devision.job_manager_jobpost.validation.ValidSalary;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,10 +37,11 @@ public class UpdateJobPostRequest {
     @Size(max = 128)
     private String locationCity;
 
-    private UUID countryId;
+    // private UUID countryId;
 
     private Boolean fresher;
 
+    @JsonProperty("isPrivate")
     private Boolean aPrivate;
 
     private LocalDateTime expiryAt;

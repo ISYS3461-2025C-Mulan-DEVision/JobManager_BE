@@ -21,7 +21,7 @@ public class JobPostBasicInfoDto {
     private boolean isPublished;
     private boolean isFresher;
     private String locationCity;
-    private UUID countryId;
+    // private UUID countryId;
     private LocalDateTime postedAt;
     private LocalDateTime expiryAt;
 }
