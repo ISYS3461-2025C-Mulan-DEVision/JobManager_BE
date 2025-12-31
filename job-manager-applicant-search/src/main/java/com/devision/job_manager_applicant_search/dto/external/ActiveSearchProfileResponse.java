@@ -28,14 +28,19 @@ public class ActiveSearchProfileResponse {
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
 
+    /**
+     * TODO: Salary Filtering
+     * JA service currently does not have salary fields in UserResponse.
+     * When JA adds salary support, uncomment minSalary and maxSalary fields.
+     */
     public static ActiveSearchProfileResponse fromEntity(ApplicantSearchProfile profile) {
         return ActiveSearchProfileResponse.builder()
                 .id(profile.getId())
                 .companyId(profile.getCompanyId())
                 .profileName(profile.getProfileName())
                 .countryCode(profile.getCountryCode())
-                .minSalary(profile.getMinSalary())
-                .maxSalary(profile.getMaxSalary())
+                // .minSalary(profile.getMinSalary())
+                // .maxSalary(profile.getMaxSalary())
                 .highestDegree(profile.getHighestDegree())
                 .employmentTypes(profile.getEmploymentTypeValues())
                 .skillIds(profile.getSkillIds())

@@ -30,7 +30,7 @@ public class ApplicantSearchRequest {
     // Skill names to filter by (OR semantics)
     private List<String> skills;
 
-    //
+    /**
      * Employment types to filter by.
      * Note: JA does not have employment type in user search.
      * This will be used for client-side filtering if needed.
