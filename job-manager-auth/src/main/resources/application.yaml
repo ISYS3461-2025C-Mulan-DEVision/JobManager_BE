@@ -136,14 +136,9 @@ eureka:
     health-check-url-path: /actuator/health
 
 jwt:
-  jwe:
-    # RSA Private Key for decryption
-    private-key: ${JWE_PRIVATE_KEY}
-    # RSA Public Key for encryption
-    public-key: ${JWE_PUBLIC_KEY}
-  # JWT settings
-  access-token-expiration: 86400000    # 24 hours in milliseconds
-  refresh-token-expiration: 604800000  # 7 days in milliseconds
+  secret: ${JWT_SECRET:YourSuperSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
 
 management:
   endpoints:

@@ -1,6 +1,5 @@
 package com.devision.job_manager_auth.config.sharding;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
@@ -43,14 +42,14 @@ public class ShardingDataSourceConfig {
     @Bean
     @Primary
     public DataSource dataSource() {
-//        log.info("=== SPRING ENVIRONMENT DEBUG ===");
-//        log.info("env.SHARD_VN_URL: {}", environment.getProperty("env.SHARD_VN_URL"));
-//        log.info("env.SHARD_OTHERS_URL: {}", environment.getProperty("env.SHARD_OTHERS_URL"));
-//        log.info("env.NEON_USERNAME: {}", environment.getProperty("env.NEON_USERNAME"));
-//        log.info("SHARD_VN_URL (no prefix): {}", environment.getProperty("SHARD_VN_URL"));
-//        log.info("SHARD_OTHERS_URL (no prefix): {}", environment.getProperty("SHARD_OTHERS_URL"));
-//        log.info("GOOGLE_CLIENT_ID: {}", environment.getProperty("GOOGLE_CLIENT_ID"));
-//        log.info("=== END SPRING ENV DEBUG ===");
+        log.info("=== SPRING ENVIRONMENT DEBUG ===");
+        log.info("env.SHARD_VN_URL: {}", environment.getProperty("env.SHARD_VN_URL"));
+        log.info("env.SHARD_OTHERS_URL: {}", environment.getProperty("env.SHARD_OTHERS_URL"));
+        log.info("env.NEON_USERNAME: {}", environment.getProperty("env.NEON_USERNAME"));
+        log.info("SHARD_VN_URL (no prefix): {}", environment.getProperty("SHARD_VN_URL"));
+        log.info("SHARD_OTHERS_URL (no prefix): {}", environment.getProperty("SHARD_OTHERS_URL"));
+        log.info("GOOGLE_CLIENT_ID: {}", environment.getProperty("GOOGLE_CLIENT_ID"));
+        log.info("=== END SPRING ENV DEBUG ===");
 
         ShardRoutingDataSource routingDataSource = new ShardRoutingDataSource();
 
@@ -148,30 +147,5 @@ public class ShardingDataSourceConfig {
     public PlatformTransactionManager shardingTransactionManager(
             @Qualifier("shardingEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
-    }
-
-    @Bean
-    @Qualifier("shardDataSources")
-    public Map<String, DataSource> shardDataSources() {
-        Map<String, DataSource> dataSources = new HashMap<>();
-
-        shardingProperties.getShards().forEach((shardKey, shardConfig) -> {
-            HikariConfig config = new HikariConfig();
-            config.setJdbcUrl(shardConfig.getUrl());
-            config.setUsername(shardConfig.getUsername());
-            config.setPassword(shardConfig.getPassword());
-            config.setDriverClassName("org.postgresql.Driver");
-            config.setPoolName("DirectPool-" + shardKey);
-            config.setMaximumPoolSize(3);  // Smaller pool for scatter-gather
-            config.setMinimumIdle(1);
-            config.setConnectionTimeout(30000);
-            config.setIdleTimeout(600000);
-            config.setMaxLifetime(1800000);
-
-            dataSources.put(shardKey, new HikariDataSource(config));
-            log.info("Created direct DataSource for shard: {}", shardKey);
-        });
-
-        return dataSources;
     }
 }

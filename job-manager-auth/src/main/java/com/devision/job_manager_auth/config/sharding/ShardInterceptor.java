@@ -2,8 +2,8 @@ package com.devision.job_manager_auth.config.sharding;
 
 
 import com.devision.job_manager_auth.entity.Country;
-import com.devision.job_manager_auth.service.internal.JweTokenService;
-import com.nimbusds.jwt.JWTClaimsSet;
+import com.devision.job_manager_auth.service.internal.TokenService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @RequiredArgsConstructor
 public class ShardInterceptor implements HandlerInterceptor {
-    private final JweTokenService jweTokenService;
+    private final TokenService tokenService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
@@ -29,14 +29,13 @@ public class ShardInterceptor implements HandlerInterceptor {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
-                String token = authHeader.substring(7);
+                String token = tokenService.extractTokenFromHeader(authHeader);
 
-                JWTClaimsSet claims = jweTokenService.validateAndDecryptToken(token);
-
-                if (claims != null) {
+                if (token != null) {
+                    Claims claims = tokenService.extractAllClaims(token);
 
                     // Extract country from JWT claims
-                    String countryCode = jweTokenService.extractCountryCode(claims);
+                    String countryCode = claims.get("country", String.class);
 
                     if (countryCode != null) {
                         Country country = Country.fromCode(countryCode);
@@ -49,7 +48,7 @@ public class ShardInterceptor implements HandlerInterceptor {
                             ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
                         }
                     } else {
-                        log.debug("No country in JWE claims, using default shard");
+                        log.debug("No country in JWT claims, using default shard");
                         ShardContext.setShardKey(ShardContext.DEFAULT_SHARD);
                     }
                 }

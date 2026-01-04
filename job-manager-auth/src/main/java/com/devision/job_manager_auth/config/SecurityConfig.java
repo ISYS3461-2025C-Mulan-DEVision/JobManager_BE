@@ -1,6 +1,5 @@
 package com.devision.job_manager_auth.config;
 
-import com.devision.job_manager_auth.security.JwtAuthenticationFilter;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,8 +26,26 @@ import java.util.Arrays;
 @Slf4j
 public class SecurityConfig {
 
+
+//     CORS is handled by the API Gateway - do not configure it here to avoid duplicate headers
+//     @Bean
+//     public CorsConfigurationSource corsConfigurationSource() {
+//         CorsConfiguration configuration = new CorsConfiguration();
+//         configuration.setAllowedOrigins(Arrays.asList(
+//                 "http://localhost:5173"
+//         ));
+//         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+//         configuration.setAllowedHeaders(Arrays.asList("*"));
+//         configuration.setAllowCredentials(true);
+//         configuration.setExposedHeaders(Arrays.asList("Authorization"));
+//         configuration.setMaxAge(3600L);
+//
+//         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//         source.registerCorsConfiguration("/**", configuration);
+//         return source;
+//     }
+
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired(required = false)
     private ClientRegistrationRepository clientRegistrationRepository;
@@ -76,8 +92,8 @@ public class SecurityConfig {
                         .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
                         .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+
 
 
         return http.build();
