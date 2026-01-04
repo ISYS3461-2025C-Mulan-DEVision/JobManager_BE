@@ -3,8 +3,8 @@ package com.devision.job_manager_gateway.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,22 +13,34 @@ import java.util.List;
 public class CorsConfig {
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",  // Frontend dev server
-                "http://localhost:3000",  // Alternative frontend port
-                "http://localhost:5174"   // Alternative frontend port
+
+        // Allow your frontend origin
+        corsConfig.setAllowedOrigins(List.of(
+                "http://localhost:5173"
         ));
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(Arrays.asList("*"));
+
+        // Allow all HTTP methods
+        corsConfig.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+
+        // Allow all headers
+        corsConfig.setAllowedHeaders(List.of("*"));
+
+        // Allow credentials (cookies, authorization headers)
         corsConfig.setAllowCredentials(true);
-        corsConfig.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // Expose Authorization header to frontend
+        corsConfig.setExposedHeaders(List.of("Authorization"));
+
+        // Cache preflight response for 1 hour
         corsConfig.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
 
-        return new CorsFilter(source);
+        return new CorsWebFilter(source);
     }
 }
