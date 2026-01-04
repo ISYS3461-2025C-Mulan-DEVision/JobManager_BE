@@ -7,12 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
 
     Page<JobPost> findByCompanyId(UUID companyId, Pageable pageable);
+
+    List<JobPost> findByCompanyId(UUID companyId);
 
     Page<JobPost> findByPublishedTrue(Pageable pageable);
 

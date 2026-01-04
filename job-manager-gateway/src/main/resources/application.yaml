@@ -4,9 +4,48 @@ server:
 spring:
   application:
     name: job-manager-gateway
-    # Note: Gateway routes are configured in GatewayConfig.java for MVC Gateway
-    # YAML-based configuration is for reactive gateway only
 
+  config:
+    import: optional:dotenv:.env
+
+  cloud:
+    gateway:
+      routes:
+        - id: job-manager-auth
+          uri: http://localhost:8081/
+          predicates:
+            - Path=/api/auth/**
+          metadata:
+            public-paths:
+              - /api/auth/register
+              - /api/auth/login
+              - /api/auth/activate
+              - /api/auth/resend-activation
+              - /api/auth/forgot-password
+              - /api/auth/reset-password
+              - /api/auth/countries
+              - /api/auth/oauth2/**
+              - /api/auth/health
+              - /oauth2/**
+              - /login/oauth2/**
+              - /api/auth/refresh
+              - /api/auth/diagnostics/**
+              - /api/auth/validate-token
+
+        - id: job-manager-company
+          uri: http://localhost:8082/
+          predicates:
+            - Path=/api/companies/**
+          filters:
+            - Authentication
+
+
+# JWT configuration for token validation
+jwt:
+  jwe:
+    validate-via-auth-service: true
+
+# Eureka configuration
 eureka:
   client:
     service-url:
@@ -16,9 +55,23 @@ eureka:
   instance:
     prefer-ip-address: true
     health-check-url-path: /actuator/health
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
 
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,metrics
+  endpoint:
+    gateway:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.devision.job_manager_gateway: DEBUG
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.route: TRACE
+    reactor.netty: INFO
