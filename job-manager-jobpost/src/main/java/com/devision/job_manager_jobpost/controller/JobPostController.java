@@ -102,6 +102,17 @@ public class JobPostController {
         return ResponseEntity.ok(ApiResponse.success("Published job posts fetched", dtoPage));
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<JobPostDto>>> getAllJobPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Fetching all job posts with page={}, size={}", page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<JobPostDto> dtoPage = jobPostService.getAllJobPosts(pageable)
+                .map(this::mapToDto);
+        return ResponseEntity.ok(ApiResponse.success("All job posts fetched", dtoPage));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<JobPostDto>> updateJobPost(
             @PathVariable UUID id,

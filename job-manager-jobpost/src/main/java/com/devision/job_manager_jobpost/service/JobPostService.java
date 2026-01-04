@@ -20,6 +20,8 @@ public interface JobPostService {
 
     Page<JobPost> getPublishedJobPosts(Pageable pageable);
 
+    Page<JobPost> getAllJobPosts(Pageable pageable);
+
     JobPost updateJobPost(UUID id, JobPost updatedJobPost);
 
     JobPost publishJobPost(UUID id);
