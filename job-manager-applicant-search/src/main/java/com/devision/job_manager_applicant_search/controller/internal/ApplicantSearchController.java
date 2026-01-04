@@ -1,8 +1,8 @@
 package com.devision.job_manager_applicant_search.controller.internal;
 
 import com.devision.job_manager_applicant_search.dto.ApiResponse;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantResponse;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantSearchRequest;
+import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService.ApplicantSearchResult;
 import lombok.RequiredArgsConstructor;
