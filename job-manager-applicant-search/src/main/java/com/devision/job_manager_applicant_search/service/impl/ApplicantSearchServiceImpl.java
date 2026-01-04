@@ -1,6 +1,7 @@
 package com.devision.job_manager_applicant_search.service.impl;
 
 import com.devision.job_manager_applicant_search.client.ApplicantClient;
+import com.devision.job_manager_applicant_search.dto.PageResponse;
 import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
 import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService;
@@ -15,10 +16,9 @@ import java.util.stream.Collectors;
 /**
  * Implementation of ApplicantSearchService.
  * 
- * Delegates search to JA service and handles pagination/sorting locally.
- * 
- * Note: JA search endpoint currently supports: skills, country, keyword.
- * Other filters (employmentTypes, highestDegree) are not supported by JA.
+ * Delegates search to JA service which now handles:
+ * - skills, country, city, education, workExperience, employmentTypes, username
+ * - Pagination (page, size)
  * 
  * TODO: Salary filtering - JA does not have salary fields yet.
  */
@@ -31,50 +31,49 @@ public class ApplicantSearchServiceImpl implements ApplicantSearchService {
 
     @Override
     public ApplicantSearchResult searchApplicants(ApplicantSearchRequest request) {
-        log.info("Searching applicants with filters: keyword={}, country={}, skills={}",
-                request.getKeyword(), request.getCountryCode(), request.getSkills());
+        log.info("Searching applicants with filters: username={}, country={}, city={}, education={}, skills={}",
+                request.getUsername(), request.getCountryCode(), request.getCity(), 
+                request.getEducation(), request.getSkills());
 
-        // Build skills parameter (comma-separated)
-        String skillsParam = null;
-        if (request.getSkills() != null && !request.getSkills().isEmpty()) {
-            skillsParam = String.join(",", request.getSkills());
-        }
+        // Build comma-separated params
+        String skillsParam = request.getSkills() != null && !request.getSkills().isEmpty()
+                ? String.join(",", request.getSkills())
+                : null;
+        
+        String employmentTypesParam = request.getEmploymentTypes() != null && !request.getEmploymentTypes().isEmpty()
+                ? String.join(",", request.getEmploymentTypes())
+                : null;
 
-        // Call JA service
-        List<ApplicantResponse> allResults = applicantClient.searchApplicants(
-                skillsParam,
-                request.getCountryCode(),
-                request.getKeyword()
-        );
-
-        // Apply sorting (JA doesn't support sorting, so we do it here)
-        allResults = applySorting(allResults, request.getSortBy());
-
-        // Apply pagination
         int page = request.getPage() != null ? request.getPage() : 0;
         int size = request.getPageSize() != null ? request.getPageSize() : 10;
-        
-        int totalElements = allResults.size();
-        int totalPages = (int) Math.ceil((double) totalElements / size);
-        
-        int fromIndex = page * size;
-        int toIndex = Math.min(fromIndex + size, totalElements);
-        
-        List<ApplicantResponse> pagedResults = fromIndex < totalElements
-                ? allResults.subList(fromIndex, toIndex)
-                : List.of();
+
+        // Call JA service with all supported filters
+        PageResponse<ApplicantResponse> jaResponse = applicantClient.searchApplicants(
+                skillsParam,
+                request.getCountryCode(),
+                request.getCity(),
+                request.getEducation(),
+                request.getWorkExperience(),
+                employmentTypesParam,
+                request.getUsername(),
+                page,
+                size
+        );
+
+        // Apply local sorting if needed (JA returns sorted by default)
+        List<ApplicantResponse> sortedResults = applySorting(jaResponse.getContent(), request.getSortBy());
 
         log.info("Returning {} of {} total applicants (page {} of {})",
-                pagedResults.size(), totalElements, page, totalPages);
+                sortedResults.size(), jaResponse.getTotalElements(), jaResponse.getPage(), jaResponse.getTotalPages());
 
         return new ApplicantSearchResult(
-                pagedResults,
-                page,
-                size,
-                totalElements,
-                totalPages,
-                page == 0,
-                page >= totalPages - 1
+                sortedResults,
+                jaResponse.getPage(),
+                jaResponse.getSize(),
+                jaResponse.getTotalElements(),
+                jaResponse.getTotalPages(),
+                jaResponse.isFirst(),
+                jaResponse.isLast()
         );
     }
 
@@ -90,44 +89,35 @@ public class ApplicantSearchServiceImpl implements ApplicantSearchService {
 
     /**
      * Apply sorting to applicant list.
-     * 
-     * @param applicants List to sort
-     * @param sortBy Sort option
-     * @return Sorted list
+     * Currently only 'newest' is supported since JA doesn't have salary.
      */
     private List<ApplicantResponse> applySorting(List<ApplicantResponse> applicants, String sortBy) {
-        if (sortBy == null || sortBy.isEmpty()) {
-            sortBy = "newest";
+        if (applicants == null || applicants.isEmpty()) {
+            return applicants;
+        }
+        
+        if (sortBy == null || sortBy.isEmpty() || "newest".equals(sortBy)) {
+            // JA returns in order already, but we can re-sort if needed
+            return applicants.stream()
+                    .sorted(Comparator.comparing(
+                            ApplicantResponse::getCreatedAt,
+                            Comparator.nullsLast(Comparator.reverseOrder())
+                    ))
+                    .collect(Collectors.toList());
         }
 
-        Comparator<ApplicantResponse> comparator;
+        // TODO: Salary sorting - uncomment when JA adds salary fields
+        // case "salaryAsc":
+        //     return applicants.stream()
+        //             .sorted(Comparator.comparing(ApplicantResponse::getDesiredSalary,
+        //                     Comparator.nullsLast(Comparator.naturalOrder())))
+        //             .collect(Collectors.toList());
+        // case "salaryDesc":
+        //     return applicants.stream()
+        //             .sorted(Comparator.comparing(ApplicantResponse::getDesiredSalary,
+        //                     Comparator.nullsLast(Comparator.reverseOrder())))
+        //             .collect(Collectors.toList());
 
-        switch (sortBy) {
-            case "newest":
-                comparator = Comparator.comparing(
-                        ApplicantResponse::getCreatedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                );
-                break;
-            // TODO: Salary sorting - uncomment when JA adds salary fields
-            // case "salaryAsc":
-            //     comparator = Comparator.comparing(ApplicantResponse::getDesiredSalary,
-            //             Comparator.nullsLast(Comparator.naturalOrder()));
-            //     break;
-            // case "salaryDesc":
-            //     comparator = Comparator.comparing(ApplicantResponse::getDesiredSalary,
-            //             Comparator.nullsLast(Comparator.reverseOrder()));
-            //     break;
-            default:
-                // Default to newest
-                comparator = Comparator.comparing(
-                        ApplicantResponse::getCreatedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                );
-        }
-
-        return applicants.stream()
-                .sorted(comparator)
-                .collect(Collectors.toList());
+        return applicants;
     }
 }

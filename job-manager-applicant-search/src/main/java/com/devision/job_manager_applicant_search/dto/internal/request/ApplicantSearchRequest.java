@@ -11,6 +11,15 @@ import java.util.List;
  * Request DTO for applicant search filters.
  * Maps frontend filter state to backend search parameters.
  * 
+ * Aligned with JA service's /api/v1/users/search endpoint parameters:
+ * - skills: CSV skill names
+ * - country: country code
+ * - city: city name
+ * - education: education level (enum)
+ * - workExperience: CSV keywords
+ * - employmentTypes: CSV employment types
+ * - username: name search
+ * 
  * TODO: Salary Filtering
  * JA service currently does not have salary fields in UserResponse.
  * When JA adds salary support, uncomment minSalary and maxSalary fields.
@@ -21,35 +30,64 @@ import java.util.List;
 @Builder
 public class ApplicantSearchRequest {
 
-    // Full-text keyword search (name, email, bio, skills)
-    private String keyword;
+    /**
+     * Username/name search (firstName, lastName).
+     * Maps to JA's 'username' parameter.
+     */
+    private String username;
 
-    // Country code filter (e.g., "US", "VN")
+    /**
+     * Country code filter (e.g., "US", "VN").
+     * Maps to JA's 'country' parameter.
+     */
     private String countryCode;
 
-    // Skill names to filter by (OR semantics)
+    /**
+     * City filter.
+     * Maps to JA's 'city' parameter.
+     */
+    private String city;
+
+    /**
+     * Skill names to filter by (OR semantics).
+     * Maps to JA's 'skills' parameter (comma-separated).
+     */
     private List<String> skills;
 
     /**
      * Employment types to filter by.
-     * Note: JA does not have employment type in user search.
-     * This will be used for client-side filtering if needed.
+     * Maps to JA's 'employmentTypes' parameter (comma-separated).
+     * Values: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FRESHER
      */
     private List<String> employmentTypes;
 
     /**
      * Highest education degree filter.
-     * Note: JA does not have education filter in user search.
+     * Maps to JA's 'education' parameter.
+     * Values: HIGH_SCHOOL, ASSOCIATE, BACHELOR, MASTER, DOCTORATE
      */
-    private String highestDegree;
+    private String education;
 
-    // Sort option (e.g., "newest", "salaryAsc", "salaryDesc")
+    /**
+     * Work experience keywords filter.
+     * Maps to JA's 'workExperience' parameter (comma-separated keywords).
+     */
+    private String workExperience;
+
+    /**
+     * Sort option (e.g., "newest", "salaryAsc", "salaryDesc").
+     * Note: Sorting is done locally as JA does not support sorting.
+     */
     private String sortBy;
 
-    // Page number (0-indexed)
+    /**
+     * Page number (0-indexed).
+     */
     private Integer page;
 
-    // Page size
+    /**
+     * Page size.
+     */
     private Integer pageSize;
 
     // TODO: Salary filtering - uncomment when JA adds salary support
