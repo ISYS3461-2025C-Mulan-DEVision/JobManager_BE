@@ -1,6 +1,6 @@
 package com.devision.job_manager_subscription.exception;
 
-import com.devision.job_manager_subscription.dto.ApiResponse;
+import com.devision.job_manager_subscription.dto.internal.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

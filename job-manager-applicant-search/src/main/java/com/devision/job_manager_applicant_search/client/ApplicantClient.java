@@ -1,7 +1,7 @@
 package com.devision.job_manager_applicant_search.client;
 
 import com.devision.job_manager_applicant_search.dto.ApiResponse;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantResponse;
+import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;

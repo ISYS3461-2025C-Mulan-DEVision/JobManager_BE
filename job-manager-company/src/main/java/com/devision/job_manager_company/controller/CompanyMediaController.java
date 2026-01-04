@@ -1,9 +1,9 @@
 package com.devision.job_manager_company.controller;
 
-import com.devision.job_manager_company.dto.ApiResponse;
+import com.devision.job_manager_company.dto.response.ApiResponse;
 import com.devision.job_manager_company.dto.CompanyMediaDto;
-import com.devision.job_manager_company.dto.PagedResponse;
-import com.devision.job_manager_company.dto.UpdateMediaDisplayOrderRequest;
+import com.devision.job_manager_company.dto.response.PagedResponse;
+import com.devision.job_manager_company.dto.request.UpdateMediaDisplayOrderRequest;
 import com.devision.job_manager_company.model.CompanyMedia;
 import com.devision.job_manager_company.model.MediaType;
 import com.devision.job_manager_company.service.CompanyMediaService;

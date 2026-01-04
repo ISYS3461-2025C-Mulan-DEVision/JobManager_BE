@@ -1,8 +1,8 @@
 package com.devision.job_manager_applicant_search.service.impl;
 
 import com.devision.job_manager_applicant_search.client.ApplicantClient;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantResponse;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantSearchRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

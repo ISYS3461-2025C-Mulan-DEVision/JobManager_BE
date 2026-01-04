@@ -1,9 +1,9 @@
 package com.devision.job_manager_subscription.controller.internal;
 
-import com.devision.job_manager_subscription.dto.ApiResponse;
-import com.devision.job_manager_subscription.dto.internal.CreateSubscriptionRequest;
-import com.devision.job_manager_subscription.dto.internal.SubscriptionResponse;
-import com.devision.job_manager_subscription.dto.internal.UpdateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.response.ApiResponse;
+import com.devision.job_manager_subscription.dto.internal.request.CreateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.response.SubscriptionResponse;
+import com.devision.job_manager_subscription.dto.internal.request.UpdateSubscriptionRequest;
 import com.devision.job_manager_subscription.service.SubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

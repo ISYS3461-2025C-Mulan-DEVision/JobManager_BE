@@ -1,8 +1,8 @@
 package com.devision.job_manager_subscription.service.impl;
 
-import com.devision.job_manager_subscription.dto.internal.CreateSubscriptionRequest;
-import com.devision.job_manager_subscription.dto.internal.SubscriptionResponse;
-import com.devision.job_manager_subscription.dto.internal.UpdateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.request.CreateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.response.SubscriptionResponse;
+import com.devision.job_manager_subscription.dto.internal.request.UpdateSubscriptionRequest;
 import com.devision.job_manager_subscription.event.SubscriptionUpdatedEvent;
 import com.devision.job_manager_subscription.exception.SubscriptionAlreadyExistsException;
 import com.devision.job_manager_subscription.exception.SubscriptionNotFoundException;

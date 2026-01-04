@@ -1,8 +1,7 @@
 package com.devision.job_manager_subscription.controller.external;
 
-import com.devision.job_manager_subscription.dto.ApiResponse;
+import com.devision.job_manager_subscription.dto.internal.response.ApiResponse;
 import com.devision.job_manager_subscription.dto.external.SubscriptionStatusResponse;
-import com.devision.job_manager_subscription.exception.SubscriptionNotFoundException;
 import com.devision.job_manager_subscription.model.CompanySubscription;
 import com.devision.job_manager_subscription.repository.CompanySubscriptionRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.devision.job_manager_applicant_search.dto.internal;
+package com.devision.job_manager_applicant_search.dto.internal.response;
 
 import com.devision.job_manager_applicant_search.model.ApplicantSearchProfile;
 import com.devision.job_manager_applicant_search.model.EducationDegree;
@@ -23,8 +23,9 @@ public class SearchProfileResponse {
     private UUID companyId;
     private String profileName;
     private String countryCode;
-    private BigDecimal minSalary;
-    private BigDecimal maxSalary;
+    // TODO: Salary filtering - uncomment when JA adds salary support
+    // private BigDecimal minSalary;
+    // private BigDecimal maxSalary;
     private EducationDegree highestDegree;
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
@@ -38,8 +39,9 @@ public class SearchProfileResponse {
                 .companyId(profile.getCompanyId())
                 .profileName(profile.getProfileName())
                 .countryCode(profile.getCountryCode())
-                .minSalary(profile.getMinSalary())
-                .maxSalary(profile.getMaxSalary())
+                // TODO: Salary filtering - uncomment when JA supports it
+                // .minSalary(profile.getMinSalary())
+                // .maxSalary(profile.getMaxSalary())
                 .highestDegree(profile.getHighestDegree())
                 .employmentTypes(profile.getEmploymentTypeValues())
                 .skillIds(profile.getSkillIds())

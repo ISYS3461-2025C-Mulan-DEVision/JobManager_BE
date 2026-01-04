@@ -38,11 +38,12 @@ public class ApplicantSearchProfile {
     @Column(name = "country_code", length = 2)
     private String countryCode;
 
-    @Column(name = "min_salary", precision = 12, scale = 2)
-    private BigDecimal minSalary;
+    // TODO: Salary filtering - uncomment when JA supports it
+    // @Column(name = "min_salary", precision = 12, scale = 2)
+    // private BigDecimal minSalary;
 
-    @Column(name = "max_salary", precision = 12, scale = 2)
-    private BigDecimal maxSalary;
+    // @Column(name = "max_salary", precision = 12, scale = 2)
+    // private BigDecimal maxSalary;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "highest_degree", length = 32)

@@ -1,10 +1,10 @@
 package com.devision.job_manager_applicant_search.controller.internal;
 
 import com.devision.job_manager_applicant_search.dto.ApiResponse;
-import com.devision.job_manager_applicant_search.dto.internal.CreateSearchProfileRequest;
-import com.devision.job_manager_applicant_search.dto.internal.SearchProfileResponse;
-import com.devision.job_manager_applicant_search.dto.internal.UpdateSearchProfileRequest;
-import com.devision.job_manager_applicant_search.dto.internal.UpdateStatusRequest;
+import com.devision.job_manager_applicant_search.dto.internal.request.CreateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.SearchProfileResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.UpdateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.request.UpdateStatusRequest;
 import com.devision.job_manager_applicant_search.service.SearchProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

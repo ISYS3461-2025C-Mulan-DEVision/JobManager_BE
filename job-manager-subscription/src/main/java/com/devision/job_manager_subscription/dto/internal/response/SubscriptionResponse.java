@@ -1,4 +1,4 @@
-package com.devision.job_manager_subscription.dto.internal;
+package com.devision.job_manager_subscription.dto.internal.response;
 
 import com.devision.job_manager_subscription.model.CompanySubscription;
 import com.devision.job_manager_subscription.model.SubscriptionStatus;

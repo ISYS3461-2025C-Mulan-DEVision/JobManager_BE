@@ -1,4 +1,4 @@
-package com.devision.job_manager_company.dto;
+package com.devision.job_manager_company.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

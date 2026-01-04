@@ -1,4 +1,4 @@
-package com.devision.job_manager_applicant_search.dto.internal;
+package com.devision.job_manager_applicant_search.dto.internal.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

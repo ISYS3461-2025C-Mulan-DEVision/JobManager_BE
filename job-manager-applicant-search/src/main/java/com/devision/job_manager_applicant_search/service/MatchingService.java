@@ -6,6 +6,7 @@ import com.devision.job_manager_applicant_search.model.ApplicantSearchProfile;
 import java.util.List;
 import java.util.UUID;
 
+// TODO: Applicant Data Dependency
 public interface MatchingService {
 
     /**

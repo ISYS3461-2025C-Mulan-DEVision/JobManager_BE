@@ -1,6 +1,9 @@
 package com.devision.job_manager_company.controller;
 
 import com.devision.job_manager_company.dto.*;
+import com.devision.job_manager_company.dto.request.UpdateCompanyProfileRequest;
+import com.devision.job_manager_company.dto.request.UpdateCompanyRequest;
+import com.devision.job_manager_company.dto.response.ApiResponse;
 import com.devision.job_manager_company.model.Company;
 import com.devision.job_manager_company.model.CompanyProfile;
 import com.devision.job_manager_company.service.CompanyService;

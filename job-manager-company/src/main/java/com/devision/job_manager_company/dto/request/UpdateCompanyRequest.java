@@ -1,4 +1,4 @@
-package com.devision.job_manager_company.dto;
+package com.devision.job_manager_company.dto.request;
 
 import com.devision.job_manager_company.validation.ValidPhoneNumber;
 import jakarta.validation.constraints.Pattern;

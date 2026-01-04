@@ -1,4 +1,4 @@
-package com.devision.job_manager_applicant_search.dto.internal;
+package com.devision.job_manager_applicant_search.dto.internal.request;
 
 import com.devision.job_manager_applicant_search.model.EducationDegree;
 import com.devision.job_manager_applicant_search.model.EmploymentType;
@@ -30,14 +30,11 @@ public class CreateSearchProfileRequest {
     @Size(min = 2, max = 2, message = "Country code must be 2 characters (ISO 3166-1 alpha-2)")
     private String countryCode;
 
-    private BigDecimal minSalary;
-
-    private BigDecimal maxSalary;
-
+    // TODO: Salary filtering - uncomment when JA adds salary support
+    // private BigDecimal minSalary;
+    // private BigDecimal maxSalary;
     private EducationDegree highestDegree;
-
     private Set<EmploymentType> employmentTypes;
-
     private Set<UUID> skillIds;
 
     @Builder.Default

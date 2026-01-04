@@ -1,9 +1,9 @@
 package com.devision.job_manager_applicant_search.service.impl;
 
 import com.devision.job_manager_applicant_search.client.SubscriptionClient;
-import com.devision.job_manager_applicant_search.dto.internal.CreateSearchProfileRequest;
-import com.devision.job_manager_applicant_search.dto.internal.SearchProfileResponse;
-import com.devision.job_manager_applicant_search.dto.internal.UpdateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.request.CreateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.SearchProfileResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.UpdateSearchProfileRequest;
 import com.devision.job_manager_applicant_search.exception.DuplicateProfileNameException;
 import com.devision.job_manager_applicant_search.exception.PremiumRequiredException;
 import com.devision.job_manager_applicant_search.exception.SearchProfileNotFoundException;
@@ -50,8 +50,9 @@ public class SearchProfileServiceImpl implements SearchProfileService {
                 .companyId(request.getCompanyId())
                 .profileName(request.getProfileName())
                 .countryCode(request.getCountryCode())
-                .minSalary(request.getMinSalary())
-                .maxSalary(request.getMaxSalary())
+                // TODO: Salary filtering - uncomment when JA supports it
+                // .minSalary(request.getMinSalary())
+                // .maxSalary(request.getMaxSalary())
                 .highestDegree(request.getHighestDegree())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
@@ -142,12 +143,13 @@ public class SearchProfileServiceImpl implements SearchProfileService {
         if (request.getCountryCode() != null) {
             profile.setCountryCode(request.getCountryCode());
         }
-        if (request.getMinSalary() != null) {
-            profile.setMinSalary(request.getMinSalary());
-        }
-        if (request.getMaxSalary() != null) {
-            profile.setMaxSalary(request.getMaxSalary());
-        }
+        // TODO: Salary filtering - uncomment when JA supports it
+        // if (request.getMinSalary() != null) {
+        //     profile.setMinSalary(request.getMinSalary());
+        // }
+        // if (request.getMaxSalary() != null) {
+        //     profile.setMaxSalary(request.getMaxSalary());
+        // }
         if (request.getHighestDegree() != null) {
             profile.setHighestDegree(request.getHighestDegree());
         }

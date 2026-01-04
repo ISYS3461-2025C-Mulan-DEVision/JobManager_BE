@@ -1,7 +1,7 @@
 package com.devision.job_manager_applicant_search.service;
 
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantResponse;
-import com.devision.job_manager_applicant_search.dto.internal.ApplicantSearchRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
 
 import java.util.List;
 

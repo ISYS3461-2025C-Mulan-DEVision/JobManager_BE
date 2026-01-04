@@ -1,8 +1,8 @@
 package com.devision.job_manager_applicant_search.service;
 
-import com.devision.job_manager_applicant_search.dto.internal.CreateSearchProfileRequest;
-import com.devision.job_manager_applicant_search.dto.internal.SearchProfileResponse;
-import com.devision.job_manager_applicant_search.dto.internal.UpdateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.request.CreateSearchProfileRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.SearchProfileResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.UpdateSearchProfileRequest;
 import com.devision.job_manager_applicant_search.model.ApplicantSearchProfile;
 
 import java.util.List;

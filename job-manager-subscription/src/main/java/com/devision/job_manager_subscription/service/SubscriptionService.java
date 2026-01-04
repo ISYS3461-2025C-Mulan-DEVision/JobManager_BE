@@ -1,8 +1,8 @@
 package com.devision.job_manager_subscription.service;
 
-import com.devision.job_manager_subscription.dto.internal.CreateSubscriptionRequest;
-import com.devision.job_manager_subscription.dto.internal.SubscriptionResponse;
-import com.devision.job_manager_subscription.dto.internal.UpdateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.request.CreateSubscriptionRequest;
+import com.devision.job_manager_subscription.dto.internal.response.SubscriptionResponse;
+import com.devision.job_manager_subscription.dto.internal.request.UpdateSubscriptionRequest;
 
 import java.util.List;
 import java.util.UUID;

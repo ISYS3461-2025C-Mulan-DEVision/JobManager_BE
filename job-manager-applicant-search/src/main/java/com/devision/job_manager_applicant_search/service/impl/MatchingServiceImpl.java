@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 /**
  * Service for matching applicants with saved search profiles.
+ * TODO: Applicant Data Dependency
  * 
  * Implements the matching algorithm:
  * - Rule-based, deterministic filtering
