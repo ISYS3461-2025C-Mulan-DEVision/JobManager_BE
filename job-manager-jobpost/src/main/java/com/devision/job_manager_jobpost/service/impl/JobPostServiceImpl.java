@@ -1,14 +1,17 @@
 package com.devision.job_manager_jobpost.service.impl;
 
+import com.devision.job_manager_jobpost.client.CompanyServiceClient;
 import com.devision.job_manager_jobpost.event.JobPostSkillsChangedEvent;
 import com.devision.job_manager_jobpost.model.JobPost;
 import com.devision.job_manager_jobpost.model.JobPostSkill;
 import com.devision.job_manager_jobpost.repository.JobPostRepository;
 import com.devision.job_manager_jobpost.service.JobPostService;
 import com.devision.job_manager_jobpost.service.internal.EventPublisherService;
+import feign.FeignException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class JobPostServiceImpl implements JobPostService {
 
     private final JobPostRepository jobPostRepository;
     private final EventPublisherService eventPublisher;
+    private final CompanyServiceClient companyServiceClient;
 
     @Override
     @Transactional
@@ -170,12 +174,15 @@ public class JobPostServiceImpl implements JobPostService {
             log.info("Publishing skills changed event. Added: {}, Removed: {}",
                     addedSkills.size(), removedSkills.size());
 
+            // Fetch country code from Company service (cached)
+            String countryCode = getCompanyCountry(savedJobPost.getCompanyId());
+
             JobPostSkillsChangedEvent event = JobPostSkillsChangedEvent.builder()
                     .jobPostId(savedJobPost.getJobPostId())
                     .companyId(savedJobPost.getCompanyId())
                     .title(savedJobPost.getTitle())
                     .locationCity(savedJobPost.getLocationCity())
-                    .countryCode(null) // TODO: Add country code field to JobPost model
+                    .countryCode(countryCode)  // Derived from Company service (Ultimo 4.3.1)
                     .addedSkills(addedSkills)
                     .removedSkills(removedSkills)
                     .currentSkills(newSkillIds)
@@ -188,6 +195,29 @@ public class JobPostServiceImpl implements JobPostService {
         }
 
         return savedJobPost;
+    }
+
+    /**
+     * Get company country code with caching (Ultimo 4.3.1 requirement).
+     * Cached for 1 hour to minimize calls to Company service.
+     *
+     * @param companyId The company UUID
+     * @return Country code (e.g., "VN", "AUS", "USA") or null if not found/unavailable
+     */
+    @Cacheable(value = "companyCountry", key = "#companyId")
+    public String getCompanyCountry(UUID companyId) {
+        try {
+            log.debug("Fetching country code for company ID: {} from Company service", companyId);
+            String countryCode = companyServiceClient.getCompanyCountry(companyId);
+            log.debug("Retrieved country code: {} for company ID: {}", countryCode, companyId);
+            return countryCode;
+        } catch (FeignException.NotFound e) {
+            log.warn("Company not found: {}", companyId);
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to fetch country for company {}: {}", companyId, e.getMessage());
+            return null; // Graceful degradation
+        }
     }
 }
 
