@@ -199,7 +199,14 @@ public class JobPostController {
         if (jobPost.getEmploymentTypes() != null && !jobPost.getEmploymentTypes().isEmpty()) {
             employmentType = jobPost.getEmploymentTypes().get(0).getType();
         }
-        
+
+        // Fetch country code from Company service (cached) - Ultimo 4.3.1
+        String countryCode = null;
+        if (jobPost.getCompanyId() != null) {
+            countryCode = ((com.devision.job_manager_jobpost.service.impl.JobPostServiceImpl) jobPostService)
+                    .getCompanyCountry(jobPost.getCompanyId());
+        }
+
         return JobPostDto.builder()
                 .id(jobPost.getJobPostId())
                 .companyId(jobPost.getCompanyId())
@@ -211,6 +218,7 @@ public class JobPostController {
                 .salaryMax(jobPost.getSalaryMax())
                 .salaryNote(jobPost.getSalaryNote())
                 .locationCity(jobPost.getLocationCity())
+                .countryCode(countryCode)  // Derived from Company service
                 .published(jobPost.isPublished())
                 .aPrivate(jobPost.isAPrivate())
                 .postedAt(jobPost.getPostedAt())

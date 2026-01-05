@@ -1,4 +1,4 @@
-package com.devision.job_manager_company.dto;
+package com.devision.job_manager_subscription.dto.internal.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

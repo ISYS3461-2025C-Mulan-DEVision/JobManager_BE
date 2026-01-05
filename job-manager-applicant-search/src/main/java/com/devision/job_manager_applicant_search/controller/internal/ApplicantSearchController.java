@@ -1,0 +1,96 @@
+package com.devision.job_manager_applicant_search.controller.internal;
+
+import com.devision.job_manager_applicant_search.dto.ApiResponse;
+import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
+import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
+import com.devision.job_manager_applicant_search.service.ApplicantSearchService;
+import com.devision.job_manager_applicant_search.service.ApplicantSearchService.ApplicantSearchResult;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST controller for applicant search operations.
+ * 
+ * Aligned with JA's /api/v1/users/search endpoint as of 2026-01-04.
+ */
+@RestController
+@RequestMapping("/api/internal/applicants")
+@RequiredArgsConstructor
+public class ApplicantSearchController {
+
+    private final ApplicantSearchService applicantSearchService;
+
+    /**
+     * Search for applicants using filter criteria.
+     * 
+     * Supported filters (aligned with JA service):
+     * - username: Name search (firstName, lastName)
+     * - countryCode: Two-letter country code
+     * - city: City name filter
+     * - education: Education level (HIGH_SCHOOL, ASSOCIATE, BACHELOR, MASTER, DOCTORATE)
+     * - workExperience: Work experience keywords
+     * - employmentTypes: Employment types (FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FRESHER)
+     * - skills: Skill names
+     * - page, size: Pagination
+     * 
+     * TODO: Salary filtering - will be added when JA supports it
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<ApplicantSearchResult>> searchApplicants(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String countryCode,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String education,
+            @RequestParam(required = false) String workExperience,
+            @RequestParam(required = false) List<String> employmentTypes,
+            @RequestParam(required = false) List<String> skills,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size
+            // TODO: Salary filtering - uncomment when JA supports it
+            // @RequestParam(required = false) BigDecimal minSalary,
+            // @RequestParam(required = false) BigDecimal maxSalary
+    ) {
+        ApplicantSearchRequest request = ApplicantSearchRequest.builder()
+                .username(username)
+                .countryCode(countryCode)
+                .city(city)
+                .education(education)
+                .workExperience(workExperience)
+                .employmentTypes(employmentTypes)
+                .skills(skills)
+                .sortBy(sortBy)
+                .page(page)
+                .pageSize(size)
+                // .minSalary(minSalary)
+                // .maxSalary(maxSalary)
+                .build();
+
+        ApplicantSearchResult result = applicantSearchService.searchApplicants(request);
+        return ResponseEntity.ok(ApiResponse.success("Applicants retrieved", result));
+    }
+
+    /**
+     * Get all available skills for filter dropdown.
+     */
+    @GetMapping("/skills")
+    public ResponseEntity<ApiResponse<List<ApplicantResponse.SkillDto>>> getSkills() {
+        List<ApplicantResponse.SkillDto> skills = applicantSearchService.getSkills();
+        return ResponseEntity.ok(ApiResponse.success("Skills retrieved", skills));
+    }
+
+    /**
+     * Search skills by name for autocomplete.
+     * 
+     * @param q Search query
+     */
+    @GetMapping("/skills/search")
+    public ResponseEntity<ApiResponse<List<ApplicantResponse.SkillDto>>> searchSkills(
+            @RequestParam(required = false) String q) {
+        List<ApplicantResponse.SkillDto> skills = applicantSearchService.searchSkills(q);
+        return ResponseEntity.ok(ApiResponse.success("Skills retrieved", skills));
+    }
+}

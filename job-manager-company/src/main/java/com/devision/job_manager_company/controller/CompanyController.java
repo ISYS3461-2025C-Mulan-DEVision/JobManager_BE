@@ -1,6 +1,9 @@
 package com.devision.job_manager_company.controller;
 
 import com.devision.job_manager_company.dto.*;
+import com.devision.job_manager_company.dto.request.UpdateCompanyProfileRequest;
+import com.devision.job_manager_company.dto.request.UpdateCompanyRequest;
+import com.devision.job_manager_company.dto.response.ApiResponse;
 import com.devision.job_manager_company.model.Company;
 import com.devision.job_manager_company.model.CompanyProfile;
 import com.devision.job_manager_company.service.CompanyService;
@@ -92,6 +95,19 @@ public class CompanyController {
             log.error("Failed to update company profile: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
+    }
+
+    /**
+     * Get company country code - lightweight endpoint for JobPost service integration
+     * Used by JobPost service to derive country for Kafka events (Ultimo 4.3.1)
+     */
+    @GetMapping("/{id}/country")
+    public ResponseEntity<String> getCompanyCountry(@PathVariable UUID id) {
+        log.info("Getting country code for company ID: {}", id);
+
+        return companyService.getCompanyById(id)
+                .map(company -> ResponseEntity.ok(company.getCountryCode()))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/health")
