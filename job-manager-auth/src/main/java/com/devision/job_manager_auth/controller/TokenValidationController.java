@@ -2,8 +2,8 @@ package com.devision.job_manager_auth.controller;
 
 
 import com.devision.job_manager_auth.dto.external.TokenValidationResponse;
-import com.devision.job_manager_auth.service.internal.TokenService;
-import io.jsonwebtoken.Claims;
+import com.devision.job_manager_auth.service.internal.JweTokenService;
+import com.nimbusds.jwt.JWTClaimsSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class TokenValidationController {
 
-    private final TokenService tokenService;
+    private final JweTokenService jweTokenService;
 
     @PostMapping("/validate-token")
     public ResponseEntity<TokenValidationResponse> validateToken(
@@ -36,14 +36,15 @@ public class TokenValidationController {
             String token = authHeader.substring(7);
 
             // Check if token is revoked
-            if (tokenService.isTokenRevoked(token)) {
+            if (jweTokenService.isTokenRevoked(token)) {
                 log.warn("Token is revoked");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(TokenValidationResponse.invalid());
             }
 
-            // Validate token and extract claims
-            Claims claims = tokenService.extractAllClaims(token);
+            // validate and decrypt
+            JWTClaimsSet claims = jweTokenService.validateAndDecryptToken(token);
+
 
             if (claims == null) {
                 log.warn("Token validation failed - invalid or expired token");
@@ -52,7 +53,7 @@ public class TokenValidationController {
             }
 
             // Check token type
-            String tokenType = claims.get("type", String.class);
+            String tokenType = jweTokenService.extractTokenType(claims);
             if (!"ACCESS".equals(tokenType)) {
                 log.warn("Invalid token type: {}", tokenType);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -60,10 +61,10 @@ public class TokenValidationController {
             }
 
             // Extract info
-            String userId = claims.getSubject();
-            String email = claims.get("email", String.class);
-            String role = claims.get("role", String.class);
-            String countryCode = claims.get("country", String.class);
+            String userId = jweTokenService.extractUserId(claims).toString();
+            String email = jweTokenService.extractEmail(claims);
+            String role = jweTokenService.extractRole(claims);
+            String countryCode = jweTokenService.extractCountryCode(claims);
 
             // Build response
             TokenValidationResponse response = TokenValidationResponse.builder()
