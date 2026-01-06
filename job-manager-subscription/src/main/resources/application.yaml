@@ -30,12 +30,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        session.timeout.ms: 30000
-        heartbeat.interval.ms: 10000        # 10 seconds
-        max.poll.interval.ms: 300000        # 5 minutes
-        max.poll.records: 10                # Process 10 records at a time
-        enable.auto.commit: false
-        auto.offset.reset: earliest
+
 
 eureka:
   client:
