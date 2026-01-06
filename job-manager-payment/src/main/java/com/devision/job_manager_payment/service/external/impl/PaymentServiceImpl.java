@@ -257,9 +257,6 @@ public class PaymentServiceImpl implements PaymentService {
                 stripeObject = dataObjectDeserializer.deserializeUnsafe();
             }
 
-//            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
-//                    .getObject()
-//                    .orElseThrow(() -> new PaymentProcessingException("Failed to deserialize payment intent"));
 
             PaymentIntent paymentIntent = (PaymentIntent) stripeObject;
 
@@ -298,38 +295,55 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void handlePaymentFailed(Event event) {
-        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
-                .getObject()
-                .orElseThrow(() -> new PaymentProcessingException("Failed to deserialize payment intent"));
 
-        String paymentIntentId = paymentIntent.getId();
-        log.info("Handling payment failed for Stripe Payment Intent: {}", paymentIntentId);
+        try {
+            EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+            StripeObject stripeObject = null;
 
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentIntentId));
+            if (dataObjectDeserializer.getObject().isPresent()) {
+                stripeObject = dataObjectDeserializer.getObject().get();
+            } else {
+                // Fallback: try unsafe deserialization
+                log.warn("Safe deserialization failed, trying unsafe deserialization");
+                stripeObject = dataObjectDeserializer.deserializeUnsafe();
+            }
 
-        // Update Status
-        payment.setStatus(PaymentStatus.FAILED);
-        payment.setFailureReason(paymentIntent.getLastPaymentError() != null ?
-                paymentIntent.getLastPaymentError().getMessage() : "Payment failed with no error message");
-        paymentRepository.save(payment);
+            PaymentIntent paymentIntent = (PaymentIntent) stripeObject;
 
-        log.info("Payment with id {} failed", payment.getId());
+            String paymentIntentId = paymentIntent.getId();
+            log.info("Handling payment failed for Stripe Payment Intent: {}", paymentIntentId);
 
-        // Publish Kafka event for subscription service
-        log.info("Published payment failed event for Subscription Service to consume: {}", payment.getId());
-        PaymentFailedEvent failedEvent = PaymentFailedEvent.builder()
-                .paymentId(payment.getId())
-                .payerType(payment.getPayerType())
-                .payerId(payment.getPayerId())
-                .email(payment.getEmail())
-                .amount(payment.getAmount())
-                .currency(payment.getCurrency())
-                .failureReason(payment.getFailureReason())
-                .failedAt(LocalDateTime.now())
-                .build();
+            Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
+                    .orElseThrow(() -> new PaymentNotFoundException(paymentIntentId));
 
-        paymentEventProducer.publishPaymentFailed(failedEvent);
+            // Update Status
+            payment.setStatus(PaymentStatus.FAILED);
+            payment.setFailureReason(paymentIntent.getLastPaymentError() != null ?
+                    paymentIntent.getLastPaymentError().getMessage() : "Payment failed with no error message");
+            paymentRepository.save(payment);
+
+            log.info("Payment with id {} failed", payment.getId());
+
+            // Publish Kafka event for subscription service
+            log.info("Published payment failed event for Subscription Service to consume: {}", payment.getId());
+            PaymentFailedEvent failedEvent = PaymentFailedEvent.builder()
+                    .paymentId(payment.getId())
+                    .payerType(payment.getPayerType())
+                    .payerId(payment.getPayerId())
+                    .email(payment.getEmail())
+                    .amount(payment.getAmount())
+                    .currency(payment.getCurrency())
+                    .failureReason(payment.getFailureReason())
+                    .failedAt(LocalDateTime.now())
+                    .build();
+
+            paymentEventProducer.publishPaymentFailed(failedEvent);
+        } catch (Exception e) {
+            log.error("Error handling payment failed event", e);
+            throw new PaymentProcessingException("Failed to process payment failed event: " + e.getMessage());
+        }
+
+
 
     }
 

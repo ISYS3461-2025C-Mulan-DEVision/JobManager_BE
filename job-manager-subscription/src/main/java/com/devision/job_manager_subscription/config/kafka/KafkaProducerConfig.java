@@ -1,4 +1,4 @@
-package com.devision.job_manager_subscription.config;
+package com.devision.job_manager_subscription.config.kafka;
 
 import com.devision.job_manager_subscription.event.SubscriptionUpdatedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
