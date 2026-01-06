@@ -17,7 +17,9 @@ import com.devision.job_manager_payment.service.external.PaymentEventProducer;
 import com.devision.job_manager_payment.service.external.StripeService;
 import com.devision.job_manager_payment.service.external.PaymentService;
 import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeObject;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -243,36 +245,55 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void handlePaymentSucceeded(Event event) {
-        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
-                .getObject()
-                .orElseThrow(() -> new PaymentProcessingException("Failed to deserialize payment intent"));
+        try {
+            EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+            StripeObject stripeObject = null;
 
-        String paymentIntentId = paymentIntent.getId();
-        log.info("Handling payment succeeded for Stripe Payment Intent: {}", paymentIntentId);
+            if (dataObjectDeserializer.getObject().isPresent()) {
+                stripeObject = dataObjectDeserializer.getObject().get();
+            } else {
+                // Fallback: try unsafe deserialization
+                log.warn("Safe deserialization failed, trying unsafe deserialization");
+                stripeObject = dataObjectDeserializer.deserializeUnsafe();
+            }
 
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentIntentId));
+//            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
+//                    .getObject()
+//                    .orElseThrow(() -> new PaymentProcessingException("Failed to deserialize payment intent"));
 
-        // Update Status
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setCompletedAt(LocalDateTime.now());
-        payment = paymentRepository.save(payment);
+            PaymentIntent paymentIntent = (PaymentIntent) stripeObject;
 
-        log.info("Payment completed: {}", payment.getId());
+            String paymentIntentId = paymentIntent.getId();
+            log.info("Handling payment succeeded for Stripe Payment Intent: {}", paymentIntentId);
 
-        // Publish Kafka event for subscription service
-        log.info("Publishing payment completed event for Subscription Service to consume: {}", payment.getId());
+            Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
+                    .orElseThrow(() -> new PaymentNotFoundException(paymentIntentId));
 
-        PaymentCompletedEvent completedEvent = PaymentCompletedEvent.builder()
-                .paymentId(payment.getId())
-                .payerType(payment.getPayerType())
-                .payerId(payment.getPayerId())
-                .email(payment.getEmail())
-                .amount(payment.getAmount())
-                .currency(payment.getCurrency())
-                .completedAt(payment.getCompletedAt())
-                .build();
-        paymentEventProducer.publishPaymentCompleted(completedEvent);
+            // Update Status
+            payment.setStatus(PaymentStatus.COMPLETED);
+            payment.setCompletedAt(LocalDateTime.now());
+            payment = paymentRepository.save(payment);
+
+            log.info("Payment completed: {}", payment.getId());
+
+            // Publish Kafka event for subscription service
+            log.info("Publishing payment completed event for Subscription Service to consume: {}", payment.getId());
+
+            PaymentCompletedEvent completedEvent = PaymentCompletedEvent.builder()
+                    .paymentId(payment.getId())
+                    .payerType(payment.getPayerType())
+                    .payerId(payment.getPayerId())
+                    .email(payment.getEmail())
+                    .amount(payment.getAmount())
+                    .currency(payment.getCurrency())
+                    .completedAt(payment.getCompletedAt())
+                    .build();
+            paymentEventProducer.publishPaymentCompleted(completedEvent);
+        } catch (Exception e) {
+            log.error("Error handling payment succeeded event", e);
+            throw new PaymentProcessingException("Failed to process payment succeeded event: " + e.getMessage());
+        }
+
 
     }
 
