@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Generic page response DTO matching JA's PageResponse structure.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,9 +22,7 @@ public class PageResponse<T> {
     private boolean first;
     private boolean last;
 
-    /**
-     * Create an empty page response.
-     */
+    // Create an empty page response
     public static <T> PageResponse<T> empty() {
         return PageResponse.<T>builder()
                 .content(Collections.emptyList())
@@ -40,9 +35,7 @@ public class PageResponse<T> {
                 .build();
     }
 
-    /**
-     * Create a page response from content and pagination info.
-     */
+    // Create a page response from content and pagination info
     public static <T> PageResponse<T> of(List<T> content, int page, int size, long totalElements) {
         int totalPages = size > 0 ? (int) Math.ceil((double) totalElements / size) : 0;
         return PageResponse.<T>builder()

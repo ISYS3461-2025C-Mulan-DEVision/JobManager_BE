@@ -33,19 +33,10 @@ public class ApplicantResponse {
     
     private String phone;
     
-    /**
-     * Street address.
-     */
     private String address;
     
-    /**
-     * City name.
-     */
     private String city;
     
-    /**
-     * User's objective summary (bio).
-     */
     private String objectiveSummary;
     
     private String avatarUrl;
@@ -58,36 +49,18 @@ public class ApplicantResponse {
     
     private LocalDateTime profileUpdatedAt;
     
-    /**
-     * Nested country object from JA.
-     */
     private CountryDto country;
     
-    /**
-     * Skills list from JA.
-     */
     private List<SkillDto> skills;
     
-    /**
-     * Education history from JA.
-     */
     private List<EducationDto> education;
     
-    /**
-     * Work experience history from JA.
-     */
     private List<WorkExperienceDto> workExperience;
     
-    /**
-     * Portfolio items from JA.
-     */
     private List<PortfolioItemDto> portfolioItems;
 
     // ==================== Nested DTOs ====================
 
-    /**
-     * Country DTO matching JA's CountryResponse.
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -98,9 +71,6 @@ public class ApplicantResponse {
         private String abbreviation;
     }
 
-    /**
-     * Skill DTO matching JA's SkillResponse.
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -111,9 +81,6 @@ public class ApplicantResponse {
         private int usageCount;
     }
 
-    /**
-     * Education DTO matching JA's UserEducationResponse.
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -128,9 +95,6 @@ public class ApplicantResponse {
         private String description;
     }
 
-    /**
-     * Work experience DTO matching JA's UserWorkExperienceResponse.
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -147,9 +111,6 @@ public class ApplicantResponse {
         private CountryDto country;
     }
 
-    /**
-     * Portfolio item DTO matching JA's UserPortfolioItemResponse.
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

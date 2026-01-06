@@ -23,6 +23,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     @Override
     @Async
     public void sendActivationEmail(CompanyAccount company, String activationToken) {
@@ -32,6 +35,7 @@ public class EmailServiceImpl implements EmailService {
             String activationLink = frontendUrl + "/activate?token=" + activationToken;
 
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(company.getEmail());
             message.setSubject("Activate Your DEVision-JM Account");
             message.setText(String.format("""
@@ -55,6 +59,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendWelcomeEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(company.getEmail());
             message.setSubject("Welcome to DEVision Job Manager!");
             message.setText(String.format("""
@@ -87,6 +92,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendAccountLockedEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(company.getEmail());
             message.setSubject("DEVision Account Security Alert - Account Locked");
             message.setText(String.format("""
@@ -118,6 +124,7 @@ public class EmailServiceImpl implements EmailService {
             String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
 
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(company.getEmail());
             message.setSubject("Reset Your DEVision-JM Password");
             message.setText(String.format("""
@@ -150,6 +157,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendPasswordChangedEmail(CompanyAccount company) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(company.getEmail());
             message.setSubject("DEVision-JM Password Changed Successfully");
             message.setText(String.format("""

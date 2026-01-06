@@ -62,6 +62,14 @@ spring:
           filters:
             - Authentication
 
+        # Internal Applicant Search API (frontend use)
+        - id: job-manager-applicant-search-applicants
+          uri: http://localhost:8084/
+          predicates:
+            - Path=/api/internal/applicants/**
+          filters:
+            - Authentication
+
         - id: job-manager-subscription-internal
           uri: http://localhost:8085/
           predicates:
