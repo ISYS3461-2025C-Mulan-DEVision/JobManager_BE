@@ -134,7 +134,7 @@ management:
         include: health,info,gateway,metrics
   endpoint:
     gateway:
-      enabled: true
+      access: unrestricted
 
 # Logging configuration
 logging:
