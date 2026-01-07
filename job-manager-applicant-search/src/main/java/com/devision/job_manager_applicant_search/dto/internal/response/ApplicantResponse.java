@@ -11,11 +11,9 @@ import java.util.UUID;
 
 /**
  * Response DTO for applicant data.
- * Maps JA service's UserResponse to our domain model.
+ * Aligned with JA service's UserResponse.
  * 
- * TODO: Applicant Data Dependency
- * The exact structure of applicant data is owned by the Job Applicant team.
- * Field names may change when the JA service is updated.
+ * Fields match JA's UserResponse structure as of 2026-01-04.
  */
 @Data
 @NoArgsConstructor
@@ -35,7 +33,10 @@ public class ApplicantResponse {
     
     private String phone;
     
-    // User's objective summary (bio)
+    private String address;
+    
+    private String city;
+    
     private String objectiveSummary;
     
     private String avatarUrl;
@@ -48,13 +49,18 @@ public class ApplicantResponse {
     
     private LocalDateTime profileUpdatedAt;
     
-    // Nested country object from JA.
     private CountryDto country;
     
-    // Skills list - populated from JA user skills endpoint if needed.
     private List<SkillDto> skills;
+    
+    private List<EducationDto> education;
+    
+    private List<WorkExperienceDto> workExperience;
+    
+    private List<PortfolioItemDto> portfolioItems;
 
-    // Nested country DTO matching JA's CountryResponse.
+    // ==================== Nested DTOs ====================
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -65,7 +71,6 @@ public class ApplicantResponse {
         private String abbreviation;
     }
 
-    // Skill DTO matching JA's SkillResponse.
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -74,5 +79,47 @@ public class ApplicantResponse {
         private String id;
         private String name;
         private int usageCount;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class EducationDto {
+        private UUID id;
+        private String educationLevel; // HIGH_SCHOOL, ASSOCIATE, BACHELOR, MASTER, DOCTORATE
+        private String fieldOfStudy;
+        private String institutionName;
+        private String startAt; // ISO date string
+        private String endAt;
+        private String description;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class WorkExperienceDto {
+        private UUID id;
+        private String title;
+        private String companyName;
+        private String employmentType; // FULL_TIME, PART_TIME, etc.
+        private String startAt;
+        private String endAt;
+        private boolean currentJob;
+        private String description;
+        private CountryDto country;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PortfolioItemDto {
+        private UUID id;
+        private String title;
+        private String description;
+        private String url;
+        private String imageUrl;
     }
 }

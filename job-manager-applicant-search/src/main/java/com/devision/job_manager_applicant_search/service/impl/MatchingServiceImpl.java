@@ -154,25 +154,30 @@ public class MatchingServiceImpl implements MatchingService {
      * Note: JA's REST API (/api/v1/users/search) does NOT include salary fields.
      * Salary filtering only works for Kafka-based matching, not API search.
      * When JA adds salary to UserResponse, update ApplicantSearchServiceImpl.
+     * 
+     * NOTE: Currently disabled because ApplicantSearchProfile doesn't have salary fields.
+     * When salary support is added, uncomment the profile.getMinSalary()/getMaxSalary() calls.
      */
     private boolean matchesSalary(ApplicantSearchProfile profile, ApplicantProfileUpdatedEvent applicant) {
-        BigDecimal applicantSalary = applicant.getDesiredSalary();
+        // TODO: Salary matching - uncomment when salary fields are added to ApplicantSearchProfile
+        // BigDecimal applicantSalary = applicant.getDesiredSalary();
+        // 
+        // // If applicant has no salary specified, allow match if profile has no requirements
+        // if (applicantSalary == null) {
+        //     return profile.getMinSalary() == null && profile.getMaxSalary() == null;
+        // }
+        //
+        // // Check min salary
+        // if (profile.getMinSalary() != null && applicantSalary.compareTo(profile.getMinSalary()) < 0) {
+        //     return false;
+        // }
+        //
+        // // Check max salary
+        // if (profile.getMaxSalary() != null && applicantSalary.compareTo(profile.getMaxSalary()) > 0) {
+        //     return false;
+        // }
         
-        // If applicant has no salary specified, allow match if profile has no requirements
-        if (applicantSalary == null) {
-            return profile.getMinSalary() == null && profile.getMaxSalary() == null;
-        }
-
-        // Check min salary
-        if (profile.getMinSalary() != null && applicantSalary.compareTo(profile.getMinSalary()) < 0) {
-            return false;
-        }
-
-        // Check max salary
-        if (profile.getMaxSalary() != null && applicantSalary.compareTo(profile.getMaxSalary()) > 0) {
-            return false;
-        }
-
+        // Always match since salary filtering is disabled
         return true;
     }
 
