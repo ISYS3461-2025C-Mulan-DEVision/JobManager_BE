@@ -1,121 +1,148 @@
 server:
-  port: 8080
+    port: 8080
 
 spring:
-  application:
-    name: job-manager-gateway
+    application:
+        name: job-manager-gateway
 
-  config:
-    import: optional:dotenv:.env
+    config:
+        import: optional:dotenv:.env
 
-  cloud:
-    gateway:
-      routes:
-        - id: job-manager-auth
-          uri: http://localhost:8081/
-          predicates:
-            - Path=/api/auth/**
-          metadata:
-            public-paths:
-              - /api/auth/register
-              - /api/auth/login
-              - /api/auth/activate
-              - /api/auth/resend-activation
-              - /api/auth/forgot-password
-              - /api/auth/reset-password
-              - /api/auth/countries
-              - /api/auth/oauth2/**
-              - /api/auth/health
-              - /oauth2/**
-              - /login/oauth2/**
-              - /api/auth/refresh
-              - /api/auth/diagnostics/**
-              - /api/auth/validate-token
+    cloud:
+        gateway:
+            routes:
+                # OAuth2 routes (must be before /api/auth/** to avoid conflicts)
+                - id: job-manager-auth-oauth2
+                  uri: http://localhost:8081/
+                  predicates:
+                      - Path=/api/oauth2/**,/api/login/oauth2/**
+                  filters:
+                      - StripPrefix=1
 
-        - id: job-manager-company
-          uri: http://localhost:8082/
-          predicates:
-            - Path=/api/companies/**
-          filters:
-            - Authentication
+                - id: job-manager-auth
+                  uri: http://localhost:8081/
+                  predicates:
+                      - Path=/api/auth/**
+                  metadata:
+                      public-paths:
+                          - /api/auth/register
+                          - /api/auth/login
+                          - /api/auth/activate
+                          - /api/auth/resend-activation
+                          - /api/auth/forgot-password
+                          - /api/auth/reset-password
+                          - /api/auth/countries
+                          - /api/auth/oauth2/**
+                          - /api/auth/health
+                          - /oauth2/**
+                          - /login/oauth2/**
+                          - /api/auth/refresh
+                          - /api/auth/diagnostics/**
+                          - /api/auth/validate-token
 
-        - id: job-manager-jobpost
-          uri: http://localhost:8083/
-          predicates:
-            - Path=/api/job-posts/**
-          filters:
-            - Authentication
+                - id: job-manager-company
+                  uri: http://localhost:8082/
+                  predicates:
+                      - Path=/api/companies/**
+                  filters:
+                      - Authentication
 
-        # External Search Profiles API (inter-service communication)
-        - id: job-manager-applicant-search-external
-          uri: http://localhost:8084/
-          predicates:
-            - Path=/api/search-profiles/**
-          filters:
-            - Authentication
+                - id: job-manager-jobpost
+                  uri: http://localhost:8083/
+                  predicates:
+                      - Path=/api/job-posts/**
+                  filters:
+                      - Authentication
 
-        # Internal Search Profiles API (frontend/internal use)
-        - id: job-manager-applicant-search-internal
-          uri: http://localhost:8084/
-          predicates:
-            - Path=/api/internal/search-profiles/**
-          filters:
-            - Authentication
+                # External Search Profiles API (inter-service communication)
+                - id: job-manager-applicant-search-external
+                  uri: http://localhost:8084/
+                  predicates:
+                      - Path=/api/search-profiles/**
+                  filters:
+                      - Authentication
 
-        # Internal Applicant Search API (frontend use)
-        - id: job-manager-applicant-search-applicants
-          uri: http://localhost:8084/
-          predicates:
-            - Path=/api/internal/applicants/**
-          filters:
-            - Authentication
+                # Internal Search Profiles API (frontend/internal use)
+                - id: job-manager-applicant-search-internal
+                  uri: http://localhost:8084/
+                  predicates:
+                      - Path=/api/internal/search-profiles/**
+                  filters:
+                      - Authentication
 
-        - id: job-manager-subscription-internal
-          uri: http://localhost:8085/
-          predicates:
-            - Path=/api/internal/subscriptions/**
-          filters:
-            - Authentication
+                # Internal Applicant Search API (frontend use)
+                - id: job-manager-applicant-search-applicants
+                  uri: http://localhost:8084/
+                  predicates:
+                      - Path=/api/internal/applicants/**
+                  filters:
+                      - Authentication
 
-        - id: job-manager-subscription-external
-          uri: http://localhost:8085/
-          predicates:
-            - Path=/api/subscriptions/**
-          filters:
-            - Authentication
+                - id: job-manager-subscription-internal
+                  uri: http://localhost:8085/
+                  predicates:
+                      - Path=/api/internal/subscriptions/**
+                  filters:
+                      - Authentication
+
+                - id: job-manager-subscription-external
+                  uri: http://localhost:8085/
+                  predicates:
+                      - Path=/api/subscriptions/**
+                  filters:
+                      - Authentication
+
+                - id: job-manager-payment-internal
+                  uri: http://localhost:8086/
+                  predicates:
+                      - Path=/api/internal/payment/**
+                  filters:
+                      - Authentication
+
+                - id: job-manager-payment-external
+                  uri: http://localhost:8086/
+                  predicates:
+                      - Path=/api/payment/**
+                  filters:
+                      - Authentication
+
+                - id: job-manager-payment-external-webhook
+                  uri: http://localhost:8086/
+                  predicates:
+                      - Path=/api/payment/webhooks/**
 
 # JWT configuration for token validation
 jwt:
-  jwe:
-    validate-via-auth-service: true
+    jwe:
+        validate-via-auth-service: true
 
 # Eureka configuration
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
-    health-check-url-path: /actuator/health
-    instance-id: ${spring.application.name}:${server.port}:${random.value}
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+        fetch-registry: true
+        register-with-eureka: true
+    instance:
+        prefer-ip-address: true
+        health-check-url-path: /actuator/health
+        instance-id: ${spring.application.name}:${server.port}:${random.value}
 
 # Management endpoints
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gateway,metrics
-  endpoint:
-    gateway:
-      enabled: true
+    endpoints:
+        web:
+            exposure:
+                include: health,info,gateway,metrics
+    endpoint:
+        gateway:
+            access: unrestricted
 
 # Logging configuration
 logging:
-  level:
-    root: INFO
-    com.devision.job_manager_gateway: DEBUG
-    org.springframework.cloud.gateway: TRACE
-    org.springframework.cloud.gateway.route: TRACE
-    reactor.netty: INFO
+    level:
+        root: INFO
+        com.devision.job_manager_gateway: DEBUG
+        org.springframework.cloud.gateway: TRACE
+        org.springframework.cloud.gateway.route: TRACE
+        reactor.netty: INFO
