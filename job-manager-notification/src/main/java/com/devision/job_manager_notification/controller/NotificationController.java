@@ -1,9 +1,9 @@
 package com.devision.job_manager_notification.controller;
 
-import com.devision.job_manager_notification.dto.request.CreateNotificationRequest;
+import com.devision.job_manager_notification.dto.external.ExternalCreateNotificationRequest;
+import com.devision.job_manager_notification.dto.external.ExternalNotificationResponse;
+import com.devision.job_manager_notification.dto.external.ExternalNotificationSummaryResponse;
 import com.devision.job_manager_notification.dto.response.ApiResponse;
-import com.devision.job_manager_notification.dto.response.NotificationResponse;
-import com.devision.job_manager_notification.dto.response.NotificationSummaryResponse;
 import com.devision.job_manager_notification.enums.NotificationStatus;
 import com.devision.job_manager_notification.enums.NotificationType;
 import com.devision.job_manager_notification.service.NotificationService;
@@ -29,23 +29,23 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<NotificationResponse>> createNotification(
-            @Valid @RequestBody CreateNotificationRequest request) {
+    public ResponseEntity<ApiResponse<ExternalNotificationResponse>> createNotification(
+            @Valid @RequestBody ExternalCreateNotificationRequest request) {
         log.info("Creating notification for user: {}, type: {}", request.getUserId(), request.getType());
-        ApiResponse<NotificationResponse> response = notificationService.createNotification(request);
+        ApiResponse<ExternalNotificationResponse> response = notificationService.createNotificationExternal(request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{notificationId}")
-    public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationById(
+    public ResponseEntity<ApiResponse<ExternalNotificationResponse>> getNotificationById(
             @PathVariable UUID notificationId) {
         log.info("Retrieving notification: {}", notificationId);
-        ApiResponse<NotificationResponse> response = notificationService.getNotificationById(notificationId);
+        ApiResponse<ExternalNotificationResponse> response = notificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<Page<NotificationResponse>>> getUserNotifications(
+    public ResponseEntity<ApiResponse<Page<ExternalNotificationResponse>>> getUserNotifications(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -56,20 +56,20 @@ public class NotificationController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        ApiResponse<Page<NotificationResponse>> response = notificationService.getUserNotifications(userId, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotifications(userId, pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}/all")
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllUserNotifications(
+    public ResponseEntity<ApiResponse<List<ExternalNotificationResponse>>> getAllUserNotifications(
             @PathVariable UUID userId) {
         log.info("Retrieving all notifications for user: {}", userId);
-        ApiResponse<List<NotificationResponse>> response = notificationService.getAllUserNotifications(userId);
+        ApiResponse<List<ExternalNotificationResponse>> response = notificationService.getAllUserNotifications(userId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}/status/{status}")
-    public ResponseEntity<ApiResponse<Page<NotificationResponse>>> getUserNotificationsByStatus(
+    public ResponseEntity<ApiResponse<Page<ExternalNotificationResponse>>> getUserNotificationsByStatus(
             @PathVariable UUID userId,
             @PathVariable NotificationStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -77,12 +77,12 @@ public class NotificationController {
         log.info("Retrieving {} notifications for user: {}", status, userId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        ApiResponse<Page<NotificationResponse>> response = notificationService.getUserNotificationsByStatus(userId, status, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotificationsByStatus(userId, status, pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}/type/{type}")
-    public ResponseEntity<ApiResponse<Page<NotificationResponse>>> getUserNotificationsByType(
+    public ResponseEntity<ApiResponse<Page<ExternalNotificationResponse>>> getUserNotificationsByType(
             @PathVariable UUID userId,
             @PathVariable NotificationType type,
             @RequestParam(defaultValue = "0") int page,
@@ -90,23 +90,23 @@ public class NotificationController {
         log.info("Retrieving {} type notifications for user: {}", type, userId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        ApiResponse<Page<NotificationResponse>> response = notificationService.getUserNotificationsByType(userId, type, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotificationsByType(userId, type, pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}/summary")
-    public ResponseEntity<ApiResponse<NotificationSummaryResponse>> getUserNotificationSummary(
+    public ResponseEntity<ApiResponse<ExternalNotificationSummaryResponse>> getUserNotificationSummary(
             @PathVariable UUID userId) {
         log.info("Retrieving notification summary for user: {}", userId);
-        ApiResponse<NotificationSummaryResponse> response = notificationService.getUserNotificationSummary(userId);
+        ApiResponse<ExternalNotificationSummaryResponse> response = notificationService.getUserNotificationSummary(userId);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{notificationId}/read")
-    public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(
+    public ResponseEntity<ApiResponse<ExternalNotificationResponse>> markAsRead(
             @PathVariable UUID notificationId) {
         log.info("Marking notification as read: {}", notificationId);
-        ApiResponse<NotificationResponse> response = notificationService.markAsRead(notificationId);
+        ApiResponse<ExternalNotificationResponse> response = notificationService.markAsRead(notificationId);
         return ResponseEntity.ok(response);
     }
 
