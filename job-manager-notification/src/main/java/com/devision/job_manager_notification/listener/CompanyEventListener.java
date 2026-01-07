@@ -5,18 +5,22 @@ import com.devision.job_manager_notification.enums.NotificationType;
 import com.devision.job_manager_notification.event.CompanyAccountLockedEvent;
 import com.devision.job_manager_notification.event.CompanyActivatedEvent;
 import com.devision.job_manager_notification.event.CompanyRegisteredEvent;
-import com.devision.job_manager_notification.service.NotificationService;
+import com.devision.job_manager_notification.service.InternalNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * Kafka listener for company-related events.
+ * Uses InternalNotificationService for creating notifications from event data.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class CompanyEventListener {
 
-    private final NotificationService notificationService;
+    private final InternalNotificationService internalNotificationService;
 
     @KafkaListener(
             topics = "company.registered",
@@ -36,7 +40,7 @@ public class CompanyEventListener {
                     .referenceType("COMPANY_REGISTRATION")
                     .build();
 
-            notificationService.createNotification(notification);
+            internalNotificationService.createNotification(notification);
             log.info("Notification created for company registration: {}", event.getCompanyId());
         } catch (Exception e) {
             log.error("Error processing CompanyRegisteredEvent for company: {}", event.getCompanyId(), e);
@@ -61,7 +65,7 @@ public class CompanyEventListener {
                     .referenceType("COMPANY_ACTIVATION")
                     .build();
 
-            notificationService.createNotification(notification);
+            internalNotificationService.createNotification(notification);
             log.info("Notification created for company activation: {}", event.getCompanyId());
         } catch (Exception e) {
             log.error("Error processing CompanyActivatedEvent for company: {}", event.getCompanyId(), e);
@@ -86,7 +90,7 @@ public class CompanyEventListener {
                     .referenceType("COMPANY_ACCOUNT_LOCKED")
                     .build();
 
-            notificationService.createNotification(notification);
+            internalNotificationService.createNotification(notification);
             log.info("Notification created for company account locked: {}", event.getCompanyId());
         } catch (Exception e) {
             log.error("Error processing CompanyAccountLockedEvent for company: {}", event.getCompanyId(), e);
