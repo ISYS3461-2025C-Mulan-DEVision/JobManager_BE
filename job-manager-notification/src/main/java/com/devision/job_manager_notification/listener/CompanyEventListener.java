@@ -1,6 +1,6 @@
 package com.devision.job_manager_notification.listener;
 
-import com.devision.job_manager_notification.dto.request.CreateNotificationRequest;
+import com.devision.job_manager_notification.dto.internal.InternalCreateNotificationRequest;
 import com.devision.job_manager_notification.enums.NotificationType;
 import com.devision.job_manager_notification.event.CompanyAccountLockedEvent;
 import com.devision.job_manager_notification.event.CompanyActivatedEvent;
@@ -27,7 +27,7 @@ public class CompanyEventListener {
         try {
             log.info("Received CompanyRegisteredEvent for company: {}", event.getCompanyId());
 
-            CreateNotificationRequest notification = CreateNotificationRequest.builder()
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(event.getCompanyId())
                     .type(NotificationType.ACCOUNT)
                     .title("Welcome to Job Manager!")
@@ -52,7 +52,7 @@ public class CompanyEventListener {
         try {
             log.info("Received CompanyActivatedEvent for company: {}", event.getCompanyId());
 
-            CreateNotificationRequest notification = CreateNotificationRequest.builder()
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(event.getCompanyId())
                     .type(NotificationType.ACCOUNT)
                     .title("Account Activated Successfully")
@@ -77,7 +77,7 @@ public class CompanyEventListener {
         try {
             log.info("Received CompanyAccountLockedEvent for company: {}", event.getCompanyId());
 
-            CreateNotificationRequest notification = CreateNotificationRequest.builder()
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(event.getCompanyId())
                     .type(NotificationType.ALERT)
                     .title("Account Locked")
