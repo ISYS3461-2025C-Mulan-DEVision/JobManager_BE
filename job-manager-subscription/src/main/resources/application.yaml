@@ -6,9 +6,9 @@ spring:
     name: job-manager-subscription
 
   datasource:
-    url: ${POSTGRES_SUBSCRIPTION_URL:jdbc:postgresql://localhost:5436/job_manager_subscription}
-    username: ${POSTGRES_SUBSCRIPTION_USERNAME:postgres}
-    password: ${POSTGRES_SUBSCRIPTION_PASSWORD:postgres}
+    url: ${POSTGRES_SUBSCRIPTION_URL}
+    username: ${POSTGRES_SUBSCRIPTION_USERNAME}
+    password: ${POSTGRES_SUBSCRIPTION_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -30,6 +30,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+
 
 eureka:
   client:
