@@ -111,31 +111,6 @@ spring:
                   predicates:
                       - Path=/api/payment/webhooks/**
 
-        - id: job-manager-payment-internal
-          uri: http://localhost:8086/
-          predicates:
-            - Path=/api/internal/payment/**
-          filters:
-            - Authentication
-
-        - id: job-manager-payment-external
-          uri: http://localhost:8086/
-          predicates:
-            - Path=/api/payment/**
-          filters:
-            - Authentication
-
-        - id: job-manager-payment-external-webhook
-          uri: http://localhost:8086/
-          predicates:
-            - Path=/api/payment/webhooks/**
-
-
-
-
-
-
-
 # JWT configuration for token validation
 jwt:
     jwe:
