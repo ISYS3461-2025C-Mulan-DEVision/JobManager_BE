@@ -98,7 +98,7 @@ public class CompanyController {
     }
 
     /**
-     * Get company country code - lightweight endpoint for JobPost service integration
+     * Get company country code
      * Used by JobPost service to derive country for Kafka events (Ultimo 4.3.1)
      */
     @GetMapping("/{id}/country")
@@ -119,63 +119,34 @@ public class CompanyController {
     public ResponseEntity<ApiResponse<List<Map<String, String>>>> getDialCodes() {
         log.info("Getting dial codes list");
         
+        // Dial codes matching Country enum from auth service
+        // Only includes countries supported by the application
         List<Map<String, String>> dialCodes = new ArrayList<>();
         
-        // Add all dial codes with their country names
-        dialCodes.add(Map.of("code", "1", "name", "USA/Canada"));
-        dialCodes.add(Map.of("code", "7", "name", "Russia"));
-        dialCodes.add(Map.of("code", "20", "name", "Egypt"));
-        dialCodes.add(Map.of("code", "27", "name", "South Africa"));
-        dialCodes.add(Map.of("code", "30", "name", "Greece"));
-        dialCodes.add(Map.of("code", "31", "name", "Netherlands"));
-        dialCodes.add(Map.of("code", "32", "name", "Belgium"));
-        dialCodes.add(Map.of("code", "33", "name", "France"));
-        dialCodes.add(Map.of("code", "34", "name", "Spain"));
-        dialCodes.add(Map.of("code", "36", "name", "Hungary"));
-        dialCodes.add(Map.of("code", "39", "name", "Italy"));
-        dialCodes.add(Map.of("code", "40", "name", "Romania"));
-        dialCodes.add(Map.of("code", "41", "name", "Switzerland"));
-        dialCodes.add(Map.of("code", "43", "name", "Austria"));
-        dialCodes.add(Map.of("code", "44", "name", "UK"));
-        dialCodes.add(Map.of("code", "45", "name", "Denmark"));
-        dialCodes.add(Map.of("code", "46", "name", "Sweden"));
-        dialCodes.add(Map.of("code", "47", "name", "Norway"));
-        dialCodes.add(Map.of("code", "48", "name", "Poland"));
-        dialCodes.add(Map.of("code", "49", "name", "Germany"));
-        dialCodes.add(Map.of("code", "54", "name", "Argentina"));
-        dialCodes.add(Map.of("code", "55", "name", "Brazil"));
-        dialCodes.add(Map.of("code", "56", "name", "Chile"));
-        dialCodes.add(Map.of("code", "57", "name", "Colombia"));
-        dialCodes.add(Map.of("code", "58", "name", "Venezuela"));
-        dialCodes.add(Map.of("code", "60", "name", "Malaysia"));
-        dialCodes.add(Map.of("code", "61", "name", "Australia"));
-        dialCodes.add(Map.of("code", "62", "name", "Indonesia"));
-        dialCodes.add(Map.of("code", "63", "name", "Philippines"));
+        // Southeast Asia
+        dialCodes.add(Map.of("code", "84", "name", "Vietnam"));
         dialCodes.add(Map.of("code", "65", "name", "Singapore"));
+        dialCodes.add(Map.of("code", "60", "name", "Malaysia"));
         dialCodes.add(Map.of("code", "66", "name", "Thailand"));
+        dialCodes.add(Map.of("code", "63", "name", "Philippines"));
+        dialCodes.add(Map.of("code", "62", "name", "Indonesia"));
         dialCodes.add(Map.of("code", "81", "name", "Japan"));
         dialCodes.add(Map.of("code", "82", "name", "South Korea"));
-        dialCodes.add(Map.of("code", "84", "name", "Vietnam"));
         dialCodes.add(Map.of("code", "86", "name", "China"));
-        dialCodes.add(Map.of("code", "90", "name", "Turkey"));
-        dialCodes.add(Map.of("code", "91", "name", "India"));
-        dialCodes.add(Map.of("code", "92", "name", "Pakistan"));
-        dialCodes.add(Map.of("code", "93", "name", "Afghanistan"));
-        dialCodes.add(Map.of("code", "94", "name", "Sri Lanka"));
-        dialCodes.add(Map.of("code", "95", "name", "Myanmar"));
-        dialCodes.add(Map.of("code", "98", "name", "Iran"));
-        dialCodes.add(Map.of("code", "234", "name", "Nigeria"));
-        dialCodes.add(Map.of("code", "254", "name", "Kenya"));
-        dialCodes.add(Map.of("code", "375", "name", "Belarus"));
-        dialCodes.add(Map.of("code", "380", "name", "Ukraine"));
-        dialCodes.add(Map.of("code", "852", "name", "Hong Kong"));
-        dialCodes.add(Map.of("code", "853", "name", "Macau"));
-        dialCodes.add(Map.of("code", "886", "name", "Taiwan"));
-        dialCodes.add(Map.of("code", "966", "name", "Saudi Arabia"));
-        dialCodes.add(Map.of("code", "971", "name", "UAE"));
-        dialCodes.add(Map.of("code", "972", "name", "Israel"));
-        dialCodes.add(Map.of("code", "973", "name", "Bahrain"));
-        dialCodes.add(Map.of("code", "974", "name", "Qatar"));
+        
+        // Oceania
+        dialCodes.add(Map.of("code", "61", "name", "Australia"));
+        dialCodes.add(Map.of("code", "64", "name", "New Zealand"));
+        
+        // North America
+        dialCodes.add(Map.of("code", "1", "name", "United States"));
+        dialCodes.add(Map.of("code", "1", "name", "Canada"));
+        
+        // Europe
+        dialCodes.add(Map.of("code", "44", "name", "United Kingdom"));
+        dialCodes.add(Map.of("code", "49", "name", "Germany"));
+        dialCodes.add(Map.of("code", "33", "name", "France"));
+        dialCodes.add(Map.of("code", "31", "name", "Netherlands"));
         
         return ResponseEntity.ok(ApiResponse.success("Dial codes list", dialCodes));
     }

@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmailService emailService;
     private final ShardLookupService shardLookupService;
     private final ShardDirectQueryService shardDirectQueryService;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String SESSION_INVALIDATION_PREFIX = "session-invalidated:";
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -299,6 +303,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             log.info("Login successful for: {} (shard: {})", request.getEmail(), account.getCountry().getShardKey());
 
+            // Clear any session invalidation flag (e.g., from country change)
+            clearSessionInvalidation(account.getId());
+
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -348,6 +355,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String refreshToken = jweTokenService.generateRefreshToken(account);
 
             log.info("SSO login successful for: {} (shard: {})", account.getEmail(), account.getCountry().getShardKey());
+
+            // Clear any session invalidation flag (e.g., from country change)
+            clearSessionInvalidation(account.getId());
 
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(accessToken)
@@ -723,5 +733,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .activationToken(activationToken)
                 .registeredAt(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Clear session invalidation flag when user successfully logs in.
+     * This allows the user to use the system after re-authenticating.
+     */
+    private void clearSessionInvalidation(UUID companyId) {
+        String redisKey = SESSION_INVALIDATION_PREFIX + companyId.toString();
+        Boolean deleted = redisTemplate.delete(redisKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared session invalidation for company ID: {}", companyId);
+        }
     }
 }

@@ -3,6 +3,9 @@ package com.devision.job_manager_applicant_search.controller.internal;
 import com.devision.job_manager_applicant_search.dto.ApiResponse;
 import com.devision.job_manager_applicant_search.dto.internal.request.ApplicantSearchRequest;
 import com.devision.job_manager_applicant_search.dto.internal.response.ApplicantResponse;
+import com.devision.job_manager_applicant_search.model.ApplicantStatusType;
+import com.devision.job_manager_applicant_search.model.CompanyApplicantStatus;
+import com.devision.job_manager_applicant_search.repository.CompanyApplicantStatusRepository;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService;
 import com.devision.job_manager_applicant_search.service.ApplicantSearchService.ApplicantSearchResult;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for applicant search operations.
@@ -22,6 +28,7 @@ import java.util.List;
 public class ApplicantSearchController {
 
     private final ApplicantSearchService applicantSearchService;
+    private final CompanyApplicantStatusRepository statusRepository;
 
     /**
      * Search for applicants using filter criteria.
@@ -36,10 +43,13 @@ public class ApplicantSearchController {
      * - skills: Skill names
      * - page, size: Pagination
      * 
+     * Results are enriched with company-specific Warning/Favorite status if X-Company-Id header is provided.
+     * 
      * TODO: Salary filtering - will be added when JA supports it
      */
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<ApplicantSearchResult>> searchApplicants(
+            @RequestHeader(value = "X-Company-Id", required = false) UUID companyId,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String countryCode,
             @RequestParam(required = false) String city,
@@ -70,7 +80,42 @@ public class ApplicantSearchController {
                 .build();
 
         ApplicantSearchResult result = applicantSearchService.searchApplicants(request);
+
+        // Enrich with company-specific status if company ID is provided
+        if (companyId != null && !result.content().isEmpty()) {
+            enrichWithStatus(result.content(), companyId);
+        }
+
         return ResponseEntity.ok(ApiResponse.success("Applicants retrieved", result));
+    }
+
+    /**
+     * Enrich applicant list with company-specific Warning/Favorite status.
+     */
+    private void enrichWithStatus(List<ApplicantResponse> applicants, UUID companyId) {
+        // Extract applicant IDs
+        List<UUID> applicantIds = applicants.stream()
+                .map(a -> a.getId())
+                .collect(Collectors.toList());
+
+        // Bulk fetch statuses
+        List<CompanyApplicantStatus> statuses = statusRepository.findByCompanyIdAndApplicantIdIn(companyId, applicantIds);
+
+        // Build lookup map
+        Map<UUID, CompanyApplicantStatus> statusMap = statuses.stream()
+                .collect(Collectors.toMap(CompanyApplicantStatus::getApplicantId, s -> s));
+
+        // Enrich each applicant
+        for (ApplicantResponse applicant : applicants) {
+            CompanyApplicantStatus status = statusMap.get(applicant.getId());
+            if (status != null) {
+                applicant.setCompanyStatus(status.getStatus().name());
+                applicant.setCompanyStatusNote(status.getNote());
+            } else {
+                applicant.setCompanyStatus(ApplicantStatusType.NONE.name());
+                applicant.setCompanyStatusNote(null);
+            }
+        }
     }
 
     /**
