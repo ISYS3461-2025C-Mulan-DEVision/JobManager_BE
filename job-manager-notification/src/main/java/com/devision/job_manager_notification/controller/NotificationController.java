@@ -6,7 +6,7 @@ import com.devision.job_manager_notification.dto.external.ExternalNotificationSu
 import com.devision.job_manager_notification.dto.response.ApiResponse;
 import com.devision.job_manager_notification.enums.NotificationStatus;
 import com.devision.job_manager_notification.enums.NotificationType;
-import com.devision.job_manager_notification.service.NotificationService;
+import com.devision.job_manager_notification.service.ExternalNotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,19 +20,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * REST controller for notification management.
+ * Uses ExternalNotificationService for handling validated external API requests.
+ */
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    private final ExternalNotificationService externalNotificationService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ExternalNotificationResponse>> createNotification(
             @Valid @RequestBody ExternalCreateNotificationRequest request) {
         log.info("Creating notification for user: {}, type: {}", request.getUserId(), request.getType());
-        ApiResponse<ExternalNotificationResponse> response = notificationService.createNotificationExternal(request);
+        ApiResponse<ExternalNotificationResponse> response = externalNotificationService.createNotification(request);
         return ResponseEntity.ok(response);
     }
 
@@ -40,7 +44,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<ExternalNotificationResponse>> getNotificationById(
             @PathVariable UUID notificationId) {
         log.info("Retrieving notification: {}", notificationId);
-        ApiResponse<ExternalNotificationResponse> response = notificationService.getNotificationById(notificationId);
+        ApiResponse<ExternalNotificationResponse> response = externalNotificationService.getNotificationById(notificationId);
         return ResponseEntity.ok(response);
     }
 
@@ -56,7 +60,7 @@ public class NotificationController {
         Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotifications(userId, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = externalNotificationService.getUserNotifications(userId, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -64,7 +68,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<List<ExternalNotificationResponse>>> getAllUserNotifications(
             @PathVariable UUID userId) {
         log.info("Retrieving all notifications for user: {}", userId);
-        ApiResponse<List<ExternalNotificationResponse>> response = notificationService.getAllUserNotifications(userId);
+        ApiResponse<List<ExternalNotificationResponse>> response = externalNotificationService.getAllUserNotifications(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -77,7 +81,7 @@ public class NotificationController {
         log.info("Retrieving {} notifications for user: {}", status, userId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotificationsByStatus(userId, status, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = externalNotificationService.getUserNotificationsByStatus(userId, status, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -90,7 +94,7 @@ public class NotificationController {
         log.info("Retrieving {} type notifications for user: {}", type, userId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        ApiResponse<Page<ExternalNotificationResponse>> response = notificationService.getUserNotificationsByType(userId, type, pageable);
+        ApiResponse<Page<ExternalNotificationResponse>> response = externalNotificationService.getUserNotificationsByType(userId, type, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -98,7 +102,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<ExternalNotificationSummaryResponse>> getUserNotificationSummary(
             @PathVariable UUID userId) {
         log.info("Retrieving notification summary for user: {}", userId);
-        ApiResponse<ExternalNotificationSummaryResponse> response = notificationService.getUserNotificationSummary(userId);
+        ApiResponse<ExternalNotificationSummaryResponse> response = externalNotificationService.getUserNotificationSummary(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -106,7 +110,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<ExternalNotificationResponse>> markAsRead(
             @PathVariable UUID notificationId) {
         log.info("Marking notification as read: {}", notificationId);
-        ApiResponse<ExternalNotificationResponse> response = notificationService.markAsRead(notificationId);
+        ApiResponse<ExternalNotificationResponse> response = externalNotificationService.markAsRead(notificationId);
         return ResponseEntity.ok(response);
     }
 
@@ -114,7 +118,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<String>> markAllAsRead(
             @PathVariable UUID userId) {
         log.info("Marking all notifications as read for user: {}", userId);
-        ApiResponse<String> response = notificationService.markAllAsRead(userId);
+        ApiResponse<String> response = externalNotificationService.markAllAsRead(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -122,7 +126,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<String>> deleteNotification(
             @PathVariable UUID notificationId) {
         log.info("Deleting notification: {}", notificationId);
-        ApiResponse<String> response = notificationService.deleteNotification(notificationId);
+        ApiResponse<String> response = externalNotificationService.deleteNotification(notificationId);
         return ResponseEntity.ok(response);
     }
 
@@ -130,7 +134,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<String>> deleteAllUserNotifications(
             @PathVariable UUID userId) {
         log.info("Deleting all notifications for user: {}", userId);
-        ApiResponse<String> response = notificationService.deleteAllUserNotifications(userId);
+        ApiResponse<String> response = externalNotificationService.deleteAllUserNotifications(userId);
         return ResponseEntity.ok(response);
     }
 
@@ -138,7 +142,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<String>> cleanupOldNotifications(
             @RequestParam(defaultValue = "30") int daysOld) {
         log.info("Cleaning up notifications older than {} days", daysOld);
-        ApiResponse<String> response = notificationService.cleanupOldNotifications(daysOld);
+        ApiResponse<String> response = externalNotificationService.cleanupOldNotifications(daysOld);
         return ResponseEntity.ok(response);
     }
 
