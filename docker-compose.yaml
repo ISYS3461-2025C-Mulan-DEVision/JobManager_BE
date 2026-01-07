@@ -1,91 +1,6 @@
 #version: '3.8'
 
 services:
-  # PostgreSQL Databases
-  postgres-auth:
-    image: postgres:15-alpine
-    container_name: postgres-auth
-    environment:
-      POSTGRES_DB: job_manager_auth
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5439:5432"
-    volumes:
-      - postgres-auth-data:/var/lib/postgresql/data
-
-  postgres-company:
-    image: postgres:15-alpine
-    container_name: postgres-company
-    environment:
-      POSTGRES_DB: job_manager_company
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres-company-data:/var/lib/postgresql/data
-
-  postgres-jobpost:
-    image: postgres:15-alpine
-    container_name: postgres-jobpost
-    environment:
-      POSTGRES_DB: job_manager_jobpost
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-jobpost-data:/var/lib/postgresql/data
-
-  postgres-applicant-search:
-    image: postgres:15-alpine
-    container_name: postgres-applicant-search
-    environment:
-      POSTGRES_DB: job_manager_applicant_search
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres-applicant-search-data:/var/lib/postgresql/data
-
-  postgres-subscription:
-    image: postgres:15-alpine
-    container_name: postgres-subscription
-    environment:
-      POSTGRES_DB: job_manager_subscription
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres-subscription-data:/var/lib/postgresql/data
-
-  postgres-payment:
-    image: postgres:15-alpine
-    container_name: postgres-payment
-    environment:
-      POSTGRES_DB: job_manager_payment
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5437:5432"
-    volumes:
-      - postgres-payment-data:/var/lib/postgresql/data
-
-  postgres-notification:
-    image: postgres:15-alpine
-    container_name: postgres-notification
-    environment:
-      POSTGRES_DB: job_manager_notification
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5438:5432"
-    volumes:
-      - postgres-notification-data:/var/lib/postgresql/data
-
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -121,11 +36,4 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
 volumes:
-  postgres-auth-data:
-  postgres-company-data:
-  postgres-jobpost-data:
-  postgres-applicant-search-data:
-  postgres-subscription-data:
-  postgres-payment-data:
-  postgres-notification-data:
   redis-data:
