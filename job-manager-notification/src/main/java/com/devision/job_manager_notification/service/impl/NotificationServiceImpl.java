@@ -10,7 +10,8 @@ import com.devision.job_manager_notification.entity.Notification;
 import com.devision.job_manager_notification.enums.NotificationStatus;
 import com.devision.job_manager_notification.enums.NotificationType;
 import com.devision.job_manager_notification.repository.NotificationRepository;
-import com.devision.job_manager_notification.service.NotificationService;
+import com.devision.job_manager_notification.service.ExternalNotificationService;
+import com.devision.job_manager_notification.service.InternalNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,10 +24,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Unified implementation of both internal and external notification services.
+ * Implements InternalNotificationService for Kafka/internal use and
+ * ExternalNotificationService for REST API use.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class NotificationServiceImpl implements NotificationService {
+public class NotificationServiceImpl implements InternalNotificationService, ExternalNotificationService {
 
     private final NotificationRepository notificationRepository;
 
@@ -55,9 +61,10 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    // Overloaded createNotification method for external requests
     @Override
     @Transactional
-    public ApiResponse<ExternalNotificationResponse> createNotificationExternal(ExternalCreateNotificationRequest request) {
+    public ApiResponse<ExternalNotificationResponse> createNotification(ExternalCreateNotificationRequest request) {
         try {
             Notification notification = Notification.builder()
                     .userId(request.getUserId())
