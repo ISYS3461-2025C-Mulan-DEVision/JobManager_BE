@@ -565,6 +565,96 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<String> changePassword(String companyId, ChangePasswordRequest request) {
+        log.info("Change password request for company: {}", companyId);
+
+        UUID id = UUID.fromString(companyId);
+        
+        // Find account across shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // Set shard context
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // SSO accounts cannot change password
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Change password failed: SSO account - {}", account.getEmail());
+                throw new IllegalArgumentException("This account uses SSO login. Password change is not applicable.");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Change password failed: Incorrect current password for {}", account.getEmail());
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
+
+            // Update password
+            account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            companyAccountRepository.save(account);
+
+            // Send notification email
+            emailService.sendPasswordChangedEmail(account);
+
+            log.info("Password changed successfully for: {}", account.getEmail());
+            return ApiResponse.success("Password has been changed successfully.", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> changeEmail(String companyId, ChangeEmailRequest request) {
+        log.info("Change email request for company: {}", companyId);
+
+        UUID id = UUID.fromString(companyId);
+        
+        // Find account across shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // Set shard context
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // SSO accounts cannot change email
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Change email failed: SSO account - {}", account.getEmail());
+                throw new IllegalArgumentException("This account uses SSO login. Email change is not applicable.");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Change email failed: Incorrect password for {}", account.getEmail());
+                throw new IllegalArgumentException("Password is incorrect");
+            }
+
+            // Check if new email already exists
+            if (shardDirectQueryService.emailExistsInAnyShard(request.getNewEmail())) {
+                log.warn("Change email failed: Email {} already exists", request.getNewEmail());
+                throw new IllegalArgumentException("This email is already in use");
+            }
+
+            String oldEmail = account.getEmail();
+            account.setEmail(request.getNewEmail());
+            companyAccountRepository.save(account);
+
+            // Update email-to-shard cache
+            shardLookupService.cacheEmailShard(request.getNewEmail(), shardKey);
+
+            log.info("Email changed successfully from {} to {}", oldEmail, request.getNewEmail());
+            return ApiResponse.success("Email has been changed successfully.", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
     /**
      * Find account by activation token across all shards (scatter-gather)
      */

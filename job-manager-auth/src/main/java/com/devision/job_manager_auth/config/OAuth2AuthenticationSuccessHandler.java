@@ -7,8 +7,8 @@ import com.devision.job_manager_auth.entity.AuthProvider;
 import com.devision.job_manager_auth.repository.CompanyAccountRepository;
 import com.devision.job_manager_auth.service.internal.AuthenticationService;
 import com.devision.job_manager_auth.service.internal.SsoRegistrationCacheService;
+import com.devision.job_manager_auth.service.internal.impl.ShardDirectQueryService;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final SsoRegistrationCacheService ssoRegistrationCacheService;
     private final CompanyAccountRepository companyAccountRepository;
     private final AuthenticationService authenticationService;
+    private final ShardDirectQueryService shardDirectQueryService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -45,8 +46,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         log.info("OAuth2 authentication successful for email: {}", email);
 
-        // If user already exists with this SSO provider:
-        boolean existingUser = companyAccountRepository.existsByAuthProviderAndSsoProviderId(AuthProvider.GOOGLE, ssoProviderId);
+        // Check if user already exists with this SSO provider across all shards
+        boolean existingUser = shardDirectQueryService.ssoProviderIdExistsInAnyShard(AuthProvider.GOOGLE, ssoProviderId);
 
         if (existingUser) {
             // Log the user in

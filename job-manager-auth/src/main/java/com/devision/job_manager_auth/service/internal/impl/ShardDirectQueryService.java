@@ -71,6 +71,16 @@ public class ShardDirectQueryService {
             WHERE auth_provider = ? AND sso_provider_id = ?
             """;
 
+    private static final String FIND_BY_ID_SQL = """
+            SELECT id, email, password_hash, country, auth_provider, sso_provider_id,
+                   role, is_activated, activation_token, activation_token_expiry,
+                   failed_login_attempts, is_locked, last_failed_login_time,
+                   password_reset_token, password_reset_token_expiry,
+                   created_at, updated_at
+            FROM company_account
+            WHERE id = ?
+            """;
+
     public ShardDirectQueryService(
             @Qualifier("shardDataSources") Map<String, DataSource> shardDataSources) {
 
@@ -235,6 +245,37 @@ public class ShardDirectQueryService {
 
         log.debug("Email '{}' not found in any shard", email);
         return false;
+    }
+
+    /**
+     * Find account by ID across all shards (scatter-gather)
+     */
+    public Optional<CompanyAccount> findByIdAcrossShards(UUID id) {
+        log.debug("Searching for account ID across all shards");
+
+        for (String shardKey : SHARD_KEYS) {
+            JdbcTemplate jdbcTemplate = shardJdbcTemplates.get(shardKey);
+            if (jdbcTemplate == null) continue;
+
+            try {
+                log.debug("Querying shard '{}' for account ID", shardKey);
+                List<CompanyAccount> results = jdbcTemplate.query(
+                        FIND_BY_ID_SQL,
+                        new CompanyAccountRowMapper(),
+                        id
+                );
+
+                if (!results.isEmpty()) {
+                    log.info("Found account with ID in shard '{}'", shardKey);
+                    return Optional.of(results.get(0));
+                }
+            } catch (Exception e) {
+                log.error("Error querying shard '{}' for account ID: {}", shardKey, e.getMessage());
+            }
+        }
+
+        log.warn("Account ID not found in any shard");
+        return Optional.empty();
     }
 
     /**
