@@ -1,9 +1,11 @@
 package com.devision.job_manager_notification.service.impl;
 
-import com.devision.job_manager_notification.dto.request.CreateNotificationRequest;
+import com.devision.job_manager_notification.dto.external.ExternalCreateNotificationRequest;
+import com.devision.job_manager_notification.dto.external.ExternalNotificationResponse;
+import com.devision.job_manager_notification.dto.external.ExternalNotificationSummaryResponse;
+import com.devision.job_manager_notification.dto.internal.InternalCreateNotificationRequest;
+import com.devision.job_manager_notification.dto.internal.InternalNotificationResponse;
 import com.devision.job_manager_notification.dto.response.ApiResponse;
-import com.devision.job_manager_notification.dto.response.NotificationResponse;
-import com.devision.job_manager_notification.dto.response.NotificationSummaryResponse;
 import com.devision.job_manager_notification.entity.Notification;
 import com.devision.job_manager_notification.enums.NotificationStatus;
 import com.devision.job_manager_notification.enums.NotificationType;
@@ -30,7 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public ApiResponse<NotificationResponse> createNotification(CreateNotificationRequest request) {
+    public ApiResponse<InternalNotificationResponse> createNotification(InternalCreateNotificationRequest request) {
         try {
             Notification notification = Notification.builder()
                     .userId(request.getUserId())
@@ -46,7 +48,32 @@ public class NotificationServiceImpl implements NotificationService {
             Notification savedNotification = notificationRepository.save(notification);
             log.info("Notification created successfully for user: {}, type: {}", request.getUserId(), request.getType());
 
-            return ApiResponse.success("Notification created successfully", mapToResponse(savedNotification));
+            return ApiResponse.success("Notification created successfully", mapToInternalResponse(savedNotification));
+        } catch (Exception e) {
+            log.error("Error creating notification for user: {}", request.getUserId(), e);
+            return ApiResponse.error("Failed to create notification: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<ExternalNotificationResponse> createNotificationExternal(ExternalCreateNotificationRequest request) {
+        try {
+            Notification notification = Notification.builder()
+                    .userId(request.getUserId())
+                    .type(request.getType())
+                    .title(request.getTitle())
+                    .message(request.getMessage())
+                    .status(NotificationStatus.UNREAD)
+                    .referenceId(request.getReferenceId())
+                    .referenceType(request.getReferenceType())
+                    .metadata(request.getMetadata())
+                    .build();
+
+            Notification savedNotification = notificationRepository.save(notification);
+            log.info("Notification created successfully for user: {}, type: {}", request.getUserId(), request.getType());
+
+            return ApiResponse.success("Notification created successfully", mapToExternalResponse(savedNotification));
         } catch (Exception e) {
             log.error("Error creating notification for user: {}", request.getUserId(), e);
             return ApiResponse.error("Failed to create notification: " + e.getMessage());
@@ -55,12 +82,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<NotificationResponse> getNotificationById(UUID notificationId) {
+    public ApiResponse<ExternalNotificationResponse> getNotificationById(UUID notificationId) {
         try {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
 
-            return ApiResponse.success("Notification retrieved successfully", mapToResponse(notification));
+            return ApiResponse.success("Notification retrieved successfully", mapToExternalResponse(notification));
         } catch (Exception e) {
             log.error("Error retrieving notification: {}", notificationId, e);
             return ApiResponse.error("Failed to retrieve notification: " + e.getMessage());
@@ -69,10 +96,10 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<NotificationResponse>> getUserNotifications(UUID userId, Pageable pageable) {
+    public ApiResponse<Page<ExternalNotificationResponse>> getUserNotifications(UUID userId, Pageable pageable) {
         try {
             Page<Notification> notifications = notificationRepository.findByUserId(userId, pageable);
-            Page<NotificationResponse> response = notifications.map(this::mapToResponse);
+            Page<ExternalNotificationResponse> response = notifications.map(this::mapToExternalResponse);
 
             return ApiResponse.success("Notifications retrieved successfully", response);
         } catch (Exception e) {
@@ -83,10 +110,10 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<NotificationResponse>> getUserNotificationsByStatus(UUID userId, NotificationStatus status, Pageable pageable) {
+    public ApiResponse<Page<ExternalNotificationResponse>> getUserNotificationsByStatus(UUID userId, NotificationStatus status, Pageable pageable) {
         try {
             Page<Notification> notifications = notificationRepository.findByUserIdAndStatus(userId, status, pageable);
-            Page<NotificationResponse> response = notifications.map(this::mapToResponse);
+            Page<ExternalNotificationResponse> response = notifications.map(this::mapToExternalResponse);
 
             return ApiResponse.success("Notifications retrieved successfully", response);
         } catch (Exception e) {
@@ -97,10 +124,10 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<NotificationResponse>> getUserNotificationsByType(UUID userId, NotificationType type, Pageable pageable) {
+    public ApiResponse<Page<ExternalNotificationResponse>> getUserNotificationsByType(UUID userId, NotificationType type, Pageable pageable) {
         try {
             Page<Notification> notifications = notificationRepository.findByUserIdAndType(userId, type, pageable);
-            Page<NotificationResponse> response = notifications.map(this::mapToResponse);
+            Page<ExternalNotificationResponse> response = notifications.map(this::mapToExternalResponse);
 
             return ApiResponse.success("Notifications retrieved successfully", response);
         } catch (Exception e) {
@@ -111,11 +138,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<NotificationResponse>> getAllUserNotifications(UUID userId) {
+    public ApiResponse<List<ExternalNotificationResponse>> getAllUserNotifications(UUID userId) {
         try {
             List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
-            List<NotificationResponse> response = notifications.stream()
-                    .map(this::mapToResponse)
+            List<ExternalNotificationResponse> response = notifications.stream()
+                    .map(this::mapToExternalResponse)
                     .collect(Collectors.toList());
 
             return ApiResponse.success("All notifications retrieved successfully", response);
@@ -127,7 +154,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public ApiResponse<NotificationResponse> markAsRead(UUID notificationId) {
+    public ApiResponse<ExternalNotificationResponse> markAsRead(UUID notificationId) {
         try {
             Notification notification = notificationRepository.findById(notificationId)
                     .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
@@ -138,7 +165,7 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.setStatus(NotificationStatus.READ);
                 notification.setReadAt(LocalDateTime.now());
                 log.info("Notification marked as read: {}", notificationId);
-                return ApiResponse.success("Notification marked as read", mapToResponse(notification));
+                return ApiResponse.success("Notification marked as read", mapToExternalResponse(notification));
             } else {
                 return ApiResponse.error("Failed to mark notification as read");
             }
@@ -199,14 +226,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<NotificationSummaryResponse> getUserNotificationSummary(UUID userId) {
+    public ApiResponse<ExternalNotificationSummaryResponse> getUserNotificationSummary(UUID userId) {
         try {
             long totalCount = notificationRepository.countByUserId(userId);
             long unreadCount = notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
             long readCount = notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.READ);
             long archivedCount = notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.ARCHIVED);
 
-            NotificationSummaryResponse summary = NotificationSummaryResponse.builder()
+            ExternalNotificationSummaryResponse summary = ExternalNotificationSummaryResponse.builder()
                     .totalNotifications(totalCount)
                     .unreadCount(unreadCount)
                     .readCount(readCount)
@@ -235,8 +262,25 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-    private NotificationResponse mapToResponse(Notification notification) {
-        return NotificationResponse.builder()
+    private InternalNotificationResponse mapToInternalResponse(Notification notification) {
+        return InternalNotificationResponse.builder()
+                .id(notification.getId())
+                .userId(notification.getUserId())
+                .type(notification.getType())
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .status(notification.getStatus())
+                .referenceId(notification.getReferenceId())
+                .referenceType(notification.getReferenceType())
+                .metadata(notification.getMetadata())
+                .readAt(notification.getReadAt())
+                .createdAt(notification.getCreatedAt())
+                .updatedAt(notification.getUpdatedAt())
+                .build();
+    }
+
+    private ExternalNotificationResponse mapToExternalResponse(Notification notification) {
+        return ExternalNotificationResponse.builder()
                 .id(notification.getId())
                 .userId(notification.getUserId())
                 .type(notification.getType())
