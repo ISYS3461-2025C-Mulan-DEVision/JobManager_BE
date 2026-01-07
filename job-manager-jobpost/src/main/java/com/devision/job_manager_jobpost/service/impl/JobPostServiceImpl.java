@@ -61,6 +61,11 @@ public class JobPostServiceImpl implements JobPostService {
     }
 
     @Override
+    public Page<JobPost> getAllJobPosts(Pageable pageable) {
+        return jobPostRepository.findAll(pageable);
+    }
+
+    @Override
     @Transactional
     public JobPost updateJobPost(UUID id, JobPost updatedJobPost) {
         JobPost existing = jobPostRepository.findById(id)

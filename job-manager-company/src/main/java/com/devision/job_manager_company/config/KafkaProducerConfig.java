@@ -1,6 +1,5 @@
-package com.devision.job_manager_subscription.config;
+package com.devision.job_manager_company.config;
 
-import com.devision.job_manager_subscription.event.SubscriptionUpdatedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +16,7 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
+    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
     @Bean
@@ -27,9 +26,6 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
-        // Use type mappings for cross-service compatibility
-        configProps.put(JsonSerializer.TYPE_MAPPINGS, 
-                "subscriptionUpdated:" + SubscriptionUpdatedEvent.class.getName());
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

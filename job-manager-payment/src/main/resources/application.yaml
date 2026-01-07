@@ -6,9 +6,9 @@ spring:
     name: job-manager-payment
 
   datasource:
-    url: ${POSTGRES_PAYMENT_URL:jdbc:postgresql://localhost:5437/job_manager_payment}
-    username: ${POSTGRES_PAYMENT_USERNAME:postgres}
-    password: ${POSTGRES_PAYMENT_PASSWORD:postgres}
+    url: ${POSTGRES_PAYMENT_URL}
+    username: ${POSTGRES_PAYMENT_USERNAME}
+    password: ${POSTGRES_PAYMENT_PASSWORD}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -19,9 +19,21 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 stripe:
   api-key: ${STRIPE_API_KEY:sk_test_your_stripe_key}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_your_webhook_secret}
+
+kafka:
+  topic:
+    payment-completed: payment.completed
+    payment-failed: payment.failed
+    payment-cancelled: payment.cancelled
 
 eureka:
   client:
@@ -38,3 +50,7 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+logging:
+  level:
+    com.devision.job_manager_payment: DEBUG

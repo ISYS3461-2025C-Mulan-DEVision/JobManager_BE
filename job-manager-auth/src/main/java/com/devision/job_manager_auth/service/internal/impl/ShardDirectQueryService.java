@@ -71,6 +71,16 @@ public class ShardDirectQueryService {
             WHERE auth_provider = ? AND sso_provider_id = ?
             """;
 
+    private static final String FIND_BY_ID_SQL = """
+            SELECT id, email, password_hash, country, auth_provider, sso_provider_id,
+                   role, is_activated, activation_token, activation_token_expiry,
+                   failed_login_attempts, is_locked, last_failed_login_time,
+                   password_reset_token, password_reset_token_expiry,
+                   created_at, updated_at
+            FROM company_account
+            WHERE id = ?
+            """;
+
     public ShardDirectQueryService(
             @Qualifier("shardDataSources") Map<String, DataSource> shardDataSources) {
 
@@ -238,10 +248,115 @@ public class ShardDirectQueryService {
     }
 
     /**
+     * Find account by ID across all shards (scatter-gather)
+     * Returns a record containing both the account and the shard key where it was found
+     */
+    public Optional<AccountWithShard> findByIdAcrossShards(UUID companyId) {
+        log.debug("Searching for company ID {} across all shards", companyId);
+
+        for (String shardKey : SHARD_KEYS) {
+            JdbcTemplate jdbcTemplate = shardJdbcTemplates.get(shardKey);
+            if (jdbcTemplate == null) continue;
+
+            try {
+                log.debug("Querying shard '{}' for company ID {}", shardKey, companyId);
+                List<CompanyAccount> results = jdbcTemplate.query(
+                        FIND_BY_ID_SQL,
+                        new CompanyAccountRowMapper(),
+                        companyId
+                );
+
+                if (!results.isEmpty()) {
+                    log.info("Found company account with ID {} in shard '{}'", companyId, shardKey);
+                    return Optional.of(new AccountWithShard(results.get(0), shardKey));
+                }
+            } catch (Exception e) {
+                log.error("Error querying shard '{}' for company ID {}: {}", shardKey, companyId, e.getMessage());
+            }
+        }
+
+        log.warn("Company account with ID {} not found in any shard", companyId);
+        return Optional.empty();
+    }
+
+    /**
+     * Record to hold both the account and the shard where it was found
+     */
+    public record AccountWithShard(CompanyAccount account, String shardKey) {}
+
+    /**
      * Get all shard keys
      */
     public List<String> getShardKeys() {
         return SHARD_KEYS;
+    }
+
+    /**
+     * Insert a company account into a specific shard using direct JDBC.
+     * This avoids Hibernate session issues when doing cross-shard operations.
+     */
+    public void insertAccountInShard(CompanyAccount account, String shardKey) {
+        JdbcTemplate jdbcTemplate = shardJdbcTemplates.get(shardKey);
+        if (jdbcTemplate == null) {
+            throw new IllegalStateException("No JdbcTemplate found for shard: " + shardKey);
+        }
+
+        String insertSql = """
+            INSERT INTO company_account (
+                id, email, password_hash, country, auth_provider, sso_provider_id,
+                role, is_activated, activation_token, activation_token_expiry,
+                failed_login_attempts, is_locked, last_failed_login_time,
+                password_reset_token, password_reset_token_expiry,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        
+        jdbcTemplate.update(insertSql,
+                account.getId(),
+                account.getEmail(),
+                account.getPasswordHash(),
+                account.getCountry() != null ? account.getCountry().name() : null,
+                account.getAuthProvider() != null ? account.getAuthProvider().name() : null,
+                account.getSsoProviderId(),
+                account.getRole() != null ? account.getRole().name() : null,
+                account.getIsActivated(),
+                account.getActivationToken(),
+                account.getActivationTokenExpiry() != null ? 
+                    java.sql.Timestamp.valueOf(account.getActivationTokenExpiry()) : null,
+                account.getFailedLoginAttempts(),
+                account.getIsLocked(),
+                account.getLastFailedLoginTime() != null ? 
+                    java.sql.Timestamp.valueOf(account.getLastFailedLoginTime()) : null,
+                account.getPasswordResetToken(),
+                account.getPasswordResetTokenExpiry() != null ? 
+                    java.sql.Timestamp.valueOf(account.getPasswordResetTokenExpiry()) : null,
+                java.sql.Timestamp.valueOf(now),
+                java.sql.Timestamp.valueOf(now)
+        );
+
+        log.info("Inserted company account {} into shard {}", account.getId(), shardKey);
+    }
+
+    /**
+     * Delete a company account from a specific shard using direct JDBC.
+     * This avoids Hibernate session issues when doing cross-shard operations.
+     */
+    public void deleteAccountFromShard(UUID companyId, String shardKey) {
+        JdbcTemplate jdbcTemplate = shardJdbcTemplates.get(shardKey);
+        if (jdbcTemplate == null) {
+            throw new IllegalStateException("No JdbcTemplate found for shard: " + shardKey);
+        }
+
+        String deleteSql = "DELETE FROM company_account WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(deleteSql, companyId);
+
+        if (rowsAffected > 0) {
+            log.info("Deleted company account {} from shard {}", companyId, shardKey);
+        } else {
+            log.warn("No company account found to delete with ID {} in shard {}", companyId, shardKey);
+        }
     }
 
     /**

@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmailService emailService;
     private final ShardLookupService shardLookupService;
     private final ShardDirectQueryService shardDirectQueryService;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final String SESSION_INVALIDATION_PREFIX = "session-invalidated:";
 
     @Value("${app.activation.token-expiration}")
     private long activationTokenExpiration;
@@ -299,6 +303,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             log.info("Login successful for: {} (shard: {})", request.getEmail(), account.getCountry().getShardKey());
 
+            // Clear any session invalidation flag (e.g., from country change)
+            clearSessionInvalidation(account.getId());
+
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -348,6 +355,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String refreshToken = jweTokenService.generateRefreshToken(account);
 
             log.info("SSO login successful for: {} (shard: {})", account.getEmail(), account.getCountry().getShardKey());
+
+            // Clear any session invalidation flag (e.g., from country change)
+            clearSessionInvalidation(account.getId());
 
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(accessToken)
@@ -565,6 +575,96 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<String> changePassword(String companyId, ChangePasswordRequest request) {
+        log.info("Change password request for company: {}", companyId);
+
+        UUID id = UUID.fromString(companyId);
+        
+        // Find account across shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // Set shard context
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // SSO accounts cannot change password
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Change password failed: SSO account - {}", account.getEmail());
+                throw new IllegalArgumentException("This account uses SSO login. Password change is not applicable.");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Change password failed: Incorrect current password for {}", account.getEmail());
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
+
+            // Update password
+            account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            companyAccountRepository.save(account);
+
+            // Send notification email
+            emailService.sendPasswordChangedEmail(account);
+
+            log.info("Password changed successfully for: {}", account.getEmail());
+            return ApiResponse.success("Password has been changed successfully.", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> changeEmail(String companyId, ChangeEmailRequest request) {
+        log.info("Change email request for company: {}", companyId);
+
+        UUID id = UUID.fromString(companyId);
+        
+        // Find account across shards
+        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // Set shard context
+        String shardKey = account.getCountry().getShardKey();
+        ShardContext.setShardKey(shardKey);
+
+        try {
+            // SSO accounts cannot change email
+            if (account.getAuthProvider() != AuthProvider.LOCAL) {
+                log.warn("Change email failed: SSO account - {}", account.getEmail());
+                throw new IllegalArgumentException("This account uses SSO login. Email change is not applicable.");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPasswordHash())) {
+                log.warn("Change email failed: Incorrect password for {}", account.getEmail());
+                throw new IllegalArgumentException("Password is incorrect");
+            }
+
+            // Check if new email already exists
+            if (shardDirectQueryService.emailExistsInAnyShard(request.getNewEmail())) {
+                log.warn("Change email failed: Email {} already exists", request.getNewEmail());
+                throw new IllegalArgumentException("This email is already in use");
+            }
+
+            String oldEmail = account.getEmail();
+            account.setEmail(request.getNewEmail());
+            companyAccountRepository.save(account);
+
+            // Update email-to-shard cache
+            shardLookupService.cacheEmailShard(request.getNewEmail(), shardKey);
+
+            log.info("Email changed successfully from {} to {}", oldEmail, request.getNewEmail());
+            return ApiResponse.success("Email has been changed successfully.", null);
+        } finally {
+            ShardContext.clear();
+        }
+    }
+
     /**
      * Find account by activation token across all shards (scatter-gather)
      */
@@ -633,5 +733,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .activationToken(activationToken)
                 .registeredAt(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Clear session invalidation flag when user successfully logs in.
+     * This allows the user to use the system after re-authenticating.
+     */
+    private void clearSessionInvalidation(UUID companyId) {
+        String redisKey = SESSION_INVALIDATION_PREFIX + companyId.toString();
+        Boolean deleted = redisTemplate.delete(redisKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared session invalidation for company ID: {}", companyId);
+        }
     }
 }

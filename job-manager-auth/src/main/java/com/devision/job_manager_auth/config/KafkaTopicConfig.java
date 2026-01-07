@@ -35,4 +35,14 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    public static final String COMPANY_COUNTRY_CHANGED_TOPIC = "company.country.changed";
+
+    @Bean
+    public NewTopic companyCountryChangedTopic() {
+        return TopicBuilder.name(COMPANY_COUNTRY_CHANGED_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

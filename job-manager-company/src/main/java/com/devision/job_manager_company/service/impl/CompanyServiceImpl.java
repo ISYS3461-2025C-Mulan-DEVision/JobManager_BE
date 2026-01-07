@@ -1,5 +1,6 @@
 package com.devision.job_manager_company.service.impl;
 
+import com.devision.job_manager_company.event.CompanyCountryChangedEvent;
 import com.devision.job_manager_company.event.CompanyRegisteredEvent;
 import com.devision.job_manager_company.model.Company;
 import com.devision.job_manager_company.model.CompanyProfile;
@@ -9,8 +10,10 @@ import com.devision.job_manager_company.service.CompanyService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,8 +22,11 @@ import java.util.UUID;
 @Slf4j
 public class CompanyServiceImpl implements CompanyService {
 
+    private static final String COUNTRY_CHANGED_TOPIC = "company.country.changed";
+
     private final CompanyRepository companyRepository;
     private final CompanyProfileRepository companyProfileRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     @Transactional
@@ -71,6 +77,10 @@ public class CompanyServiceImpl implements CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with ID: " + id));
 
+        // Track if country is changing for event publishing
+        String previousCountryCode = company.getCountryCode();
+        boolean countryChanged = false;
+
         if (updatedCompany.getName() != null) {
             company.setName(updatedCompany.getName());
         }
@@ -83,11 +93,41 @@ public class CompanyServiceImpl implements CompanyService {
         if (updatedCompany.getCity() != null) {
             company.setCity(updatedCompany.getCity());
         }
-        if (updatedCompany.getCountryCode() != null) {
+        if (updatedCompany.getCountryCode() != null && 
+                !updatedCompany.getCountryCode().equals(previousCountryCode)) {
             company.setCountryCode(updatedCompany.getCountryCode());
+            countryChanged = true;
         }
 
-        return companyRepository.save(company);
+        Company savedCompany = companyRepository.save(company);
+
+        // Publish event if country changed
+        if (countryChanged) {
+            publishCountryChangedEvent(id, previousCountryCode, updatedCompany.getCountryCode());
+        }
+
+        return savedCompany;
+    }
+
+    /**
+     * Publish country changed event for auth service to migrate shard
+     */
+    private void publishCountryChangedEvent(UUID companyId, String previousCountryCode, String newCountryCode) {
+        CompanyCountryChangedEvent event = CompanyCountryChangedEvent.builder()
+                .companyId(companyId)
+                .previousCountryCode(previousCountryCode)
+                .newCountryCode(newCountryCode)
+                .changedAt(LocalDateTime.now())
+                .build();
+
+        try {
+            kafkaTemplate.send(COUNTRY_CHANGED_TOPIC, companyId.toString(), event);
+            log.info("Published CompanyCountryChangedEvent for company ID: {} (country: {} -> {})",
+                    companyId, previousCountryCode, newCountryCode);
+        } catch (Exception e) {
+            log.error("Failed to publish CompanyCountryChangedEvent for company ID: {}. Error: {}",
+                    companyId, e.getMessage(), e);
+        }
     }
 
     @Override
