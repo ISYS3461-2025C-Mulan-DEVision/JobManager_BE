@@ -1,7 +1,7 @@
 package com.devision.job_manager_jobpost.validation;
 
-import com.devision.job_manager_jobpost.dto.CreateJobPostRequest;
-import com.devision.job_manager_jobpost.dto.UpdateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.external.CreateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.external.UpdateJobPostRequest;
 import com.devision.job_manager_jobpost.model.SalaryType;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

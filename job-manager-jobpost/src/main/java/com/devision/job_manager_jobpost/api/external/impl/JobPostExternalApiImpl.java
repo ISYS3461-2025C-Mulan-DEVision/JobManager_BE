@@ -119,10 +119,11 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
 
     @Override
     public Page<JobSearchResultDto> searchJobPosts(JobSearchRequest request) {
-        log.info("Searching job posts with criteria: title={}, employmentTypes={}, city={}, minSalary={}, maxSalary={}, fresher={}",
+        log.info("Searching job posts with criteria: title={}, employmentTypes={}, city={}, minSalary={}, maxSalary={}, fresher={}, countryCode={}",
                 request.getTitle(), request.getEmploymentTypes(),
                 request.getLocationCity(), request.getMinSalary(),
-                request.getMaxSalary(), request.getFresher());
+                request.getMaxSalary(), request.getFresher(),
+                request.getCountryCode());
 
         // Create pageable from the request
         Pageable pageable = PageRequest.of(
@@ -139,15 +140,16 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
         // Preprocess string params for case-insensitive matching
         String titlePattern = prepareTitle(request.getTitle());
         String locationCity = prepareLocationCity(request.getLocationCity());
+        String countryCode = prepareCountryCode(request.getCountryCode());
 
         // Query from the database
-        // TODO: Add the filter for country later.
         Page<JobPost> jobPosts;
         if (employmentTypes == null) {
             // No employment type filter
             jobPosts = jobPostRepository.searchJobPostsWithoutEmploymentType(
                     titlePattern,
                     locationCity,
+                    countryCode,
                     request.getMinSalary(),
                     request.getMaxSalary(),
                     request.getFresher(),
@@ -159,6 +161,7 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                     titlePattern,
                     employmentTypes,
                     locationCity,
+                    countryCode,
                     request.getMinSalary(),
                     request.getMaxSalary(),
                     request.getFresher(),
@@ -190,7 +193,7 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
                 .title(jobPost.getTitle())
                 .description(jobPost.getDescription())
                 .locationCity(jobPost.getLocationCity())
-                .countryCode(null) // TODO: Will be implemented after countryCode added to entity
+                .countryCode(jobPost.getCountryCode())
                 .salaryType(jobPost.getSalaryType())
                 .salaryMin(jobPost.getSalaryMin())
                 .salaryMax(jobPost.getSalaryMax())
@@ -218,5 +221,11 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
         return locationCity.toLowerCase().trim();
     }
 
+    private String prepareCountryCode(String countryCode) {
+        if (countryCode == null || countryCode.isBlank()) {
+            return null;
+        }
+        return countryCode.toLowerCase().trim();
+    }
 
 }

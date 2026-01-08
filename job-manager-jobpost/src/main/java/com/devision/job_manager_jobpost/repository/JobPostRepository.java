@@ -36,8 +36,10 @@ public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
     @Query("SELECT DISTINCT j FROM JobPost j " +
             "LEFT JOIN FETCH j.skills s " +
             "WHERE j.published = true " +
+            "AND j.aPrivate = false " +
             "AND (:title IS NULL OR LOWER(j.title) LIKE :title) " +
             "AND (:locationCity IS NULL OR LOWER(j.locationCity) = :locationCity) " +
+            "AND (:countryCode IS NULL OR LOWER(j.countryCode) = :countryCode) " +
             "AND (:minSalary IS NULL OR j.salaryMin >= :minSalary OR j.salaryMax >= :minSalary OR j.salaryType = 'NEGOTIABLE') " +
             "AND (:maxSalary IS NULL OR j.salaryMax <= :maxSalary OR j.salaryType = 'NEGOTIABLE') " +
             "AND (:fresher IS NULL OR j.fresher = :fresher) " +
@@ -45,6 +47,7 @@ public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
     Page<JobPost> searchJobPostsWithoutEmploymentType(
             @Param("title") String title,
             @Param("locationCity") String locationCity,
+            @Param("countryCode") String countryCode,
             @Param("minSalary") BigDecimal minSalary,
             @Param("maxSalary") BigDecimal maxSalary,
             @Param("fresher") Boolean fresher,
@@ -59,9 +62,11 @@ public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
             "JOIN j.employmentTypes et " +
             "LEFT JOIN FETCH j.skills s " +
             "WHERE j.published = true " +
+            "AND j.aPrivate = false " +
             "AND et.type IN :employmentTypes " +
             "AND (:title IS NULL OR LOWER(j.title) LIKE :title) " +
             "AND (:locationCity IS NULL OR LOWER(j.locationCity) = :locationCity) " +
+            "AND (:countryCode IS NULL OR LOWER(j.countryCode) = :countryCode) " +
             "AND (:minSalary IS NULL OR j.salaryMin >= :minSalary OR j.salaryMax >= :minSalary OR j.salaryType = 'NEGOTIABLE') " +
             "AND (:maxSalary IS NULL OR j.salaryMax <= :maxSalary OR j.salaryType = 'NEGOTIABLE') " +
             "AND (:fresher IS NULL OR j.fresher = :fresher) " +
@@ -70,6 +75,7 @@ public interface JobPostRepository extends JpaRepository<JobPost, UUID> {
             @Param("title") String title,
             @Param("employmentTypes") List<EmploymentType> employmentTypes,
             @Param("locationCity") String locationCity,
+            @Param("countryCode") String countryCode,
             @Param("minSalary") BigDecimal minSalary,
             @Param("maxSalary") BigDecimal maxSalary,
             @Param("fresher") Boolean fresher,

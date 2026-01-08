@@ -1,8 +1,11 @@
-package com.devision.job_manager_jobpost.dto;
+package com.devision.job_manager_jobpost.dto.external;
 
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.SalaryType;
 import com.devision.job_manager_jobpost.validation.ValidSalary;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,13 +21,18 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @ValidSalary
-public class UpdateJobPostRequest {
+public class CreateJobPostRequest {
 
+    @NotNull
+    private UUID companyId;
+
+    @NotBlank
     @Size(max = 255)
     private String title;
 
     private String description;
 
+    @NotNull
     private SalaryType salaryType;
 
     private BigDecimal salaryMin;
@@ -37,14 +45,18 @@ public class UpdateJobPostRequest {
     @Size(max = 128)
     private String locationCity;
 
-    // private UUID countryId;
+    @Size(max = 3, message = "Country code must be 2-3 characters")
+    private String countryCode;
 
-    private Boolean fresher;
+    private boolean fresher;
 
     @JsonProperty("isPrivate")
-    private Boolean aPrivate;
+    private boolean aPrivate;
 
     private LocalDateTime expiryAt;
+    
+    // Employment type - single value (frontend sends single type)
+    private EmploymentType employmentType;
 }
 
 
