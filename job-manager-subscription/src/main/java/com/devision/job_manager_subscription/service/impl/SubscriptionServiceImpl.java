@@ -55,10 +55,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     @Transactional(readOnly = true)
     public SubscriptionResponse getByCompanyId(UUID companyId) {
-        CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
-                .orElseThrow(() -> new SubscriptionNotFoundException(
-                        "Subscription not found for company: " + companyId));
-        return SubscriptionResponse.fromEntity(subscription);
+        return subscriptionRepository
+                .findByCompanyId(companyId)
+                .map(this::mapToResponse)
+                .orElse(null);
     }
 
     /**
@@ -239,5 +239,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 subscription.isPremium()
         );
         eventProducer.publishSubscriptionUpdated(event);
+    }
+
+    private SubscriptionResponse mapToResponse(CompanySubscription subscription) {
+        return SubscriptionResponse.builder()
+                .id(subscription.getId())
+                .companyId(subscription.getCompanyId())
+                .status(subscription.getStatus())
+                .startAt(subscription.getStartAt())
+                .endAt(subscription.getEndAt())
+                .isPremium(subscription.isPremium())
+                .createdAt(subscription.getCreatedAt())
+                .updatedAt(subscription.getUpdatedAt())
+                .build();
     }
 }
