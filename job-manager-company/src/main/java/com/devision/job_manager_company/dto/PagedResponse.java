@@ -1,4 +1,4 @@
-package com.devision.job_manager_applicant_search.dto;
+package com.devision.job_manager_company.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +17,6 @@ public class PagedResponse<T> {
     private int size;
     private long totalElements;
     private int totalPages;
-    private boolean last;
     private boolean first;
+    private boolean last;
 }

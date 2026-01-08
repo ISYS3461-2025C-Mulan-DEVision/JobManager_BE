@@ -84,4 +84,24 @@ public interface AuthenticationService {
      * @throws IllegalArgumentException if token is invalid, expired, or new password validation fails
      */
     ApiResponse<String> resetPassword(ResetPasswordRequest request);
+
+    /**
+     * Change password for authenticated user
+     *
+     * @param companyId The company ID
+     * @param request Change password request containing current and new password
+     * @return Success message
+     * @throws IllegalArgumentException if current password is incorrect or new password validation fails
+     */
+    ApiResponse<String> changePassword(String companyId, ChangePasswordRequest request);
+
+    /**
+     * Change email for authenticated user
+     *
+     * @param companyId The company ID
+     * @param request Change email request containing new email and current password for verification
+     * @return Success message
+     * @throws IllegalArgumentException if password is incorrect or new email is already in use
+     */
+    ApiResponse<String> changeEmail(String companyId, ChangeEmailRequest request);
 }

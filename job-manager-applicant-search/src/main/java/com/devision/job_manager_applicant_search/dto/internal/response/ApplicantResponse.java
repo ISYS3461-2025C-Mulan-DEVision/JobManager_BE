@@ -59,6 +59,10 @@ public class ApplicantResponse {
     
     private List<PortfolioItemDto> portfolioItems;
 
+    // Company-specific applicant status (enriched from local database)
+    private String companyStatus;      // "NONE", "WARNING", "FAVORITE"
+    private String companyStatusNote;  // Note explaining the status
+
     // ==================== Nested DTOs ====================
 
     @Data

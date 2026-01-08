@@ -29,6 +29,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired(required = false)
@@ -69,13 +70,14 @@ public class SecurityConfig {
                 )
 
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
 
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
                         .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
