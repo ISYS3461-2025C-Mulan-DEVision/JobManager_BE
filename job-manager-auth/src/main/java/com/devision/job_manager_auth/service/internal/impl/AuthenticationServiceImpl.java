@@ -583,11 +583,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UUID id = UUID.fromString(companyId);
         
         // Find account across shards
-        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+        ShardDirectQueryService.AccountWithShard accountWithShard = shardDirectQueryService.findByIdAcrossShards(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        CompanyAccount account = accountWithShard.account();
 
         // Set shard context
-        String shardKey = account.getCountry().getShardKey();
+        String shardKey = accountWithShard.shardKey();
         ShardContext.setShardKey(shardKey);
 
         try {
@@ -625,11 +626,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UUID id = UUID.fromString(companyId);
         
         // Find account across shards
-        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+        ShardDirectQueryService.AccountWithShard accountWithShard = shardDirectQueryService.findByIdAcrossShards(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        CompanyAccount account = accountWithShard.account();
 
         // Set shard context
-        String shardKey = account.getCountry().getShardKey();
+        String shardKey = accountWithShard.shardKey();
         ShardContext.setShardKey(shardKey);
 
         try {
