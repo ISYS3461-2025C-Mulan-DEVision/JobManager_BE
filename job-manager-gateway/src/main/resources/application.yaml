@@ -1,148 +1,177 @@
 server:
-    port: 8080
+  port: 8080
 
 spring:
-    application:
-        name: job-manager-gateway
+  application:
+    name: job-manager-gateway
 
-    config:
-        import: optional:dotenv:.env
+  config:
+    import: optional:dotenv:.env
 
-    cloud:
-        gateway:
-            routes:
-                # OAuth2 routes (must be before /api/auth/** to avoid conflicts)
-                - id: job-manager-auth-oauth2
-                  uri: http://localhost:8081/
-                  predicates:
-                      - Path=/api/oauth2/**,/api/login/oauth2/**
-                  filters:
-                      - StripPrefix=1
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # OAuth2 routes (must be before /api/auth/** to avoid conflicts)
+        - id: job-manager-auth-oauth2
+          uri: ${AUTH_SERVICE_URL:lb://job-manager-auth}
+          predicates:
+            - Path=/api/oauth2/**,/api/login/oauth2/**
+          filters:
+            - StripPrefix=1
 
-                - id: job-manager-auth
-                  uri: http://localhost:8081/
-                  predicates:
-                      - Path=/api/auth/**
-                  metadata:
-                      public-paths:
-                          - /api/auth/register
-                          - /api/auth/login
-                          - /api/auth/activate
-                          - /api/auth/resend-activation
-                          - /api/auth/forgot-password
-                          - /api/auth/reset-password
-                          - /api/auth/countries
-                          - /api/auth/oauth2/**
-                          - /api/auth/health
-                          - /oauth2/**
-                          - /login/oauth2/**
-                          - /api/auth/refresh
-                          - /api/auth/diagnostics/**
-                          - /api/auth/validate-token
+        - id: job-manager-auth
+          uri: ${AUTH_SERVICE_URL:lb://job-manager-auth}
+          predicates:
+            - Path=/api/auth/**
+          metadata:
+            public-paths:
+              - /api/auth/register
+              - /api/auth/login
+              - /api/auth/activate
+              - /api/auth/resend-activation
+              - /api/auth/forgot-password
+              - /api/auth/reset-password
+              - /api/auth/countries
+              - /api/auth/oauth2/**
+              - /api/auth/health
+              - /oauth2/**
+              - /login/oauth2/**
+              - /api/auth/refresh
+              - /api/auth/diagnostics/**
+              - /api/auth/validate-token
 
-                - id: job-manager-company
-                  uri: http://localhost:8082/
-                  predicates:
-                      - Path=/api/companies/**
-                  filters:
-                      - Authentication
+        - id: job-manager-company
+          uri: ${COMPANY_SERVICE_URL:lb://job-manager-company}
+          predicates:
+            - Path=/api/companies/**
+          filters:
+            - Authentication
 
-                - id: job-manager-jobpost
-                  uri: http://localhost:8083/
-                  predicates:
-                      - Path=/api/job-posts/**
-                  filters:
-                      - Authentication
+        - id: job-manager-jobpost
+          uri: ${JOBPOST_SERVICE_URL:lb://job-manager-jobpost}
+          predicates:
+            - Path=/api/job-posts/**
+          filters:
+            - Authentication
 
-                # External Search Profiles API (inter-service communication)
-                - id: job-manager-applicant-search-external
-                  uri: http://localhost:8084/
-                  predicates:
-                      - Path=/api/search-profiles/**
-                  filters:
-                      - Authentication
+        # External Search Profiles API (inter-service communication)
+        - id: job-manager-applicant-search-external
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/search-profiles/**
+          filters:
+            - Authentication
 
-                # Internal Search Profiles API (frontend/internal use)
-                - id: job-manager-applicant-search-internal
-                  uri: http://localhost:8084/
-                  predicates:
-                      - Path=/api/internal/search-profiles/**
-                  filters:
-                      - Authentication
+        # Internal Search Profiles API (frontend/internal use)
+        - id: job-manager-applicant-search-internal
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/internal/search-profiles/**
+          filters:
+            - Authentication
 
-                # Internal Applicant Search API (frontend use)
-                - id: job-manager-applicant-search-applicants
-                  uri: http://localhost:8084/
-                  predicates:
-                      - Path=/api/internal/applicants/**
-                  filters:
-                      - Authentication
+        # Internal Applicant Search API (frontend use)
+        - id: job-manager-applicant-search-applicants
+          uri: ${APPLICANT_SEARCH_SERVICE_URL:lb://job-manager-applicant-search}
+          predicates:
+            - Path=/api/internal/applicants/**
+          filters:
+            - Authentication
 
-                - id: job-manager-subscription-internal
-                  uri: http://localhost:8085/
-                  predicates:
-                      - Path=/api/internal/subscriptions/**
-                  filters:
-                      - Authentication
+        - id: job-manager-subscription-internal
+          uri: ${SUBSCRIPTION_SERVICE_URL:lb://job-manager-subscription}
+          predicates:
+            - Path=/api/internal/subscriptions/**
+          filters:
+            - Authentication
 
-                - id: job-manager-subscription-external
-                  uri: http://localhost:8085/
-                  predicates:
-                      - Path=/api/subscriptions/**
-                  filters:
-                      - Authentication
+        - id: job-manager-subscription-external
+          uri: ${SUBSCRIPTION_SERVICE_URL:lb://job-manager-subscription}
+          predicates:
+            - Path=/api/subscriptions/**
+          filters:
+            - Authentication
 
-                - id: job-manager-payment-internal
-                  uri: http://localhost:8086/
-                  predicates:
-                      - Path=/api/internal/payment/**
-                  filters:
-                      - Authentication
+        - id: job-manager-payment-internal
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/internal/payment/**
+          filters:
+            - Authentication
 
-                - id: job-manager-payment-external
-                  uri: http://localhost:8086/
-                  predicates:
-                      - Path=/api/payment/**
-                  filters:
-                      - Authentication
+        - id: job-manager-payment-external
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - Authentication
 
-                - id: job-manager-payment-external-webhook
-                  uri: http://localhost:8086/
-                  predicates:
-                      - Path=/api/payment/webhooks/**
+        - id: job-manager-payment-external-webhook
+          uri: ${PAYMENT_SERVICE_URL:lb://job-manager-payment}
+          predicates:
+            - Path=/api/payment/webhooks/**
 
 # JWT configuration for token validation
 jwt:
-    jwe:
-        validate-via-auth-service: true
+  jwe:
+    validate-via-auth-service: true
 
 # Eureka configuration
 eureka:
-    client:
-        service-url:
-            defaultZone: http://localhost:8761/eureka/
-        fetch-registry: true
-        register-with-eureka: true
-    instance:
-        prefer-ip-address: true
-        health-check-url-path: /actuator/health
-        instance-id: ${spring.application.name}:${server.port}:${random.value}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
 
 # Management endpoints
 management:
-    endpoints:
-        web:
-            exposure:
-                include: health,info,gateway,metrics
-    endpoint:
-        gateway:
-            access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,metrics
+  endpoint:
+    gateway:
+      access: unrestricted
 
 # Logging configuration
 logging:
-    level:
-        root: INFO
-        com.devision.job_manager_gateway: DEBUG
-        org.springframework.cloud.gateway: TRACE
-        org.springframework.cloud.gateway.route: TRACE
-        reactor.netty: INFO
+  level:
+    root: INFO
+    com.devision.job_manager_gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route: DEBUG
+    reactor.netty: INFO
+
+# Gateway authentication configuration
+gateway:
+  auth:
+    enabled: true
+    auth-service:
+      url: ${GATEWAY_AUTH_SERVICE_URL:http://localhost:8081}
+      validate-endpoint: /api/auth/validate-token
+      timeout-ms: 5000
+    public-paths:
+      - /api/auth/register
+      - /api/auth/login
+      - /api/auth/activate
+      - /api/auth/resend-activation
+      - /api/auth/forgot-password
+      - /api/auth/reset-password
+      - /api/auth/countries
+      - /api/auth/oauth2/**
+      - /api/auth/health
+      - /api/auth/refresh
+      - /api/auth/diagnostics/**
+      - /api/auth/validate-token
+      - /oauth2/**
+      - /login/oauth2/**
+      - /actuator/**
