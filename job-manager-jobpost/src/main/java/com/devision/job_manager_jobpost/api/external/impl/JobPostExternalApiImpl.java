@@ -1,20 +1,26 @@
 package com.devision.job_manager_jobpost.api.external.impl;
 
 import com.devision.job_manager_jobpost.api.external.JobPostExternalApi;
-import com.devision.job_manager_jobpost.dto.external.JobPostBasicInfoDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostStatusDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostSummaryDto;
+import com.devision.job_manager_jobpost.dto.external.*;
+import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
+import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
+import com.devision.job_manager_jobpost.model.JobPostSkill;
 import com.devision.job_manager_jobpost.repository.JobPostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -110,4 +116,116 @@ public class JobPostExternalApiImpl implements JobPostExternalApi {
         return jobPost.getExpiryAt() != null && 
                jobPost.getExpiryAt().isBefore(LocalDateTime.now());
     }
+
+    @Override
+    public Page<JobSearchResultDto> searchJobPosts(JobSearchRequest request) {
+        log.info("Searching job posts with criteria: title={}, employmentTypes={}, city={}, minSalary={}, maxSalary={}, fresher={}, countryCode={}",
+                request.getTitle(), request.getEmploymentTypes(),
+                request.getLocationCity(), request.getMinSalary(),
+                request.getMaxSalary(), request.getFresher(),
+                request.getCountryCode());
+
+        // Create pageable from the request
+        Pageable pageable = PageRequest.of(
+                request.getPage() != null ? request.getPage() : 0,
+                request.getSize() != null ? request.getSize() : 10
+        );
+
+        // Normalize empty list to null
+        List<EmploymentType> employmentTypes = request.getEmploymentTypes();
+        if (employmentTypes != null && employmentTypes.isEmpty()) {
+            employmentTypes = null;
+        }
+
+        // Preprocess string params for case-insensitive matching
+        String titlePattern = prepareTitle(request.getTitle());
+        String locationCity = prepareLocationCity(request.getLocationCity());
+        String countryCode = prepareCountryCode(request.getCountryCode());
+
+        // Query from the database
+        Page<JobPost> jobPosts;
+        if (employmentTypes == null) {
+            // No employment type filter
+            jobPosts = jobPostRepository.searchJobPostsWithoutEmploymentType(
+                    titlePattern,
+                    locationCity,
+                    countryCode,
+                    request.getMinSalary(),
+                    request.getMaxSalary(),
+                    request.getFresher(),
+                    pageable
+            );
+        } else {
+            // Employment type filter specified
+            jobPosts = jobPostRepository.searchJobPostsWithEmploymentType(
+                    titlePattern,
+                    employmentTypes,
+                    locationCity,
+                    countryCode,
+                    request.getMinSalary(),
+                    request.getMaxSalary(),
+                    request.getFresher(),
+                    pageable
+            );
+        }
+
+        return jobPosts.map(this::mapToSearchResultDto);
+    }
+
+    private JobSearchResultDto mapToSearchResultDto(JobPost jobPost) {
+        // Extract employment types
+        List<EmploymentType> employmentTypes = jobPost.getEmploymentTypes().stream()
+                .map(JobPostEmploymentType::getType)
+                .collect(Collectors.toList());
+
+        // Extract skill IDs
+        List<UUID> skillIds = jobPost.getSkills().stream()
+                .map(JobPostSkill::getSkillId)
+                .collect(Collectors.toList());
+
+        // Calculate if job is active
+        boolean isActive = jobPost.getExpiryAt() == null ||
+                jobPost.getExpiryAt().isAfter(LocalDateTime.now());
+
+        return JobSearchResultDto.builder()
+                .id(jobPost.getJobPostId())
+                .companyId(jobPost.getCompanyId())
+                .title(jobPost.getTitle())
+                .description(jobPost.getDescription())
+                .locationCity(jobPost.getLocationCity())
+                .countryCode(jobPost.getCountryCode())
+                .salaryType(jobPost.getSalaryType())
+                .salaryMin(jobPost.getSalaryMin())
+                .salaryMax(jobPost.getSalaryMax())
+                .salaryNote(jobPost.getSalaryNote())
+                .employmentTypes(employmentTypes)
+                .isFresher(jobPost.isFresher())
+                .skillIds(skillIds)
+                .postedAt(jobPost.getPostedAt())
+                .expiryAt(jobPost.getExpiryAt())
+                .isActive(isActive)
+                .build();
+    }
+
+    private String prepareTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return null;
+        }
+        return "%" + title.toLowerCase().trim() + "%";
+    }
+
+    private String prepareLocationCity(String locationCity) {
+        if (locationCity == null || locationCity.isBlank()) {
+            return null;
+        }
+        return locationCity.toLowerCase().trim();
+    }
+
+    private String prepareCountryCode(String countryCode) {
+        if (countryCode == null || countryCode.isBlank()) {
+            return null;
+        }
+        return countryCode.toLowerCase().trim();
+    }
+
 }

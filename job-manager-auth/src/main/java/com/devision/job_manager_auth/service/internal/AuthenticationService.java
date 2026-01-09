@@ -93,7 +93,7 @@ public interface AuthenticationService {
      * @return Success message
      * @throws IllegalArgumentException if current password is incorrect or new password validation fails
      */
-    ApiResponse<String> changePassword(String companyId, ChangePasswordRequest request);
+//    ApiResponse<String> changePassword(String companyId, ChangePasswordRequest request);
 
     /**
      * Change email for authenticated user
@@ -103,5 +103,5 @@ public interface AuthenticationService {
      * @return Success message
      * @throws IllegalArgumentException if password is incorrect or new email is already in use
      */
-    ApiResponse<String> changeEmail(String companyId, ChangeEmailRequest request);
+//    ApiResponse<String> changeEmail(String companyId, ChangeEmailRequest request);
 }
