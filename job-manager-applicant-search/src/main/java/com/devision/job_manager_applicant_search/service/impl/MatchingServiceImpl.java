@@ -145,39 +145,42 @@ public class MatchingServiceImpl implements MatchingService {
     }
 
     /**
-     * Salary filter:
-     * - If minSalary exists and applicant salary < minSalary → reject
-     * - If maxSalary exists and applicant salary > maxSalary → reject
+     * Salary filter - compares salary ranges.
      * 
-     * TODO: Salary Data Availability
-     * This method uses desiredSalary from ApplicantProfileUpdatedEvent (Kafka).
-     * Note: JA's REST API (/api/v1/users/search) does NOT include salary fields.
-     * Salary filtering only works for Kafka-based matching, not API search.
-     * When JA adds salary to UserResponse, update ApplicantSearchServiceImpl.
+     * Profile has (minSalary, maxSalary) - the range the company is willing to pay.
+     * Applicant has (minSalary, maxSalary) - the range the applicant expects.
      * 
-     * NOTE: Currently disabled because ApplicantSearchProfile doesn't have salary fields.
-     * When salary support is added, uncomment the profile.getMinSalary()/getMaxSalary() calls.
+     * Match condition: The ranges must overlap.
+     * - If profile.maxSalary < applicant.minSalary → reject (company can't afford applicant)
+     * - If profile.minSalary > applicant.maxSalary → reject (applicant expects more)
      */
     private boolean matchesSalary(ApplicantSearchProfile profile, ApplicantProfileUpdatedEvent applicant) {
-        // TODO: Salary matching - uncomment when salary fields are added to ApplicantSearchProfile
-        // BigDecimal applicantSalary = applicant.getDesiredSalary();
-        // 
-        // // If applicant has no salary specified, allow match if profile has no requirements
-        // if (applicantSalary == null) {
-        //     return profile.getMinSalary() == null && profile.getMaxSalary() == null;
-        // }
-        //
-        // // Check min salary
-        // if (profile.getMinSalary() != null && applicantSalary.compareTo(profile.getMinSalary()) < 0) {
-        //     return false;
-        // }
-        //
-        // // Check max salary
-        // if (profile.getMaxSalary() != null && applicantSalary.compareTo(profile.getMaxSalary()) > 0) {
-        //     return false;
-        // }
-        
-        // Always match since salary filtering is disabled
+        BigDecimal profileMin = profile.getMinSalary();
+        BigDecimal profileMax = profile.getMaxSalary();
+        BigDecimal applicantMin = applicant.getMinSalary();
+        BigDecimal applicantMax = applicant.getMaxSalary();
+
+        // If profile has no salary requirements, match
+        if (profileMin == null && profileMax == null) {
+            return true;
+        }
+
+        // If applicant has no salary expectations, match if profile has no strict requirements
+        if (applicantMin == null && applicantMax == null) {
+            return true; // Flexible applicant matches any range
+        }
+
+        // Check for range overlap
+        // Profile's max must be >= applicant's min (if both exist)
+        if (profileMax != null && applicantMin != null && profileMax.compareTo(applicantMin) < 0) {
+            return false; // Company's max is below applicant's minimum expectation
+        }
+
+        // Profile's min must be <= applicant's max (if both exist)
+        if (profileMin != null && applicantMax != null && profileMin.compareTo(applicantMax) > 0) {
+            return false; // Company's min is above applicant's maximum expectation
+        }
+
         return true;
     }
 
