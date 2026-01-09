@@ -21,11 +21,11 @@ public class UpdateCompanyProfileRequest {
     private String whoWeSeek;
     
     @Size(max = 512, message = "Website URL must be less than 512 characters")
-    @Pattern(regexp = "^(https?://)?([\\w\\-]+\\.)+[\\w\\-]+(/[\\w\\-./?%&=]*)?$", message = "Website URL must be a valid URL format")
+    @Pattern(regexp = "^$|^(https?://)?([\\w\\-]+\\.)+[\\w\\-]+(/[\\w\\-./?%&=]*)?$", message = "Website URL must be a valid URL format")
     private String websiteUrl;
     
     @Size(max = 512, message = "LinkedIn URL must be less than 512 characters")
-    @Pattern(regexp = "^(https?://)?(www\\.)?linkedin\\.com/(company|in)/[\\w\\-]+/?$", message = "LinkedIn URL must be a valid LinkedIn profile or company URL")
+    @Pattern(regexp = "^$|^(https?://)?(www\\.)?linkedin\\.com/(company|in)/[\\w\\-]+/?$", message = "LinkedIn URL must be a valid LinkedIn profile or company URL")
     private String linkedinUrl;
     
     @Size(max = 128, message = "Industry must be less than 128 characters")
