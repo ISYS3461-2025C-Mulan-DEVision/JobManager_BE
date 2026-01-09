@@ -1,9 +1,8 @@
 package com.devision.job_manager_jobpost.controller.external;
 
 import com.devision.job_manager_jobpost.api.external.JobPostExternalApi;
-import com.devision.job_manager_jobpost.dto.external.JobPostBasicInfoDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostStatusDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostSummaryDto;
+import com.devision.job_manager_jobpost.dto.external.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -68,5 +67,39 @@ public class JobPostExternalController {
     public ResponseEntity<Long> getPublishedJobPostCount(@PathVariable UUID companyId) {
         log.info("External request: Get published job post count for company ID: {}", companyId);
         return ResponseEntity.ok(jobPostExternalApi.getPublishedJobPostCount(companyId));
+    }
+
+    /**
+     * Search job posts with criteria
+     * This search endpoint is for JA team
+     *
+     * Supports:
+     * Case-insensitive title search
+     * Multiple employment type filtering
+     * Location filtering by city or country
+     * Salary range filtering
+     * Fresher status
+     */
+    @PostMapping("/search")
+    public ResponseEntity<Page<JobSearchResultDto>> searchJobPosts(
+            @Valid @RequestBody JobSearchRequest request) {
+        log.info("Request from JA: Search job posts - title={}, employmentTypes={}, locationCity={}, countryCode={}, minSalary={}, maxSalary={}, fresher={}, page={}, size={}",
+                request.getTitle(),
+                request.getEmploymentTypes(),
+                request.getLocationCity(),
+                request.getCountryCode(),
+                request.getMinSalary(),
+                request.getMaxSalary(),
+                request.getFresher(),
+                request.getPage(),
+                request.getSize());
+
+        Page<JobSearchResultDto> results = jobPostExternalApi.searchJobPosts(request);
+
+        log.info("Search returned {} results out of {} total",
+                results.getNumberOfElements(),
+                results.getTotalElements());
+
+        return ResponseEntity.ok(results);
     }
 }

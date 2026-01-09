@@ -1,8 +1,8 @@
 package com.devision.job_manager_jobpost.controller;
 
-import com.devision.job_manager_jobpost.dto.CreateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.external.CreateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.JobPostDto;
-import com.devision.job_manager_jobpost.dto.UpdateJobPostRequest;
+import com.devision.job_manager_jobpost.dto.external.UpdateJobPostRequest;
 import com.devision.job_manager_jobpost.dto.UpdateSkillsRequest;
 import com.devision.job_manager_jobpost.dto.ApiResponse;
 import com.devision.job_manager_jobpost.model.EmploymentType;
@@ -41,7 +41,7 @@ public class JobPostController {
                 .salaryMax(request.getSalaryMax())
                 .salaryNote(request.getSalaryNote())
                 .locationCity(request.getLocationCity())
-                // .countryId(request.getCountryId())
+                .countryCode(request.getCountryCode())
                 .fresher(request.isFresher())
                 .aPrivate(request.isAPrivate())
                 .expiryAt(request.getExpiryAt())
@@ -128,7 +128,7 @@ public class JobPostController {
                     .salaryMax(request.getSalaryMax())
                     .salaryNote(request.getSalaryNote())
                     .locationCity(request.getLocationCity())
-                    // .countryId(request.getCountryId())
+                    .countryCode(request.getCountryCode())
                     .fresher(request.getFresher() != null && request.getFresher())
                     .aPrivate(request.getAPrivate() != null && request.getAPrivate())
                     .expiryAt(request.getExpiryAt())
@@ -211,13 +211,6 @@ public class JobPostController {
             employmentType = jobPost.getEmploymentTypes().get(0).getType();
         }
 
-        // Fetch country code from Company service (cached) - Ultimo 4.3.1
-        String countryCode = null;
-        if (jobPost.getCompanyId() != null) {
-            countryCode = ((com.devision.job_manager_jobpost.service.impl.JobPostServiceImpl) jobPostService)
-                    .getCompanyCountry(jobPost.getCompanyId());
-        }
-
         return JobPostDto.builder()
                 .id(jobPost.getJobPostId())
                 .companyId(jobPost.getCompanyId())
@@ -229,7 +222,7 @@ public class JobPostController {
                 .salaryMax(jobPost.getSalaryMax())
                 .salaryNote(jobPost.getSalaryNote())
                 .locationCity(jobPost.getLocationCity())
-                .countryCode(countryCode)  // Derived from Company service
+                .countryCode(jobPost.getCountryCode())  // Derived from Company service
                 .published(jobPost.isPublished())
                 .aPrivate(jobPost.isAPrivate())
                 .postedAt(jobPost.getPostedAt())

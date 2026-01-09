@@ -31,9 +31,18 @@ public class EventPublisherServiceImpl implements EventPublisherService {
 
     @Override
     public void publishJobPostPublished(JobPostPublishedEvent event) {
-        log.info("Publishing JobPostPublishedEvent for job post ID: {}", event.getJobPostId());
-        kafkaTemplate.send(KafkaTopicConfig.JOB_POST_PUBLISHED_TOPIC,
-                String.valueOf(event.getJobPostId()), event);
+        try {
+            log.info("Publishing JobPostPublishedEvent for job post ID: {} ({})",
+                    event.getJobPostId(), event.getTitle());
+
+            kafkaTemplate.send("jobpost.published", event.getJobPostId().toString(), event);
+
+            log.info("Successfully published JobPostPublishedEvent for job post ID: {}",
+                    event.getJobPostId());
+        } catch (Exception e) {
+            log.error("Failed to publish JobPostPublishedEvent for job post ID: {}. Error: {}",
+                    event.getJobPostId(), e.getMessage(), e);
+        }
     }
 
     @Override
