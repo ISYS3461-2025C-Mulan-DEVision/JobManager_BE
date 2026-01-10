@@ -2,7 +2,6 @@ package com.devision.job_manager_notification.service.impl;
 
 import com.devision.job_manager_notification.dto.response.ApiResponse;
 import com.devision.job_manager_notification.service.ApplicantMatchNotificationService;
-import com.devision.job_manager_notification.service.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,8 +14,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicantMatchNotificationServiceImpl implements ApplicantMatchNotificationService {
-
-    private final EmailNotificationService emailNotificationService;
 
     private final Map<UUID, Map<String, Object>> companySearchProfilesCache = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> companyNotifiedApplicantsCache = new ConcurrentHashMap<>();
@@ -53,35 +50,23 @@ public class ApplicantMatchNotificationServiceImpl implements ApplicantMatchNoti
             }
 
             String applicantName = extractApplicantName(applicantProfile);
-            String companyEmail = extractCompanyEmail(companyId);
             String companyName = extractCompanyName(companyId);
 
             String matchDetails = buildDetailedMatchDescription(
                     applicantProfile, matchingCriteria, matchScore
             );
 
-            ApiResponse<String> emailResult = emailNotificationService.sendApplicantMatchNotificationEmail(
-                    companyId,
-                    companyEmail,
-                    companyName,
-                    applicantName,
-                    matchDetails
+            // TODO: Email notifications are handled by auth service
+            // For now, just log the match and mark as notified
+            markAsNotified(companyId, applicantId);
+
+            String successMessage = String.format(
+                    "Successfully notified company %s about applicant %s (match score: %.2f%%). Details: %s",
+                    companyName, applicantName, matchScore, matchDetails
             );
 
-            if (emailResult.isSuccess()) {
-                markAsNotified(companyId, applicantId);
-
-                String successMessage = String.format(
-                        "Successfully notified company %s about applicant %s (match score: %.2f%%)",
-                        companyName, applicantName, matchScore
-                );
-
-                log.info(successMessage);
-                return ApiResponse.success(successMessage, successMessage);
-            } else {
-                log.error("Failed to send email notification: {}", emailResult.getMessage());
-                return ApiResponse.error("Failed to send notification: " + emailResult.getMessage());
-            }
+            log.info(successMessage);
+            return ApiResponse.success(successMessage, successMessage);
 
         } catch (Exception e) {
             log.error("Error notifying company {} about applicant {}", companyId, applicantId, e);
