@@ -179,3 +179,53 @@ Ensure Zookeeper and Kafka containers are healthy:
 docker compose ps
 docker compose logs kafka
 ```
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for automated deployment:
+
+```
+Push to main → Build Docker images → Push to Docker Hub → SSH to EC2 → Pull & Restart
+```
+
+### Setup Requirements
+
+1. **Docker Hub**: Create repositories for each service
+2. **EC2 Instance**: With Docker and Docker Compose installed
+3. **GitHub Secrets**: Configure the following:
+
+| Secret               | Description               |
+| -------------------- | ------------------------- |
+| `DOCKERHUB_USERNAME` | Your Docker Hub username  |
+| `DOCKERHUB_TOKEN`    | Docker Hub access token   |
+| `EC2_HOST`           | EC2 public IP or hostname |
+| `EC2_USER`           | SSH user (e.g., `ubuntu`) |
+| `EC2_SSH_KEY`        | Private SSH key for EC2   |
+
+### Production Deployment
+
+On your EC2 server:
+
+```bash
+# Create project directory
+mkdir -p ~/job-manager
+cd ~/job-manager
+
+# Copy docker-compose.prod.yml and .env file
+# Then set your Docker Hub username
+export DOCKERHUB_USERNAME=your-username
+
+# Pull and start services
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### Manual Deployment
+
+To trigger deployment manually:
+
+```bash
+# On EC2
+cd ~/job-manager
+./scripts/deploy.sh
+```
