@@ -118,16 +118,69 @@ public class SubscriptionEventListener {
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
+        SubscriptionRenewedEvent validatedEvent = event;
         try {
-            log.info("Received SubscriptionRenewedEvent for company: {} from partition: {}, offset: {}",
-                    event.getCompanyId(), partition, offset);
-
-            if (event.getCompanyId() == null) {
-                log.error("SubscriptionRenewedEvent has null companyId, skipping notification creation");
+            // Validate event object
+            if (validatedEvent == null) {
+                log.error("Received null SubscriptionRenewedEvent - skipping processing");
                 return;
             }
 
+            log.info("Received SubscriptionRenewedEvent for company: {} from partition: {}, offset: {}",
+                    validatedEvent.getCompanyId(), partition, offset);
+
+            // Validate company ID
+            if (validatedEvent.getCompanyId() == null) {
+                log.error("SubscriptionRenewedEvent has null companyId, skipping notification creation. Event details - subscriptionId: {}, planType: {}",
+                        validatedEvent.getSubscriptionId(), validatedEvent.getPlanType());
+                return;
+            }
+
+            // Validate subscription ID
+            if (event.getSubscriptionId() == null) {
+                log.error("SubscriptionRenewedEvent has null subscriptionId for company: {}. Cannot create notification without subscription reference.",
+                        event.getCompanyId());
+                return;
+            }
+
+            // Validate renewal data
+            if (event.getRenewalAmount() != null && event.getRenewalAmount() <= 0) {
+                log.warn("SubscriptionRenewedEvent has invalid renewal amount: {} for company: {}, subscription: {}",
+                        event.getRenewalAmount(), event.getCompanyId(), event.getSubscriptionId());
+            }
+
+            if (event.getCurrency() == null || event.getCurrency().trim().isEmpty()) {
+                log.warn("SubscriptionRenewedEvent has null/empty currency for company: {}, subscription: {}. Using default.",
+                        event.getCompanyId(), event.getSubscriptionId());
+            }
+
+            // Validate dates
+            if (event.getNewEndAt() == null) {
+                log.warn("SubscriptionRenewedEvent has null newEndAt for company: {}, subscription: {}. Subscription may be indefinite.",
+                        event.getCompanyId(), event.getSubscriptionId());
+            }
+
+            if (event.getPreviousEndAt() != null && event.getNewEndAt() != null) {
+                if (event.getNewEndAt().isBefore(event.getPreviousEndAt())) {
+                    log.error("SubscriptionRenewedEvent has invalid dates - newEndAt {} is before previousEndAt {} for company: {}, subscription: {}",
+                            event.getNewEndAt(), event.getPreviousEndAt(), event.getCompanyId(), event.getSubscriptionId());
+                    return;
+                }
+            }
+
+            log.debug("Building renewal message for subscription: {}, company: {}, amount: {}, currency: {}, autoRenewal: {}",
+                    event.getSubscriptionId(), event.getCompanyId(), event.getRenewalAmount(),
+                    event.getCurrency(), event.getIsAutoRenewal());
+
             String renewalMessage = buildSubscriptionRenewedMessage(event);
+
+            if (renewalMessage == null || renewalMessage.trim().isEmpty()) {
+                log.error("Failed to build renewal message for subscription: {}, company: {}. Message is null/empty.",
+                        event.getSubscriptionId(), event.getCompanyId());
+                return;
+            }
+
+            log.debug("Building renewal metadata for subscription: {}", event.getSubscriptionId());
 
             String metadata = buildRenewalMetadata(
                     event.getSubscriptionId(),
@@ -137,6 +190,14 @@ public class SubscriptionEventListener {
                     event.getCurrency(),
                     event.getIsAutoRenewal()
             );
+
+            if (metadata == null) {
+                log.warn("Metadata is null for subscription renewal: {}, company: {}. Proceeding without metadata.",
+                        event.getSubscriptionId(), event.getCompanyId());
+            }
+
+            log.debug("Creating notification request for subscription renewal: {}, company: {}",
+                    event.getSubscriptionId(), event.getCompanyId());
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(event.getCompanyId())
@@ -148,14 +209,33 @@ public class SubscriptionEventListener {
                     .metadata(metadata)
                     .build();
 
+            if (notification == null) {
+                log.error("Failed to build notification request for subscription renewal: {}, company: {}",
+                        event.getSubscriptionId(), event.getCompanyId());
+                return;
+            }
+
+            log.debug("Persisting renewal notification to database for company: {}", event.getCompanyId());
+
             internalNotificationService.createNotification(notification);
 
-            log.info("Successfully created renewal notification for subscription: {} (company: {})",
-                    event.getSubscriptionId(), event.getCompanyId());
+            log.info("Successfully created renewal notification for subscription: {} (company: {}), amount: {}, autoRenewal: {}",
+                    event.getSubscriptionId(), event.getCompanyId(), event.getRenewalAmount(), event.getIsAutoRenewal());
 
+        } catch (NullPointerException e) {
+            log.error("Null pointer exception processing SubscriptionRenewedEvent for company: {}, subscription: {}. Missing required field.",
+                    event != null ? event.getCompanyId() : "unknown",
+                    event != null ? event.getSubscriptionId() : "unknown", e);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid argument processing SubscriptionRenewedEvent for company: {}, subscription: {}. Error: {}",
+                    event != null ? event.getCompanyId() : "unknown",
+                    event != null ? event.getSubscriptionId() : "unknown",
+                    e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Error processing SubscriptionRenewedEvent for company: {}, subscription: {}",
-                    event.getCompanyId(), event.getSubscriptionId(), e);
+            log.error("Unexpected error processing SubscriptionRenewedEvent for company: {}, subscription: {}, error: {}",
+                    event != null ? event.getCompanyId() : "unknown",
+                    event != null ? event.getSubscriptionId() : "unknown",
+                    e.getMessage(), e);
         }
     }
 
@@ -176,42 +256,113 @@ public class SubscriptionEventListener {
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
+        SubscriptionExpiredEvent validatedEvent = event;
         try {
-            log.info("Received SubscriptionExpiredEvent for company: {} from partition: {}, offset: {}",
-                    event.getCompanyId(), partition, offset);
-
-            if (event.getCompanyId() == null) {
-                log.error("SubscriptionExpiredEvent has null companyId, skipping notification creation");
+            // Validate event object
+            if (validatedEvent == null) {
+                log.error("Received null SubscriptionExpiredEvent from partition: {}, offset: {} - skipping processing",
+                        partition, offset);
                 return;
             }
 
-            String expirationMessage = buildSubscriptionExpiredMessage(event);
+            log.info("Received SubscriptionExpiredEvent for company: {} from partition: {}, offset: {}",
+                    validatedEvent.getCompanyId(), partition, offset);
+
+            // Validate company ID
+            if (validatedEvent.getCompanyId() == null) {
+                log.error("SubscriptionExpiredEvent has null companyId, skipping notification creation. SubscriptionId: {}, planType: {}, expirationReason: {}",
+                        validatedEvent.getSubscriptionId(), validatedEvent.getPlanType(), validatedEvent.getExpirationReason());
+                return;
+            }
+
+            // Validate subscription ID
+            if (validatedEvent.getSubscriptionId() == null) {
+                log.error("SubscriptionExpiredEvent has null subscriptionId for company: {}. Cannot track expiration without subscription ID.",
+                        validatedEvent.getCompanyId());
+                return;
+            }
+
+            // Validate expiration date
+            if (validatedEvent.getExpiredAt() == null) {
+                log.warn("SubscriptionExpiredEvent has null expiredAt for company: {}, subscription: {}. Using current timestamp.",
+                        validatedEvent.getCompanyId(), validatedEvent.getSubscriptionId());
+            }
+
+            // Validate expiration reason
+            if (validatedEvent.getExpirationReason() == null || validatedEvent.getExpirationReason().trim().isEmpty()) {
+                log.warn("SubscriptionExpiredEvent has null/empty expirationReason for company: {}, subscription: {}. Using default reason.",
+                        validatedEvent.getCompanyId(), validatedEvent.getSubscriptionId());
+            }
+
+            // Log additional context
+            log.debug("Processing subscription expiration for company: {}, subscription: {}, planType: {}, reason: {}, hadAutoRenewal: {}",
+                    validatedEvent.getCompanyId(), validatedEvent.getSubscriptionId(), validatedEvent.getPlanType(),
+                    validatedEvent.getExpirationReason(), validatedEvent.getHadAutoRenewal());
+
+            log.debug("Building expiration message for subscription: {}", validatedEvent.getSubscriptionId());
+
+            String expirationMessage = buildSubscriptionExpiredMessage(validatedEvent);
+
+            if (expirationMessage == null || expirationMessage.trim().isEmpty()) {
+                log.error("Failed to build expiration message for subscription: {}, company: {}. Message is null/empty.",
+                        validatedEvent.getSubscriptionId(), validatedEvent.getCompanyId());
+                return;
+            }
+
+            log.debug("Building expiration metadata for subscription: {}", validatedEvent.getSubscriptionId());
 
             String metadata = buildExpirationMetadata(
-                    event.getSubscriptionId(),
-                    event.getPlanType(),
-                    event.getExpirationReason(),
-                    event.getHadAutoRenewal()
+                    validatedEvent.getSubscriptionId(),
+                    validatedEvent.getPlanType(),
+                    validatedEvent.getExpirationReason(),
+                    validatedEvent.getHadAutoRenewal()
             );
 
+            if (metadata == null) {
+                log.warn("Metadata is null for subscription expiration: {}, company: {}. Proceeding without metadata.",
+                        validatedEvent.getSubscriptionId(), validatedEvent.getCompanyId());
+            }
+
+            log.debug("Creating expiration notification request for company: {}", validatedEvent.getCompanyId());
+
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
-                    .userId(event.getCompanyId())
+                    .userId(validatedEvent.getCompanyId())
                     .type(NotificationType.ALERT)
                     .title("⚠️ Subscription Expired")
                     .message(expirationMessage)
-                    .referenceId(event.getSubscriptionId() != null ? event.getSubscriptionId().toString() : null)
+                    .referenceId(validatedEvent.getSubscriptionId() != null ? validatedEvent.getSubscriptionId().toString() : null)
                     .referenceType("SUBSCRIPTION_EXPIRED")
                     .metadata(metadata)
                     .build();
 
+            if (notification == null) {
+                log.error("Failed to build notification request for subscription expiration: {}, company: {}",
+                        validatedEvent.getSubscriptionId(), validatedEvent.getCompanyId());
+                return;
+            }
+
+            log.debug("Persisting expiration notification to database for company: {}", validatedEvent.getCompanyId());
+
             internalNotificationService.createNotification(notification);
 
-            log.info("Successfully created expiration notification for subscription: {} (company: {})",
-                    event.getSubscriptionId(), event.getCompanyId());
+            log.info("Successfully created expiration notification for subscription: {} (company: {}), reason: {}, hadAutoRenewal: {}",
+                    validatedEvent.getSubscriptionId(), validatedEvent.getCompanyId(),
+                    validatedEvent.getExpirationReason(), validatedEvent.getHadAutoRenewal());
 
+        } catch (NullPointerException e) {
+            log.error("Null pointer exception processing SubscriptionExpiredEvent for company: {}, subscription: {}. Missing required field in event data.",
+                    validatedEvent != null ? validatedEvent.getCompanyId() : "unknown",
+                    validatedEvent != null ? validatedEvent.getSubscriptionId() : "unknown", e);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid argument processing SubscriptionExpiredEvent for company: {}, subscription: {}. Invalid data in event: {}",
+                    validatedEvent != null ? validatedEvent.getCompanyId() : "unknown",
+                    validatedEvent != null ? validatedEvent.getSubscriptionId() : "unknown",
+                    e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Error processing SubscriptionExpiredEvent for company: {}, subscription: {}",
-                    event.getCompanyId(), event.getSubscriptionId(), e);
+            log.error("Unexpected error processing SubscriptionExpiredEvent for company: {}, subscription: {}, error: {}. Stack trace: ",
+                    validatedEvent != null ? validatedEvent.getCompanyId() : "unknown",
+                    validatedEvent != null ? validatedEvent.getSubscriptionId() : "unknown",
+                    e.getMessage(), e);
         }
     }
 
