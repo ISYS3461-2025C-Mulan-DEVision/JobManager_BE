@@ -724,19 +724,23 @@ public class SubscriptionEventListener {
             return null;
         }
         if (dateTimeObj instanceof java.util.List) {
-            // Handle array format: [2026, 1, 10, 14, 13, 51, 660735000]
             java.util.List<Integer> dateTimeParts = (java.util.List<Integer>) dateTimeObj;
-            return java.time.LocalDateTime.of(
-                    dateTimeParts.get(0), // year
-                    dateTimeParts.get(1), // month
-                    dateTimeParts.get(2), // day
-                    dateTimeParts.get(3), // hour
-                    dateTimeParts.get(4), // minute
-                    dateTimeParts.get(5), // second
-                    dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0 // nano
-            );
+
+            if (dateTimeParts.size() < 3) {
+                log.error("Invalid date array format. Expected at least [year, month, day], got: {}", dateTimeParts);
+                return null;
+            }
+
+            int year = dateTimeParts.get(0);
+            int month = dateTimeParts.get(1);
+            int day = dateTimeParts.get(2);
+            int hour = dateTimeParts.size() > 3 ? dateTimeParts.get(3) : 0;
+            int minute = dateTimeParts.size() > 4 ? dateTimeParts.get(4) : 0;
+            int second = dateTimeParts.size() > 5 ? dateTimeParts.get(5) : 0;
+            int nano = dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0;
+
+            return java.time.LocalDateTime.of(year, month, day, hour, minute, second, nano);
         } else if (dateTimeObj instanceof String) {
-            // Handle string format
             return java.time.LocalDateTime.parse((String) dateTimeObj);
         }
         return null;
