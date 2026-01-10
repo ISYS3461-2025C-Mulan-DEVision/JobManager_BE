@@ -33,5 +33,4 @@ public class JobSearchResultDto {
     private LocalDateTime postedAt;
     private LocalDateTime expiryAt;
     private boolean isActive;
-    // the published field will always be true since we only let JA get the published job posts
 }
