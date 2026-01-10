@@ -1,5 +1,8 @@
 package com.devision.job_manager_notification.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,24 +20,24 @@ public class SubscriptionCreatedEvent {
 
     private UUID subscriptionId;
 
-
     private UUID companyId;
 
     private String planType;
 
-
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startAt;
 
- 
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endAt;
 
-   
     private String paymentReferenceId;
 
-   
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime eventTimestamp;
 
-    
     private String eventSource;
 
     

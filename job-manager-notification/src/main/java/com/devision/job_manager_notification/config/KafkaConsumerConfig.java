@@ -1,5 +1,8 @@
 package com.devision.job_manager_notification.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +28,14 @@ public class KafkaConsumerConfig {
     private String groupId;
 
     @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
+
+    @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -36,7 +47,11 @@ public class KafkaConsumerConfig {
         config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.lang.Object");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        return new DefaultKafkaConsumerFactory<>(config);
+        return new DefaultKafkaConsumerFactory<>(
+                config,
+                new StringDeserializer(),
+                new JsonDeserializer<>(Object.class, objectMapper(), false)
+        );
     }
 
     @Bean

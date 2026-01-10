@@ -46,11 +46,15 @@ public class SubscriptionEventListener {
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void handleSubscriptionCreated(
-            @Payload SubscriptionCreatedEvent event,
+            @Payload java.util.Map<String, Object> payload,
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
+        SubscriptionCreatedEvent event = null;
         try {
+            // Convert Map to SubscriptionCreatedEvent
+            event = mapToSubscriptionCreatedEvent(payload);
+
             log.info("Received SubscriptionCreatedEvent for company: {} from partition: {}, offset: {}",
                     event.getCompanyId(), partition, offset);
 
@@ -88,8 +92,10 @@ public class SubscriptionEventListener {
                     event.getSubscriptionId(), event.getCompanyId());
 
         } catch (Exception e) {
-            log.error("Error processing SubscriptionCreatedEvent for company: {}, subscription: {}",
-                    event.getCompanyId(), event.getSubscriptionId(), e);
+            log.error("Error processing SubscriptionCreatedEvent for company: {}, subscription: {}, error: {}",
+                    event != null ? event.getCompanyId() : "unknown",
+                    event != null ? event.getSubscriptionId() : "unknown",
+                    e.getMessage(), e);
             // Don't rethrow - we don't want to block the Kafka consumer
             // Consider implementing dead-letter queue for failed events
         }
@@ -539,5 +545,49 @@ public class SubscriptionEventListener {
         return String.format("{\"subscriptionId\":\"%s\",\"planType\":\"%s\",\"daysRemaining\":%d," +
                         "\"urgencyLevel\":\"%s\",\"reminderCount\":%d}",
                 subscriptionId, planType, daysRemaining, urgency, reminderCount);
+    }
+
+    /**
+     * Helper method to convert Map payload to SubscriptionCreatedEvent.
+     * Handles LocalDateTime deserialization from array format.
+     */
+    private SubscriptionCreatedEvent mapToSubscriptionCreatedEvent(java.util.Map<String, Object> payload) {
+        return SubscriptionCreatedEvent.builder()
+                .subscriptionId(java.util.UUID.fromString(payload.get("subscriptionId").toString()))
+                .companyId(java.util.UUID.fromString(payload.get("companyId").toString()))
+                .planType((String) payload.get("planType"))
+                .startAt(parseLocalDateTime(payload.get("startAt")))
+                .endAt(parseLocalDateTime(payload.get("endAt")))
+                .paymentReferenceId((String) payload.get("paymentReferenceId"))
+                .eventTimestamp(parseLocalDateTime(payload.get("eventTimestamp")))
+                .eventSource((String) payload.get("eventSource"))
+                .build();
+    }
+
+    /**
+     * Parse LocalDateTime from either array format or string format.
+     */
+    @SuppressWarnings("unchecked")
+    private java.time.LocalDateTime parseLocalDateTime(Object dateTimeObj) {
+        if (dateTimeObj == null) {
+            return null;
+        }
+        if (dateTimeObj instanceof java.util.List) {
+            // Handle array format: [2026, 1, 10, 14, 13, 51, 660735000]
+            java.util.List<Integer> dateTimeParts = (java.util.List<Integer>) dateTimeObj;
+            return java.time.LocalDateTime.of(
+                    dateTimeParts.get(0), // year
+                    dateTimeParts.get(1), // month
+                    dateTimeParts.get(2), // day
+                    dateTimeParts.get(3), // hour
+                    dateTimeParts.get(4), // minute
+                    dateTimeParts.get(5), // second
+                    dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0 // nano
+            );
+        } else if (dateTimeObj instanceof String) {
+            // Handle string format
+            return java.time.LocalDateTime.parse((String) dateTimeObj);
+        }
+        return null;
     }
 }
