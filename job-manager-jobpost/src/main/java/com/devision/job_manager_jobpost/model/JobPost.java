@@ -41,6 +41,9 @@ public class JobPost {
     @Column(name = "title", nullable = false, length = 255)
     private String title;
 
+    @Column(name = "country_code", length = 3)
+    private String countryCode;
+
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
@@ -62,9 +65,6 @@ public class JobPost {
 
     @Column(name = "location_city", length = 128)
     private String locationCity;
-
-    // @Column(name = "country_id", nullable = false)
-    // // private UUID countryId;
 
     @Column(name = "is_published", nullable = false)
     private boolean published;

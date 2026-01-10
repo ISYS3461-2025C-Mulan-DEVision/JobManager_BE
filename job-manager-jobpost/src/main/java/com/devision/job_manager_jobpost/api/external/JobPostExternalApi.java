@@ -1,10 +1,9 @@
 package com.devision.job_manager_jobpost.api.external;
 
-import com.devision.job_manager_jobpost.dto.external.JobPostBasicInfoDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostStatusDto;
-import com.devision.job_manager_jobpost.dto.external.JobPostSummaryDto;
+import com.devision.job_manager_jobpost.dto.external.*;
 
 import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -27,4 +26,6 @@ public interface JobPostExternalApi {
     boolean isJobPostExpired(UUID id);
 
     long getPublishedJobPostCount(UUID companyId);
+
+    Page<JobSearchResultDto> searchJobPosts(JobSearchRequest request);
 }

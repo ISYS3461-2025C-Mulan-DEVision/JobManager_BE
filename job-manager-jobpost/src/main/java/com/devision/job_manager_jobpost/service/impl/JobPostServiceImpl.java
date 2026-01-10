@@ -100,5 +100,3 @@ public class JobPostServiceImpl implements JobPostService {
         return jobPostSkillsService.updateJobPostSkills(jobPostId, newSkillIds);
     }
 }
-
-

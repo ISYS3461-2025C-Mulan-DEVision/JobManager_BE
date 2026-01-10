@@ -184,4 +184,37 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send password changed email to {}: {}", company.getEmail(), e.getMessage());
         }
     }
+
+    @Override
+    @Async
+    public void sendEmailChangedConfirmation(CompanyAccount company) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(company.getEmail()); // new email
+            message.setSubject("DEVision-JM Email Changed Successfully");
+            message.setText(String.format("""
+                Hello,
+
+                Your email address has been successfully changed to: %s
+
+                If you made this change, you can safely ignore this email.
+
+                If you didn't change your email, please contact our support team immediately.
+
+                Login here: %s/login
+
+                Best regards,
+                DEVision Security Team
+                """,
+                    company.getEmail(),
+                    frontendUrl));
+
+            mailSender.send(message);
+            log.info("Email change confirmation sent to: {}", company.getEmail());
+
+        } catch (Exception e) {
+            log.error("Failed to send email change confirmation to {}: {}", company.getEmail(), e.getMessage());
+        }
+    }
 }
