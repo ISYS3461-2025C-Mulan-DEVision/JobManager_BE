@@ -424,6 +424,124 @@ public class SubscriptionEventListener {
     }
 
     /**
+     * Handles subscription updated events (including cancellations).
+     * This listener monitors the company.subscription.updated topic to detect status changes.
+     *
+     * @param payload the event payload as Map
+     * @param partition the Kafka partition
+     * @param offset the message offset
+     */
+    @KafkaListener(
+            topics = "company.subscription.updated",
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void handleSubscriptionUpdated(
+            @Payload java.util.Map<String, Object> payload,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset
+    ) {
+        try {
+            log.info("Received subscription updated event from partition: {}, offset: {}", partition, offset);
+            log.debug("Payload: {}", payload);
+
+            if (payload == null || payload.isEmpty()) {
+                log.error("Received null or empty payload for subscription updated event");
+                return;
+            }
+
+            java.util.UUID companyId = null;
+            String status = null;
+            Boolean isPremium = null;
+
+            try {
+                if (payload.get("companyId") != null) {
+                    companyId = java.util.UUID.fromString(payload.get("companyId").toString());
+                }
+                if (payload.get("status") != null) {
+                    status = payload.get("status").toString();
+                }
+                if (payload.get("isPremium") != null) {
+                    isPremium = (Boolean) payload.get("isPremium");
+                }
+            } catch (Exception e) {
+                log.error("Error parsing subscription updated event fields", e);
+                return;
+            }
+
+            if (companyId == null) {
+                log.error("Subscription updated event has null companyId, skipping notification");
+                return;
+            }
+
+            if (status == null) {
+                log.warn("Subscription updated event has null status for company: {}", companyId);
+                return;
+            }
+
+            log.info("Processing subscription update for company: {}, new status: {}, isPremium: {}",
+                    companyId, status, isPremium);
+
+            // Check if subscription was cancelled
+            if ("CANCELLED".equals(status)) {
+                log.info("Detected subscription cancellation for company: {}", companyId);
+                createCancellationNotification(companyId, payload);
+            } else if ("ACTIVE".equals(status) && Boolean.TRUE.equals(isPremium)) {
+                log.info("Subscription activated/renewed for company: {}", companyId);
+            } else if ("EXPIRED".equals(status)) {
+                log.info("Subscription expired for company: {}", companyId);
+            }
+
+        } catch (Exception e) {
+            log.error("Error processing subscription updated event from partition: {}, offset: {}",
+                    partition, offset, e);
+        }
+    }
+
+    private void createCancellationNotification(java.util.UUID companyId, java.util.Map<String, Object> payload) {
+        try {
+            String cancellationMessage = buildCancellationMessage(companyId);
+
+            String metadata = String.format("{\"companyId\":\"%s\",\"status\":\"CANCELLED\",\"cancelledAt\":\"%s\"}",
+                    companyId, java.time.LocalDateTime.now());
+
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
+                    .userId(companyId)
+                    .type(NotificationType.SUBSCRIPTION)
+                    .title("⚠️ Subscription Cancelled")
+                    .message(cancellationMessage)
+                    .referenceId(companyId.toString())
+                    .referenceType("SUBSCRIPTION_CANCELLED")
+                    .metadata(metadata)
+                    .build();
+
+            internalNotificationService.createNotification(notification);
+
+            log.info("Successfully created cancellation notification for company: {}", companyId);
+
+        } catch (Exception e) {
+            log.error("Error creating cancellation notification for company: {}", companyId, e);
+        }
+    }
+
+    private String buildCancellationMessage(java.util.UUID companyId) {
+        StringBuilder message = new StringBuilder();
+        message.append("Your premium subscription has been cancelled. ");
+        message.append("\n\n");
+        message.append("Premium features will remain active until the end of your current billing period. ");
+        message.append("After that, your account will revert to the free plan.\n\n");
+        message.append("What happens next:\n");
+        message.append("• Job postings will be limited to free tier\n");
+        message.append("• Advanced search features will be disabled\n");
+        message.append("• Priority support will no longer be available\n");
+        message.append("\n");
+        message.append("You can reactivate your subscription at any time to regain access to premium features.\n\n");
+        message.append("If you cancelled by mistake or have questions, please contact our support team.");
+
+        return message.toString();
+    }
+
+    /**
      * Handles SubscriptionExpiringSoonEvent to send a renewal reminder notification.
      *
      * @param event the subscription expiring soon event
@@ -724,19 +842,23 @@ public class SubscriptionEventListener {
             return null;
         }
         if (dateTimeObj instanceof java.util.List) {
-            // Handle array format: [2026, 1, 10, 14, 13, 51, 660735000]
             java.util.List<Integer> dateTimeParts = (java.util.List<Integer>) dateTimeObj;
-            return java.time.LocalDateTime.of(
-                    dateTimeParts.get(0), // year
-                    dateTimeParts.get(1), // month
-                    dateTimeParts.get(2), // day
-                    dateTimeParts.get(3), // hour
-                    dateTimeParts.get(4), // minute
-                    dateTimeParts.get(5), // second
-                    dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0 // nano
-            );
+
+            if (dateTimeParts.size() < 3) {
+                log.error("Invalid date array format. Expected at least [year, month, day], got: {}", dateTimeParts);
+                return null;
+            }
+
+            int year = dateTimeParts.get(0);
+            int month = dateTimeParts.get(1);
+            int day = dateTimeParts.get(2);
+            int hour = dateTimeParts.size() > 3 ? dateTimeParts.get(3) : 0;
+            int minute = dateTimeParts.size() > 4 ? dateTimeParts.get(4) : 0;
+            int second = dateTimeParts.size() > 5 ? dateTimeParts.get(5) : 0;
+            int nano = dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0;
+
+            return java.time.LocalDateTime.of(year, month, day, hour, minute, second, nano);
         } else if (dateTimeObj instanceof String) {
-            // Handle string format
             return java.time.LocalDateTime.parse((String) dateTimeObj);
         }
         return null;
