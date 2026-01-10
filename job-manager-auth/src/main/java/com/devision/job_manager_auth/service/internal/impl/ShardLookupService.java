@@ -169,8 +169,13 @@ public class ShardLookupService {
     /**
      * Update cache when user changes their email.
      */
-    public void updateEmailCache(String oldEmail, String newEmail, String shardKey) {
-        invalidateCache(oldEmail);
-        cacheEmailShard(newEmail, shardKey);
+    public void removeEmailFromCache(String email) {
+        String redisKey = EMAIL_SHARD_PREFIX + email;
+        Boolean deleted = redisTemplate.delete(redisKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Deleted email from Redis cache: {}", email);
+        } else {
+            log.warn("Email not found in Redis cache: {}", email);
+        }
     }
 }
