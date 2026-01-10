@@ -100,13 +100,44 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public SubscriptionResponse create(CreateSubscriptionRequest request) {
         // Check if company already has a subscription
-        if (subscriptionRepository.findByCompanyId(request.getCompanyId()).isPresent()) {
-            throw new SubscriptionAlreadyExistsException(
-                    "Subscription already exists for company: " + request.getCompanyId());
+        var existingSubscription = subscriptionRepository.findByCompanyId(request.getCompanyId());
+
+        if (existingSubscription.isPresent()) {
+            CompanySubscription subscription = existingSubscription.get();
+
+            // If subscription is CANCELLED or EXPIRED, reactivate it
+            if (subscription.getStatus() == SubscriptionStatus.CANCELLED ||
+                subscription.getStatus() == SubscriptionStatus.EXPIRED) {
+
+                log.info("Reactivating existing subscription for company: {}", request.getCompanyId());
+
+                subscription.setStatus(SubscriptionStatus.ACTIVE);
+                subscription.setStartAt(request.getStartAt() != null ? request.getStartAt() : LocalDateTime.now());
+                subscription.setEndAt(request.getEndAt());
+                subscription.setUpdatedAt(LocalDateTime.now());
+
+                subscription = subscriptionRepository.save(subscription);
+
+                // Publish subscription updated event
+                eventProducer.publishSubscriptionCreated(
+                        subscription.getId(),
+                        subscription.getCompanyId(),
+                        "PREMIUM",
+                        subscription.getStartAt(),
+                        subscription.getEndAt(),
+                        "REACTIVATION_" + subscription.getId()
+                );
+
+                return SubscriptionResponse.fromEntity(subscription);
+            } else {
+                // If subscription is ACTIVE or INACTIVE, throw error
+                throw new SubscriptionAlreadyExistsException(
+                        "Active subscription already exists for company: " + request.getCompanyId());
+            }
         }
 
-        LocalDateTime startAt = request.getStartAt() != null 
-                ? request.getStartAt() 
+        LocalDateTime startAt = request.getStartAt() != null
+                ? request.getStartAt()
                 : LocalDateTime.now();
 
         CompanySubscription subscription = CompanySubscription.builder()
