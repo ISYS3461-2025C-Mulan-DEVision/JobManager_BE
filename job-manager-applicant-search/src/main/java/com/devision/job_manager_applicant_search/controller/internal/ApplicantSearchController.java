@@ -42,6 +42,7 @@ public class ApplicantSearchController {
      * - employmentTypes: Employment types (FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FRESHER)
      * - skills: Skill names
      * - page, size: Pagination
+     * - statusFilter: Filter by company-specific status (FAVORITE, WARNING, MARKED)
      * 
      * Results are enriched with company-specific Warning/Favorite status if X-Company-Id header is provided.
      * 
@@ -59,7 +60,8 @@ public class ApplicantSearchController {
             @RequestParam(required = false) List<String> skills,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false, defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer size
+            @RequestParam(required = false, defaultValue = "10") Integer size,
+            @RequestParam(required = false) String statusFilter
             // TODO: Salary filtering - uncomment when JA supports it
             // @RequestParam(required = false) BigDecimal minSalary,
             // @RequestParam(required = false) BigDecimal maxSalary
@@ -84,9 +86,38 @@ public class ApplicantSearchController {
         // Enrich with company-specific status if company ID is provided
         if (companyId != null && !result.content().isEmpty()) {
             enrichWithStatus(result.content(), companyId);
+
+            // Apply status filter if provided
+            if (statusFilter != null && !statusFilter.isEmpty() && !"ALL".equalsIgnoreCase(statusFilter)) {
+                List<ApplicantResponse> filtered = filterByStatus(result.content(), statusFilter);
+                result = new ApplicantSearchResult(
+                        filtered,
+                        result.page(),
+                        result.size(),
+                        filtered.size(),
+                        1,
+                        true,
+                        true
+                );
+            }
         }
 
         return ResponseEntity.ok(ApiResponse.success("Applicants retrieved", result));
+    }
+
+    /**
+     * Filter applicants by company status.
+     */
+    private List<ApplicantResponse> filterByStatus(List<ApplicantResponse> applicants, String statusFilter) {
+        return applicants.stream()
+                .filter(a -> {
+                    String status = a.getCompanyStatus();
+                    if ("MARKED".equalsIgnoreCase(statusFilter)) {
+                        return "FAVORITE".equals(status) || "WARNING".equals(status);
+                    }
+                    return statusFilter.equalsIgnoreCase(status);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
