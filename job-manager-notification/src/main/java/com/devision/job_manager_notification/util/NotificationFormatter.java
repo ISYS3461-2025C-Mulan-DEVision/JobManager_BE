@@ -10,10 +10,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Utility class for formatting notification content and metadata.
- * Provides consistent formatting across different notification types and channels.
- */
 @Component
 @Slf4j
 public class NotificationFormatter {
@@ -22,13 +18,6 @@ public class NotificationFormatter {
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    /**
-     * Formats a notification title based on type.
-     *
-     * @param type the notification type
-     * @param rawTitle the raw title
-     * @return formatted title
-     */
     public String formatTitle(NotificationType type, String rawTitle) {
         log.debug("Formatting title for type: {}", type);
 
@@ -56,13 +45,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats a notification message for display.
-     *
-     * @param message the raw message
-     * @param maxLength the maximum length
-     * @return formatted message
-     */
     public String formatMessage(String message, int maxLength) {
         log.debug("Formatting message with max length: {}", maxLength);
 
@@ -90,12 +72,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats a timestamp for notification display.
-     *
-     * @param timestamp the timestamp
-     * @return formatted timestamp string
-     */
     public String formatTimestamp(LocalDateTime timestamp) {
         log.debug("Formatting timestamp: {}", timestamp);
 
@@ -140,12 +116,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats a full date and time.
-     *
-     * @param dateTime the date time
-     * @return formatted date time string
-     */
     public String formatDateTime(LocalDateTime dateTime) {
         log.debug("Formatting date time: {}", dateTime);
 
@@ -163,12 +133,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats metadata as a readable string.
-     *
-     * @param metadata the metadata map
-     * @return formatted metadata string
-     */
     public String formatMetadata(Map<String, String> metadata) {
         log.debug("Formatting metadata with {} entries", metadata != null ? metadata.size() : 0);
 
@@ -194,12 +158,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats a reference ID for display.
-     *
-     * @param referenceId the reference ID
-     * @return formatted reference ID
-     */
     public String formatReferenceId(String referenceId) {
         log.debug("Formatting reference ID: {}", referenceId);
 
@@ -229,12 +187,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats notification priority as human-readable string.
-     *
-     * @param priority the priority (1-10)
-     * @return formatted priority string
-     */
     public String formatPriority(int priority) {
         log.debug("Formatting priority: {}", priority);
 
@@ -255,12 +207,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats notification status for display.
-     *
-     * @param status the status
-     * @return formatted status string
-     */
     public String formatStatus(String status) {
         log.debug("Formatting status: {}", status);
 
@@ -290,12 +236,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Formats notification type for display.
-     *
-     * @param type the notification type
-     * @return formatted type string
-     */
     public String formatType(NotificationType type) {
         log.debug("Formatting type: {}", type);
 
@@ -313,12 +253,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Gets emoji prefix for notification type.
-     *
-     * @param type the notification type
-     * @return emoji string
-     */
     private String getEmojiForType(NotificationType type) {
         try {
             if (type == null) {
@@ -352,12 +286,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Sanitizes notification content to prevent XSS.
-     *
-     * @param content the content to sanitize
-     * @return sanitized content
-     */
     public String sanitizeContent(String content) {
         log.debug("Sanitizing content");
 
@@ -383,13 +311,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Truncates text to specified length with ellipsis.
-     *
-     * @param text the text to truncate
-     * @param maxLength the maximum length
-     * @return truncated text
-     */
     public String truncate(String text, int maxLength) {
         log.debug("Truncating text to max length: {}", maxLength);
 
@@ -419,12 +340,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Removes HTML tags from content.
-     *
-     * @param html the HTML content
-     * @return plain text
-     */
     public String stripHtml(String html) {
         log.debug("Stripping HTML tags from content");
 
@@ -454,12 +369,6 @@ public class NotificationFormatter {
         }
     }
 
-    /**
-     * Capitalizes first letter of text.
-     *
-     * @param text the text to capitalize
-     * @return capitalized text
-     */
     public String capitalize(String text) {
         log.debug("Capitalizing text");
 
