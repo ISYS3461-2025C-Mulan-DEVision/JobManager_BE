@@ -10,10 +10,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Implementation of notification template service.
- * Manages template creation, retrieval, and rendering with variable substitution.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
