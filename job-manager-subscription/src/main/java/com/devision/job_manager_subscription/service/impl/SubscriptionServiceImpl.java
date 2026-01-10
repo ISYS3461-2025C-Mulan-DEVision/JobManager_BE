@@ -119,8 +119,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription = subscriptionRepository.save(subscription);
         log.info("Created subscription for company: {}", request.getCompanyId());
 
-        // Publish event for other services
-        publishSubscriptionEvent(subscription);
+        // Publish subscription created event to Kafka
+        eventProducer.publishSubscriptionCreated(
+                subscription.getId(),
+                subscription.getCompanyId(),
+                "PREMIUM",
+                subscription.getStartAt(),
+                subscription.getEndAt(),
+                "MANUAL_CREATION_" + subscription.getId()
+        );
 
         return SubscriptionResponse.fromEntity(subscription);
     }
