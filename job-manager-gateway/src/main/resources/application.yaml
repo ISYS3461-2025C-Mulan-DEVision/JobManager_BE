@@ -99,6 +99,12 @@ spring:
                   filters:
                       - Authentication
 
+                # # Webhook route MUST come before general payment route
+                # - id: job-manager-payment-external-webhook
+                #   uri: http://localhost:8086/
+                #   predicates:
+                #       - Path=/api/payment/webhooks/**
+
                 - id: job-manager-payment-external
                   uri: http://localhost:8086/
                   predicates:
@@ -117,6 +123,13 @@ spring:
                       - Path=/api/notifications/**
                   filters:
                       - Authentication
+
+# Gateway authentication configuration
+gateway:
+    auth:
+        enabled: true
+        public-paths:
+            - /api/payment/webhooks/**
 
 # JWT configuration for token validation
 jwt:
