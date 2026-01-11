@@ -122,6 +122,13 @@ spring:
                   filters:
                       - Authentication
 
+# Gateway authentication configuration
+gateway:
+    auth:
+        enabled: true
+        public-paths:
+            - /api/payment/webhooks/**
+
 # JWT configuration for token validation
 jwt:
   jwe:

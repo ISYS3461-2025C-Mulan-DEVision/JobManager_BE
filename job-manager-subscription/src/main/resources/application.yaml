@@ -1,15 +1,15 @@
 server:
-  port: 8085
+    port: 8085
 
 spring:
-  application:
-    name: job-manager-subscription
+    application:
+        name: job-manager-subscription
 
-  datasource:
-    url: ${POSTGRES_PREMIUM_URL}
-    username: ${POSTGRES_PREMIUM_USERNAME}
-    password: ${POSTGRES_PREMIUM_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    datasource:
+        url: ${POSTGRES_SUBSCRIPTION_URL}
+        username: ${POSTGRES_SUBSCRIPTION_USERNAME}
+        password: ${POSTGRES_SUBSCRIPTION_PASSWORD}
+        driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -42,7 +42,7 @@ eureka:
     health-check-url-path: /actuator/health
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
