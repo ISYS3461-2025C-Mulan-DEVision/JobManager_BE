@@ -132,7 +132,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
       GATEWAY_AUTH_SERVICE_URL: http://auth-service:8081
     depends_on:
       discovery-server:
@@ -141,6 +141,8 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_started
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -161,13 +163,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
       OAUTH2_REDIRECT_URI: http://localhost:8080/api/login/oauth2/code/google
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -184,12 +188,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -206,12 +212,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -228,12 +236,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -250,12 +260,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -272,12 +284,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
@@ -294,12 +308,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     depends_on:
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    extra_hosts:
+      - "kafka-mulan.duckdns.org:14.169.220.23"
     networks:
       - jm-network
 
