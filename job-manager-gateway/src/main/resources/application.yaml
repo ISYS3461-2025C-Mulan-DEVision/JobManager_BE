@@ -117,7 +117,7 @@ spring:
             - Authentication
 
         - id: job-manager-notification
-          uri: http://localhost:8087/
+          uri: ${NOTIFICATION_SERVICE_URL:lb://job-manager-notification}
           predicates:
             - Path=/api/notifications/**
           filters:
