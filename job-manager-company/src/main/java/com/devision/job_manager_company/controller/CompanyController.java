@@ -46,6 +46,27 @@ public class CompanyController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+    
+    @GetMapping("")
+    public ResponseEntity<ApiResponse<List<CompanyProfileDto>>> getAllCompanyProfiles() {
+        log.info("Getting all company profiles");
+        
+        Optional<List<CompanyProfile>> profiles = companyService.getAllCompanies();
+        
+        if (profiles.isEmpty() || profiles.get().isEmpty()) {
+            return ResponseEntity.ok(
+                ApiResponse.success("No company profiles found", List.of())
+            );
+        }
+        
+        List<CompanyProfileDto> profileDtos = profiles.get().stream()
+            .map(this::mapProfileToDto)
+            .toList();
+        
+        return ResponseEntity.ok(
+            ApiResponse.success("Company profiles retrieved successfully", profileDtos)
+        );
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CompanyDto>> updateCompany(
@@ -179,4 +200,5 @@ public class CompanyController {
                 .foundedYear(profile.getFoundedYear())
                 .build();
     }
+    
 }
