@@ -115,6 +115,13 @@ spring:
           predicates:
             - Path=/api/payment/webhooks/**
 
+                - id: job-manager-notification
+                  uri: http://localhost:8087/
+                  predicates:
+                      - Path=/api/notifications/**
+                  filters:
+                      - Authentication
+
 # JWT configuration for token validation
 jwt:
   jwe:

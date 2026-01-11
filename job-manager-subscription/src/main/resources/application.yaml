@@ -6,9 +6,9 @@ spring:
     name: job-manager-subscription
 
   datasource:
-    url: ${POSTGRES_SUBSCRIPTION_URL}
-    username: ${POSTGRES_SUBSCRIPTION_USERNAME}
-    password: ${POSTGRES_SUBSCRIPTION_PASSWORD}
+    url: ${POSTGRES_PREMIUM_URL}
+    username: ${POSTGRES_PREMIUM_USERNAME}
+    password: ${POSTGRES_PREMIUM_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
