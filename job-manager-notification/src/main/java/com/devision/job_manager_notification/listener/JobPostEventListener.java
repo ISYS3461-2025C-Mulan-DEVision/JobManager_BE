@@ -31,60 +31,10 @@ public class JobPostEventListener {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
 
     /**
-     * Handles job post created events.
-     * Notifies company when a new job post is created.
-     */
-    @KafkaListener(
-            topics = "jobpost.created",
-            groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
-    )
-    public void handleJobPostCreated(
-            @Payload Map<String, Object> payload,
-            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
-            @Header(KafkaHeaders.OFFSET) long offset
-    ) {
-        try {
-            log.info("Received JobPostCreatedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
-            UUID companyId = parseUUID(payload.get("companyId"));
-            UUID jobPostId = parseUUID(payload.get("jobPostId"));
-            String title = (String) payload.get("title");
-
-            if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostCreatedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
-                return;
-            }
-
-            String message = buildJobPostCreatedMessage(title);
-            String metadata = buildJobPostMetadata(jobPostId, title, "CREATED");
-
-            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
-                    .userId(companyId)
-                    .type(NotificationType.SYSTEM)
-                    .title("Job Post Created Successfully")
-                    .message(message)
-                    .referenceId(jobPostId.toString())
-                    .referenceType("JOB_POST_CREATED")
-                    .metadata(metadata)
-                    .build();
-
-            internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post created: {} (company: {})",
-                    jobPostId, companyId);
-
-        } catch (Exception e) {
-            log.error("Error processing JobPostCreatedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
-        }
-    }
-
-    /**
      * Handles job post published events.
-     * Notifies company when their job post goes live.
+     * Notifies company when their job post is created and goes live.
+     * Note: The job post service publishes to 'jobpost.published' when a job is created,
+     * so this serves as both creation and publication notification.
      */
     @KafkaListener(
             topics = "jobpost.published",
@@ -457,16 +407,6 @@ public class JobPostEventListener {
     }
 
     // ========== Message Building Helper Methods ==========
-
-    private String buildJobPostCreatedMessage(String title) {
-        StringBuilder message = new StringBuilder();
-        message.append("Your job post \"").append(title != null ? title : "Untitled").append("\" has been created successfully.\n\n");
-        message.append("Next steps:\n");
-        message.append("• Review and complete all job details\n");
-        message.append("• Publish the job post to start receiving applications\n");
-        message.append("• Monitor applicant responses from your dashboard");
-        return message.toString();
-    }
 
     private String buildJobPostPublishedMessage(String title, LocalDateTime publishedAt, LocalDateTime expiryAt) {
         StringBuilder message = new StringBuilder();
