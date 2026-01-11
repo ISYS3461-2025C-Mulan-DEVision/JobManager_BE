@@ -20,11 +20,15 @@ public class OAuth2ClientConfig {
     @Value("${GOOGLE_CLIENT_SECRET:}")
     private String googleClientSecret;
 
+    @Value("${OAUTH2_REDIRECT_URI:http://localhost:8081/login/oauth2/code/google}")
+    private String oauth2RedirectUri;
+
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         log.info("=== Creating ClientRegistrationRepository ===");
         log.info("Google Client ID configured: {}", googleClientId != null && !googleClientId.isBlank());
         log.info("Google Client Secret configured: {}", googleClientSecret != null && !googleClientSecret.isBlank());
+        log.info("OAuth2 Redirect URI: {}", oauth2RedirectUri);
 
         if (googleClientId == null || googleClientId.isBlank() ||
                 googleClientSecret == null || googleClientSecret.isBlank()) {
@@ -38,7 +42,7 @@ public class OAuth2ClientConfig {
                 .clientSecret(googleClientSecret)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+                .redirectUri(oauth2RedirectUri)
                 .scope("openid", "profile", "email")
                 .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
                 .tokenUri("https://oauth2.googleapis.com/token")

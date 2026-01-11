@@ -1,20 +1,17 @@
 # ========================================
-# Job Manager - Docker Compose
+# Job Manager - Production Docker Compose
 # ========================================
 #
+# This file is used for production deployment with Docker Hub images.
+#
+# Prerequisites:
+#   1. Set DOCKERHUB_USERNAME environment variable or in .env file
+#   2. Configure .env file with production values
+#
 # Usage:
-#   Build & Start all:     mvn clean package -DskipTests && docker compose up -d --build
-#   Start all:             docker compose up -d
-#   Stop all:              docker compose down
-#   View logs:             docker compose logs -f [service-name]
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
 #
-# Endpoints:
-#   Eureka Dashboard:      http://localhost:8761
-#   API Gateway:           http://localhost:8080
-#   Kafka UI:              http://localhost:8090
-#
-# Note: This setup uses cloud services for databases (Neon) and Redis (Upstash).
-#       Only Kafka/Zookeeper run locally in Docker.
 # ========================================
 
 services:
@@ -25,11 +22,13 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: jm-zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
     networks:
       - jm-network
     healthcheck:
@@ -41,12 +40,10 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: jm-kafka
+    restart: unless-stopped
     depends_on:
       zookeeper:
         condition: service_healthy
-    ports:
-      - "9092:9092"
-      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -57,6 +54,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
     networks:
       - jm-network
     healthcheck:
@@ -71,31 +70,14 @@ services:
       timeout: 10s
       retries: 5
 
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: jm-kafka-ui
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    networks:
-      - jm-network
-
   # ========================================
   # Service Discovery (Eureka)
   # ========================================
 
   discovery-server:
-    build:
-      context: ./job-manager-discovery
-      dockerfile: Dockerfile
-    image: jm-discovery-server
+    image: ${DOCKERHUB_USERNAME}/jm-discovery:latest
     container_name: jm-discovery-server
+    restart: unless-stopped
     ports:
       - "8761:8761"
     environment:
@@ -120,11 +102,9 @@ services:
   # ========================================
 
   gateway:
-    build:
-      context: ./job-manager-gateway
-      dockerfile: Dockerfile
-    image: jm-gateway
+    image: ${DOCKERHUB_USERNAME}/jm-gateway:latest
     container_name: jm-gateway
+    restart: unless-stopped
     ports:
       - "8080:8080"
     env_file:
@@ -149,11 +129,9 @@ services:
   # ========================================
 
   auth-service:
-    build:
-      context: ./job-manager-auth
-      dockerfile: Dockerfile
-    image: jm-auth-service
+    image: ${DOCKERHUB_USERNAME}/jm-auth:latest
     container_name: jm-auth-service
+    restart: unless-stopped
     ports:
       - "8081:8081"
     env_file:
@@ -162,7 +140,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      OAUTH2_REDIRECT_URI: http://localhost:8080/api/login/oauth2/code/google
+      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI:http://localhost:8080/api/login/oauth2/code/google}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -172,11 +150,9 @@ services:
       - jm-network
 
   company-service:
-    build:
-      context: ./job-manager-company
-      dockerfile: Dockerfile
-    image: jm-company-service
+    image: ${DOCKERHUB_USERNAME}/jm-company:latest
     container_name: jm-company-service
+    restart: unless-stopped
     ports:
       - "8082:8082"
     env_file:
@@ -194,11 +170,9 @@ services:
       - jm-network
 
   jobpost-service:
-    build:
-      context: ./job-manager-jobpost
-      dockerfile: Dockerfile
-    image: jm-jobpost-service
+    image: ${DOCKERHUB_USERNAME}/jm-jobpost:latest
     container_name: jm-jobpost-service
+    restart: unless-stopped
     ports:
       - "8083:8083"
     env_file:
@@ -216,11 +190,9 @@ services:
       - jm-network
 
   applicant-search-service:
-    build:
-      context: ./job-manager-applicant-search
-      dockerfile: Dockerfile
-    image: jm-applicant-search-service
+    image: ${DOCKERHUB_USERNAME}/jm-applicant-search:latest
     container_name: jm-applicant-search-service
+    restart: unless-stopped
     ports:
       - "8084:8084"
     env_file:
@@ -238,11 +210,9 @@ services:
       - jm-network
 
   subscription-service:
-    build:
-      context: ./job-manager-subscription
-      dockerfile: Dockerfile
-    image: jm-subscription-service
+    image: ${DOCKERHUB_USERNAME}/jm-subscription:latest
     container_name: jm-subscription-service
+    restart: unless-stopped
     ports:
       - "8085:8085"
     env_file:
@@ -260,11 +230,9 @@ services:
       - jm-network
 
   payment-service:
-    build:
-      context: ./job-manager-payment
-      dockerfile: Dockerfile
-    image: jm-payment-service
+    image: ${DOCKERHUB_USERNAME}/jm-payment:latest
     container_name: jm-payment-service
+    restart: unless-stopped
     ports:
       - "8086:8086"
     env_file:
@@ -282,11 +250,9 @@ services:
       - jm-network
 
   notification-service:
-    build:
-      context: ./job-manager-notification
-      dockerfile: Dockerfile
-    image: jm-notification-service
+    image: ${DOCKERHUB_USERNAME}/jm-notification:latest
     container_name: jm-notification-service
+    restart: unless-stopped
     ports:
       - "8087:8087"
     env_file:
@@ -306,3 +272,8 @@ services:
 networks:
   jm-network:
     driver: bridge
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
