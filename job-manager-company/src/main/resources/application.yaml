@@ -52,9 +52,10 @@ spring:
       max-request-size: 10MB
 
 firebase:
-  project-id: devision-job-manager
-  credentials-file: classpath:firebase-service-account.json
-  bucket-name: devision-job-manager.firebasestorage.app
+  enabled: ${FIREBASE_ENABLED:false}
+  project-id: ${FIREBASE_PROJECT_ID:devision-job-manager}
+  credentials-file: ${FIREBASE_CREDENTIALS_FILE:classpath:firebase-service-account.json}
+  bucket-name: ${FIREBASE_BUCKET_NAME:devision-job-manager.firebasestorage.app}
 
 eureka:
   client:

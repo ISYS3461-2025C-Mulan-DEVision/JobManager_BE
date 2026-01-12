@@ -27,6 +27,30 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
+    /**
+     * Add SASL/SSL security properties for Confluent Cloud
+     */
+    private void addSecurityProperties(Map<String, Object> props) {
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            props.put("security.protocol", securityProtocol);
+        }
+        if (saslMechanism != null && !saslMechanism.isEmpty()) {
+            props.put("sasl.mechanism", saslMechanism);
+        }
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
+    }
+
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -46,6 +70,9 @@ public class KafkaConsumerConfig {
         config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "java.lang.Object");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // Add SASL/SSL security properties
+        addSecurityProperties(config);
 
         return new DefaultKafkaConsumerFactory<>(
                 config,

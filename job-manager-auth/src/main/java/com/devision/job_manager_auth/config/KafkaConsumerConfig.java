@@ -30,6 +30,30 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id:job-manager-auth}")
     private String groupId;
 
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
+    /**
+     * Add SASL/SSL security properties for Confluent Cloud
+     */
+    private void addSecurityProperties(Map<String, Object> props) {
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            props.put("security.protocol", securityProtocol);
+        }
+        if (saslMechanism != null && !saslMechanism.isEmpty()) {
+            props.put("sasl.mechanism", saslMechanism);
+        }
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
+    }
+
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -50,6 +74,9 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.devision.job_manager_auth.event.CompanyCountryChangedEvent");
+        
+        // Add SASL/SSL security properties
+        addSecurityProperties(props);
         
         return new DefaultKafkaConsumerFactory<>(props);
     }

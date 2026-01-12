@@ -32,11 +32,52 @@ spring:
                 transport:
                     protocol: smtp
 
-#  datasource:
-#    url: ${POSTGRES_AUTH_URL:jdbc:postgresql://localhost:5439/job_manager_auth}
-#    username: ${POSTGRES_AUTH_USERNAME:postgres}
-#    password: ${POSTGRES_AUTH_PASSWORD:postgres}
-#    driver-class-name: org.postgresql.Driver
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: false
+                jdbc:
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    google:
+                        client-id: ${GOOGLE_CLIENT_ID}
+                        client-secret: ${GOOGLE_CLIENT_SECRET}
+                        scope:
+                            - email
+                            - profile
+                        redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+                provider:
+                    google:
+                        authorization-uri: https://accounts.google.com/o/oauth2/auth
+                        token-uri: https://oauth2.googleapis.com/token
+                        user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+                        user-name-attribute: sub
+
+    kafka:
+        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            properties:
+                spring.json.add.type.headers: true
+        consumer:
+            group-id: job-manager-auth
+        properties:
+            sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
+            security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
+            sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+            session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
+            client.id: ${SPRING_KAFKA_CLIENT_ID:auth-service-client}
 
 sharding:
     default-shard: auth_shard_others
@@ -90,60 +131,6 @@ sharding:
             maximum-pool-size: 5
             minimum-idle: 1
 
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false
-        jdbc:
-          batch_size: 20
-        order_inserts: true
-        order_updates: true
-
-    # data:
-    #     redis:
-    #         host: ${REDIS_HOST:localhost}
-    #         port: ${REDIS_PORT:6379}
-    #         password: ${REDIS_PASSWORD:}
-    #         timeout: 60000
-    #         ssl:
-    #             enabled: ${REDIS_SSL_ENABLED:false}
-
-    security:
-        oauth2:
-            client:
-                registration:
-                    google:
-                        client-id: ${GOOGLE_CLIENT_ID}
-                        client-secret: ${GOOGLE_CLIENT_SECRET}
-                        scope:
-                            - email
-                            - profile
-                        redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-                provider:
-                    google:
-                        authorization-uri: https://accounts.google.com/o/oauth2/auth
-                        token-uri: https://oauth2.googleapis.com/token
-                        user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-                        user-name-attribute: sub
-
-    kafka:
-        bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
-        producer:
-            key-serializer: org.apache.kafka.common.serialization.StringSerializer
-            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-            properties:
-                spring.json.add.type.headers: true
-        properties:
-            sasl.mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:PLAIN}
-            security.protocol: ${SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL:PLAINTEXT}
-            sasl.jaas.config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
-            session.timeout.ms: ${SPRING_KAFKA_PROPERTIES_SESSION_TIMEOUT_MS:45000}
-            client.id: ${SPRING_KAFKA_CLIENT_ID:auth-service-client}
-
 eureka:
     client:
         service-url:
@@ -165,21 +152,21 @@ jwt:
     refresh-token-expiration: 604800000 # 7 days in milliseconds
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-      base-path: /actuator
-  endpoint:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: always
+            probes:
+                enabled: true
     health:
-      show-details: always
-      probes:
-        enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
+        livenessstate:
+            enabled: true
+        readinessstate:
+            enabled: true
 
 app:
     base-url: http://localhost:8081

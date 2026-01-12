@@ -20,6 +20,30 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
+    /**
+     * Add SASL/SSL security properties for Confluent Cloud
+     */
+    private void addSecurityProperties(Map<String, Object> props) {
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            props.put("security.protocol", securityProtocol);
+        }
+        if (saslMechanism != null && !saslMechanism.isEmpty()) {
+            props.put("sasl.mechanism", saslMechanism);
+        }
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
+    }
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
@@ -30,6 +54,10 @@ public class KafkaProducerConfig {
         // Use type mappings for cross-service compatibility
         configProps.put(JsonSerializer.TYPE_MAPPINGS, 
                 "subscriptionUpdated:" + SubscriptionUpdatedEvent.class.getName());
+        
+        // Add SASL/SSL security properties
+        addSecurityProperties(configProps);
+        
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
