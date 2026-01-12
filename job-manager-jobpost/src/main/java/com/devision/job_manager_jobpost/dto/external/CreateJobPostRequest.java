@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -54,6 +55,8 @@ public class CreateJobPostRequest {
     private boolean aPrivate;
 
     private LocalDateTime expiryAt;
+
+    private List<UUID> skillIds;
     
     // Employment type - single value (frontend sends single type)
     private EmploymentType employmentType;
