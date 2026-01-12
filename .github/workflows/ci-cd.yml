@@ -2,7 +2,7 @@ name: Build and Deploy to Docker Hub
 
 on:
   push:
-    branches: [main]
+    branches: [main, deploy/ec2/simplex]
   workflow_dispatch:
 
 env:
@@ -87,7 +87,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy/ec2/simplex'
 
     steps:
       - name: Checkout code
