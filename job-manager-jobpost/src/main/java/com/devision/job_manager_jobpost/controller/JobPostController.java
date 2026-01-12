@@ -8,6 +8,7 @@ import com.devision.job_manager_jobpost.dto.ApiResponse;
 import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
 import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
+import com.devision.job_manager_jobpost.model.JobPostSkill;
 import com.devision.job_manager_jobpost.service.JobPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/job-posts")
 @RequiredArgsConstructor
@@ -57,6 +62,12 @@ public class JobPostController {
         }
 
         JobPost created = jobPostService.createJobPost(jobPost);
+
+        // handle skills if provided
+        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
+            created = jobPostService.updateJobPostSkills(created.getJobPostId(), request.getSkillIds());
+        }
+
         JobPostDto dto = mapToDto(created);
         return ResponseEntity.ok(ApiResponse.success("Job post created successfully", dto));
     }
@@ -135,6 +146,12 @@ public class JobPostController {
                     .build();
 
             JobPost jobPost = jobPostService.updateJobPost(id, updated);
+
+            // handle skills if provided
+            if (request.getSkillIds() != null) {
+                jobPost = jobPostService.updateJobPostSkills(id, request.getSkillIds());
+            }
+
             return ResponseEntity.ok(ApiResponse.success("Job post updated successfully", mapToDto(jobPost)));
         } catch (IllegalArgumentException e) {
             log.error("Failed to update job post: {}", e.getMessage());
@@ -178,14 +195,7 @@ public class JobPostController {
         }
     }
 
-    /**
-     * Update job post skills - CRITICAL for Ultimo 4.3.1
-     * This endpoint triggers Kafka event for instant applicant notifications
-     *
-     * @param id The job post ID
-     * @param request Contains the list of skill UUIDs
-     * @return Updated job post with success message
-     */
+
     @PutMapping("/{id}/skills")
     public ResponseEntity<ApiResponse<JobPostDto>> updateJobPostSkills(
             @PathVariable UUID id,
@@ -211,6 +221,13 @@ public class JobPostController {
             employmentType = jobPost.getEmploymentTypes().get(0).getType();
         }
 
+        // Extract skill IDs from JobPostSkill entities
+        List<UUID> skillIds = jobPost.getSkills() != null
+                ? jobPost.getSkills().stream()
+                .map(JobPostSkill::getSkillId)
+                .collect(Collectors.toList())
+                : Collections.emptyList();
+
         return JobPostDto.builder()
                 .id(jobPost.getJobPostId())
                 .companyId(jobPost.getCompanyId())
@@ -227,6 +244,7 @@ public class JobPostController {
                 .aPrivate(jobPost.isAPrivate())
                 .postedAt(jobPost.getPostedAt())
                 .expiryAt(jobPost.getExpiryAt())
+                .skillIds(skillIds)
                 .employmentType(employmentType)
                 .build();
     }
