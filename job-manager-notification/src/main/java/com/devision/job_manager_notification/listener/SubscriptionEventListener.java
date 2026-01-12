@@ -487,8 +487,7 @@ public class SubscriptionEventListener {
                 log.info("Detected subscription cancellation for company: {}", companyId);
                 createCancellationNotification(companyId, payload);
             } else if ("ACTIVE".equals(status) && Boolean.TRUE.equals(isPremium)) {
-                log.info("Detected subscription renewal for company: {}", companyId);
-                createRenewalNotification(companyId, payload);
+                log.info("Subscription activated/renewed for company: {}", companyId);
             } else if ("EXPIRED".equals(status)) {
                 log.info("Subscription expired for company: {}", companyId);
             }
@@ -523,55 +522,6 @@ public class SubscriptionEventListener {
         } catch (Exception e) {
             log.error("Error creating cancellation notification for company: {}", companyId, e);
         }
-    }
-
-    private void createRenewalNotification(java.util.UUID companyId, java.util.Map<String, Object> payload) {
-        try {
-            String renewalMessage = buildRenewalMessage(companyId, payload);
-
-            String metadata = String.format("{\"companyId\":\"%s\",\"status\":\"ACTIVE\",\"renewedAt\":\"%s\"}",
-                    companyId, java.time.LocalDateTime.now());
-
-            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
-                    .userId(companyId)
-                    .type(NotificationType.SUBSCRIPTION)
-                    .title("✅ Subscription Renewed Successfully")
-                    .message(renewalMessage)
-                    .referenceId(companyId.toString())
-                    .referenceType("SUBSCRIPTION_RENEWED")
-                    .metadata(metadata)
-                    .build();
-
-            internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created renewal notification for company: {}", companyId);
-
-        } catch (Exception e) {
-            log.error("Error creating renewal notification for company: {}", companyId, e);
-        }
-    }
-
-    private String buildRenewalMessage(java.util.UUID companyId, java.util.Map<String, Object> payload) {
-        StringBuilder message = new StringBuilder();
-        message.append("Great news! Your premium subscription has been renewed successfully.\n\n");
-
-        Object endAtObj = payload.get("endAt");
-        if (endAtObj != null) {
-            java.time.LocalDateTime endAt = parseLocalDateTime(endAtObj);
-            if (endAt != null) {
-                message.append("Your subscription is now active until: ");
-                message.append(endAt.format(DATE_FORMATTER));
-                message.append("\n\n");
-            }
-        }
-
-        message.append("You can continue enjoying all premium features:\n");
-        message.append("✓ Real-time applicant matching\n");
-        message.append("✓ Advanced search filters\n");
-        message.append("✓ Priority support\n\n");
-        message.append("Thank you for your continued support!");
-
-        return message.toString();
     }
 
     private String buildCancellationMessage(java.util.UUID companyId) {

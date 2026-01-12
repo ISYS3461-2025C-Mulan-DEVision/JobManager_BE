@@ -10,19 +10,26 @@ spring:
     username: ${POSTGRES_NOTIFICATION_USERNAME:postgres}
     password: ${POSTGRES_NOTIFICATION_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-
+  
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:your-email@gmail.com}
+    password: ${EMAIL_PASSWORD:your-app-password}
     properties:
-      hibernate:
-        jdbc:
-          time_zone: Asia/Ho_Chi_Minh
-
-
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    bootstrap-servers: localhost:9092
     consumer:
       group-id: notification-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -33,7 +40,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+      defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
   instance:
