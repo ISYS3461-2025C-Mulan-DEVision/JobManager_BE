@@ -21,6 +21,17 @@ services:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
             SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            # Database Sharding Configuration - Neon PostgreSQL
+            SHARD_VN_URL: ${SHARD_VN_URL}
+            SHARD_SG_URL: ${SHARD_SG_URL}
+            SHARD_ASIA_URL: ${SHARD_ASIA_URL}
+            SHARD_OCEANIA_URL: ${SHARD_OCEANIA_URL}
+            SHARD_NA_URL: ${SHARD_NA_URL}
+            SHARD_EU_URL: ${SHARD_EU_URL}
+            SHARD_OTHERS_URL: ${SHARD_OTHERS_URL}
+            NEON_USERNAME: ${NEON_USERNAME}
+            NEON_PASSWORD: ${NEON_PASSWORD}
+            # Redis Configuration
             SPRING_REDIS_HOST: ${REDIS_HOST}
             SPRING_REDIS_PORT: ${REDIS_PORT}
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -113,6 +124,7 @@ services:
             SPRING_REDIS_PORT: ${REDIS_PORT}
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
             SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+            APPLICANT_SERVICE_AUTH_TOKEN: ${APPLICANT_SERVICE_AUTH_TOKEN}
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:

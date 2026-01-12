@@ -1,6 +1,5 @@
 package com.devision.job_manager_subscription.config.kafka;
 
-import com.devision.job_manager_subscription.dto.internal.event.PaymentCompletedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -28,74 +27,29 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-//    @Bean
-//    public ConsumerFactory<String, PaymentCompletedEvent> paymentCompletedConsumerFactory() {
-//        Map<String, Object> config = new HashMap<>();
-//        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-//        config.put(ConsumerConfig.GROUP_ID_CONFIG, "subscription-service-group");
-//        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-//        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-//
-//        config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-//        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-//
-//        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-//        config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);  // Don't use type headers
-//        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, PaymentCompletedEvent.class);  // Use this type
-//
-//        config.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000);
-//        config.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10000);
-//        config.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000);
-//        config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 10);
-//        config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-//        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-//
-//        return new DefaultKafkaConsumerFactory<>(config);
-//    }
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
+    private String securityProtocol;
 
-//    @Bean
-//    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> paymentCompletedKafkaListenerFactory() {
-//        ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory =
-//                new ConcurrentKafkaListenerContainerFactory<>();
-//        factory.setConsumerFactory(paymentCompletedConsumerFactory());
-//
-//        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-//        return factory;
-//    }
-//
-//    // Generic consumer factory for failed/cancelled events (use Object type)
-//    @Bean
-//    public ConsumerFactory<String, Object> genericConsumerFactory() {
-//        Map<String, Object> config = new HashMap<>();
-//        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-//        config.put(ConsumerConfig.GROUP_ID_CONFIG, "subscription-service-group");
-//        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-//        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-//
-//        config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-//        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-//
-//        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-//        config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-//
-//        config.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000);
-//        config.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10000);
-//        config.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000);
-//        config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 10);
-//        config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-//        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-//
-//        return new DefaultKafkaConsumerFactory<>(config);
-//    }
-//
-//    @Bean
-//    public ConcurrentKafkaListenerContainerFactory<String, Object> genericKafkaListenerFactory() {
-//        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
-//                new ConcurrentKafkaListenerContainerFactory<>();
-//        factory.setConsumerFactory(genericConsumerFactory());
-//        return factory;
-//    }
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
 
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
+    /**
+     * Add SASL/SSL security properties for Confluent Cloud
+     */
+    private void addSecurityProperties(Map<String, Object> props) {
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            props.put("security.protocol", securityProtocol);
+        }
+        if (saslMechanism != null && !saslMechanism.isEmpty()) {
+            props.put("sasl.mechanism", saslMechanism);
+        }
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
+    }
 
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
@@ -117,6 +71,9 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.devision.job_manager_subscription.dto.internal.event.PaymentCompletedEvent");
+
+        // Add SASL/SSL security properties
+        addSecurityProperties(props);
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

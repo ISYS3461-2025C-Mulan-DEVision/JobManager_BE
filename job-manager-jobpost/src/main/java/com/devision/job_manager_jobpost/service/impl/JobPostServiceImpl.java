@@ -4,6 +4,7 @@ import com.devision.job_manager_jobpost.client.CompanyServiceClient;
 import com.devision.job_manager_jobpost.event.JobPostCountryChangedEvent;
 import com.devision.job_manager_jobpost.event.JobPostPublishedEvent;
 import com.devision.job_manager_jobpost.event.JobPostSkillsChangedEvent;
+import com.devision.job_manager_jobpost.event.JobPostUpdatedEvent;
 import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
 import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
@@ -126,6 +127,18 @@ public class JobPostServiceImpl implements JobPostService {
 
             eventPublisher.publishJobPostCountryChanged(event);
         }
+
+        // Publish general update event to Kafka
+        log.info("Publishing general update event for job post ID: {}", id);
+        JobPostUpdatedEvent updateEvent = JobPostUpdatedEvent.builder()
+                .jobPostId(saved.getJobPostId())
+                .companyId(saved.getCompanyId())
+                .title(saved.getTitle())
+                .location(saved.getLocationCity())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        eventPublisher.publishJobPostUpdated(updateEvent);
 
         log.info("Job post updated: {} with location: {}, {}",
                 id, saved.getLocationCity(), saved.getCountryCode());
@@ -254,15 +267,31 @@ public class JobPostServiceImpl implements JobPostService {
             log.info("Publishing skills changed event. Added: {}, Removed: {}",
                     addedSkills.size(), removedSkills.size());
 
-            // Fetch country code from Company service (cached)
-            String countryCode = getCompanyCountry(savedJobPost.getCompanyId());
+            // Extract employment types (same as JobPostPublished event)
+            List<EmploymentType> employmentTypes = savedJobPost.getEmploymentTypes().stream()
+                    .map(JobPostEmploymentType::getType)
+                    .toList();
 
+            // Build comprehensive event matching JobPostPublishedEvent structure
             JobPostSkillsChangedEvent event = JobPostSkillsChangedEvent.builder()
+                    // Core identifiers
                     .jobPostId(savedJobPost.getJobPostId())
                     .companyId(savedJobPost.getCompanyId())
                     .title(savedJobPost.getTitle())
+                    .description(savedJobPost.getDescription())
                     .locationCity(savedJobPost.getLocationCity())
-                    .countryCode(countryCode)  // Derived from Company service (Ultimo 4.3.1)
+                    .countryCode(savedJobPost.getCountryCode())
+                    // Salary information
+                    .salaryType(savedJobPost.getSalaryType())
+                    .salaryMin(savedJobPost.getSalaryMin())
+                    .salaryMax(savedJobPost.getSalaryMax())
+                    // Job type and status
+                    .employmentTypes(employmentTypes)
+                    .fresher(savedJobPost.isFresher())
+                    // Publishing timestamps
+                    .publishedAt(savedJobPost.getPostedAt())
+                    .expiryAt(savedJobPost.getExpiryAt())
+                    // Skill change tracking
                     .addedSkills(addedSkills)
                     .removedSkills(removedSkills)
                     .currentSkills(newSkillIds)

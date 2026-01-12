@@ -312,6 +312,64 @@ public class PaymentEventListener {
         }
     }
 
+    @KafkaListener(
+            topics = "payment.cancelled",
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void handlePaymentCancelled(java.util.Map<String, Object> payload) {
+        try {
+            java.util.UUID paymentId = parseUUID(payload.get("paymentId"));
+            java.util.UUID companyId = parseUUID(payload.get("payerId"));
+            Double amount = payload.get("amount") != null ? ((Number) payload.get("amount")).doubleValue() : 0.0;
+            String currency = (String) payload.getOrDefault("currency", "USD");
+
+            log.info("Received payment.cancelled event for payment: {} (company: {})", paymentId, companyId);
+
+            if (paymentId == null || companyId == null) {
+                log.error("Payment cancelled event has null paymentId or companyId, skipping");
+                return;
+            }
+
+            String message = String.format("Your payment of %.2f %s has been cancelled. " +
+                    "No charges were made to your account.",
+                    amount, currency);
+
+            String metadata = String.format("{\"paymentId\":\"%s\",\"amount\":%.2f,\"currency\":\"%s\",\"cancelledAt\":\"%s\"}",
+                    paymentId, amount, currency, java.time.LocalDateTime.now());
+
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
+                    .userId(companyId)
+                    .type(NotificationType.SYSTEM)
+                    .title("Payment Cancelled")
+                    .message(message)
+                    .referenceId(paymentId.toString())
+                    .referenceType("PAYMENT_CANCELLED")
+                    .metadata(metadata)
+                    .build();
+
+            internalNotificationService.createNotification(notification);
+            log.info("Successfully created notification for payment cancellation: {} (company: {})", paymentId, companyId);
+
+        } catch (Exception e) {
+            log.error("Error processing payment.cancelled event: {}", e.getMessage(), e);
+        }
+    }
+
+    private java.util.UUID parseUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.util.UUID) return (java.util.UUID) value;
+        if (value instanceof String) {
+            try {
+                return java.util.UUID.fromString((String) value);
+            } catch (IllegalArgumentException e) {
+                log.warn("Failed to parse UUID from string: {}", value);
+                return null;
+            }
+        }
+        return null;
+    }
+
     /**
      * Sanitizes strings for safe JSON inclusion by escaping special characters
      */

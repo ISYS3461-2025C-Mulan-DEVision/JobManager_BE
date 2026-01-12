@@ -14,6 +14,9 @@ public class WebClientConfig {
     @Value("${applicant.service.url:http://localhost:8080}")
     private String applicantServiceUrl;
 
+    @Value("${applicant.service.auth.token:}")
+    private String applicantServiceAuthToken;
+
     @Bean
     public WebClient subscriptionWebClient() {
         return WebClient.builder()
@@ -23,8 +26,14 @@ public class WebClientConfig {
 
     @Bean
     public WebClient applicantWebClient() {
-        return WebClient.builder()
-                .baseUrl(applicantServiceUrl)
-                .build();
+        WebClient.Builder builder = WebClient.builder()
+                .baseUrl(applicantServiceUrl);
+
+        // Add Bearer token if configured
+        if (applicantServiceAuthToken != null && !applicantServiceAuthToken.isEmpty()) {
+            builder.defaultHeader("Authorization", "Bearer " + applicantServiceAuthToken);
+        }
+
+        return builder.build();
     }
 }

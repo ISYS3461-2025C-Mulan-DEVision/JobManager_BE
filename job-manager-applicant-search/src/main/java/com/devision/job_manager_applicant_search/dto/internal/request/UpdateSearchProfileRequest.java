@@ -24,9 +24,13 @@ public class UpdateSearchProfileRequest {
     @Size(min = 2, max = 2, message = "Country code must be 2 characters (ISO 3166-1 alpha-2)")
     private String countryCode;
 
-    // TODO: Salary filtering - uncomment when JA adds salary support
-    // private BigDecimal minSalary;
-    // private BigDecimal maxSalary;
+    /**
+     * Salary range for profile matching (used in Kafka notification matching).
+     * TODO: Salary for Search - Not used in search API filtering until JA adds salary to UserResponse.
+     */
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
+    
     private EducationDegree highestDegree;
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;

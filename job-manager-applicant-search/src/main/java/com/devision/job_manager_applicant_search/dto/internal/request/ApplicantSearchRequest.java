@@ -37,6 +37,13 @@ public class ApplicantSearchRequest {
     private String username;
 
     /**
+     * Full-Text Search query for searching across Work Experience, 
+     * Objective Summary, and Technical Skills fields.
+     * Case-insensitive search.
+     */
+    private String ftsQuery;
+
+    /**
      * Country code filter (e.g., "US", "VN").
      * Maps to JA's 'country' parameter.
      */

@@ -26,6 +26,30 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
+    /**
+     * Add SASL/SSL security properties for Confluent Cloud
+     */
+    private void addSecurityProperties(Map<String, Object> props) {
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            props.put("security.protocol", securityProtocol);
+        }
+        if (saslMechanism != null && !saslMechanism.isEmpty()) {
+            props.put("sasl.mechanism", saslMechanism);
+        }
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
+    }
+
     // Producer Configuration
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
@@ -34,6 +58,10 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
+        
+        // Add SASL/SSL security properties
+        addSecurityProperties(configProps);
+        
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
@@ -61,6 +89,10 @@ public class KafkaConfig {
                         SubscriptionUpdatedEvent.class.getName() + "," +
                 "com.devision.job_manager_applicant.event.ApplicantProfileUpdatedEvent:" + 
                         ApplicantProfileUpdatedEvent.class.getName());
+        
+        // Add SASL/SSL security properties
+        addSecurityProperties(configProps);
+        
         return new DefaultKafkaConsumerFactory<>(configProps);
     }
 

@@ -13,12 +13,21 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Kafka listener for job post related events.
- * Listens to job post topics to notify companies about their job post lifecycle.
+ * Listens to job post events from job-manager-jobpost service and creates notifications.
+ *
+ * Events handled:
+ * - jobpost.published: When a job post goes live
+ * - jobpost.updated: When a job post is modified
+ * - jobpost.expired: When a job post reaches its expiry date
+ * - jobpost.unpublished: When a job post is taken down
+ * - jobpost.deleted: When a job post is permanently deleted
+ * - jobpost.skills.changed: When required skills are modified (CRITICAL for Ultimo)
+ * - jobpost.country.changed: When location/country is changed (CRITICAL for Ultimo)
  */
 @Component
 @RequiredArgsConstructor
@@ -31,10 +40,7 @@ public class JobPostEventListener {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
 
     /**
-     * Handles job post published events.
-     * Notifies company when their job post is created and goes live.
-     * Note: The job post service publishes to 'jobpost.published' when a job is created,
-     * so this serves as both creation and publication notification.
+     * Handles job post published event
      */
     @KafkaListener(
             topics = "jobpost.published",
@@ -47,23 +53,19 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostPublishedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
-            Object publishedAtObj = payload.get("publishedAt");
-            Object expiryAtObj = payload.get("expiryAt");
+            LocalDateTime publishedAt = parseLocalDateTime(payload.get("publishedAt"));
+            LocalDateTime expiryAt = parseLocalDateTime(payload.get("expiryAt"));
+
+            log.info("Received jobpost.published event for jobPostId: {}, companyId: {} from partition: {}, offset: {}",
+                    jobPostId, companyId, partition, offset);
 
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostPublishedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post published event has null companyId or jobPostId, skipping");
                 return;
             }
-
-            LocalDateTime publishedAt = parseLocalDateTime(publishedAtObj);
-            LocalDateTime expiryAt = parseLocalDateTime(expiryAtObj);
 
             String message = buildJobPostPublishedMessage(title, publishedAt, expiryAt);
             String metadata = buildJobPostMetadata(jobPostId, title, "PUBLISHED");
@@ -79,19 +81,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post published: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post published notification for jobPostId: {}", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostPublishedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.published event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post updated events.
-     * Notifies company when their job post is updated.
+     * Handles job post updated event
      */
     @KafkaListener(
             topics = "jobpost.updated",
@@ -104,26 +102,27 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostUpdatedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
+            LocalDateTime updatedAt = parseLocalDateTime(payload.get("updatedAt"));
+
+            log.info("Received jobpost.updated event for jobPostId: {}, companyId: {}", jobPostId, companyId);
 
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostUpdatedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post updated event has null companyId or jobPostId, skipping");
                 return;
             }
 
-            String message = buildJobPostUpdatedMessage(title);
+            String message = String.format("Your job post \"%s\" has been updated successfully.",
+                    title != null ? title : "Untitled Position");
+
             String metadata = buildJobPostMetadata(jobPostId, title, "UPDATED");
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
                     .type(NotificationType.SYSTEM)
-                    .title("Job Post Updated")
+                    .title("✏️ Job Post Updated")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_UPDATED")
@@ -131,19 +130,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post updated: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post updated notification for jobPostId: {}", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostUpdatedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.updated event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post expired events.
-     * Notifies company when their job post expires.
+     * Handles job post expired event
      */
     @KafkaListener(
             topics = "jobpost.expired",
@@ -156,29 +151,25 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostExpiredEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
-            Object expiredAtObj = payload.get("expiredAt");
+            LocalDateTime expiredAt = parseLocalDateTime(payload.get("expiredAt"));
+
+            log.info("Received jobpost.expired event for jobPostId: {}, companyId: {}", jobPostId, companyId);
 
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostExpiredEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post expired event has null companyId or jobPostId, skipping");
                 return;
             }
-
-            LocalDateTime expiredAt = parseLocalDateTime(expiredAtObj);
 
             String message = buildJobPostExpiredMessage(title, expiredAt);
             String metadata = buildJobPostMetadata(jobPostId, title, "EXPIRED");
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
-                    .type(NotificationType.ALERT)
-                    .title("⚠️ Job Post Expired")
+                    .type(NotificationType.SYSTEM)
+                    .title("⏰ Job Post Expired")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_EXPIRED")
@@ -186,19 +177,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post expired: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post expired notification for jobPostId: {}", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostExpiredEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.expired event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post unpublished events.
-     * Notifies company when their job post is unpublished.
+     * Handles job post unpublished event
      */
     @KafkaListener(
             topics = "jobpost.unpublished",
@@ -211,26 +198,26 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostUnpublishedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
 
+            log.info("Received jobpost.unpublished event for jobPostId: {}, companyId: {}", jobPostId, companyId);
+
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostUnpublishedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post unpublished event has null companyId or jobPostId, skipping");
                 return;
             }
 
-            String message = buildJobPostUnpublishedMessage(title);
+            String message = String.format("Your job post \"%s\" has been unpublished and is no longer visible to applicants.",
+                    title != null ? title : "Untitled Position");
+
             String metadata = buildJobPostMetadata(jobPostId, title, "UNPUBLISHED");
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
                     .type(NotificationType.SYSTEM)
-                    .title("Job Post Unpublished")
+                    .title("📥 Job Post Unpublished")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_UNPUBLISHED")
@@ -238,19 +225,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post unpublished: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post unpublished notification for jobPostId: {}", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostUnpublishedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.unpublished event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post deleted events.
-     * Notifies company when their job post is deleted.
+     * Handles job post deleted event
      */
     @KafkaListener(
             topics = "jobpost.deleted",
@@ -263,26 +246,26 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostDeletedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
 
+            log.info("Received jobpost.deleted event for jobPostId: {}, companyId: {}", jobPostId, companyId);
+
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostDeletedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post deleted event has null companyId or jobPostId, skipping");
                 return;
             }
 
-            String message = buildJobPostDeletedMessage(title);
+            String message = String.format("Your job post \"%s\" has been permanently deleted.",
+                    title != null ? title : "Untitled Position");
+
             String metadata = buildJobPostMetadata(jobPostId, title, "DELETED");
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
                     .type(NotificationType.SYSTEM)
-                    .title("Job Post Deleted")
+                    .title("🗑️ Job Post Deleted")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_DELETED")
@@ -290,19 +273,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post deleted: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post deleted notification for jobPostId: {}", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostDeletedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.deleted event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post skills changed events.
-     * CRITICAL for Ultimo 4.3.1: Enables instant applicant matching when job requirements change.
+     * Handles job post skills changed event (CRITICAL for Ultimo applicant matching)
      */
     @KafkaListener(
             topics = "jobpost.skills.changed",
@@ -315,26 +294,32 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostSkillsChangedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
 
+            @SuppressWarnings("unchecked")
+            List<String> addedSkills = (List<String>) payload.get("addedSkills");
+            @SuppressWarnings("unchecked")
+            List<String> removedSkills = (List<String>) payload.get("removedSkills");
+            @SuppressWarnings("unchecked")
+            List<String> currentSkills = (List<String>) payload.get("currentSkills");
+
+            log.info("Received jobpost.skills.changed event for jobPostId: {}, companyId: {}, added: {}, removed: {}",
+                    jobPostId, companyId, addedSkills, removedSkills);
+
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostSkillsChangedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post skills changed event has null companyId or jobPostId, skipping");
                 return;
             }
 
-            String message = buildJobPostSkillsChangedMessage(title);
-            String metadata = buildJobPostMetadata(jobPostId, title, "SKILLS_CHANGED");
+            String message = buildSkillsChangedMessage(title, addedSkills, removedSkills);
+            String metadata = buildSkillsChangedMetadata(jobPostId, title, addedSkills, removedSkills, currentSkills);
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
                     .type(NotificationType.SYSTEM)
-                    .title("Job Post Skills Updated")
+                    .title("🔧 Job Skills Updated")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_SKILLS_CHANGED")
@@ -342,19 +327,15 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post skills changed: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post skills changed notification for jobPostId: {}. This will trigger Ultimo re-matching.", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostSkillsChangedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.skills.changed event: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Handles job post country changed events.
-     * CRITICAL for Ultimo 4.3.1: Enables instant applicant matching when location requirements change.
+     * Handles job post country changed event (CRITICAL for Ultimo applicant matching)
      */
     @KafkaListener(
             topics = "jobpost.country.changed",
@@ -367,28 +348,31 @@ public class JobPostEventListener {
             @Header(KafkaHeaders.OFFSET) long offset
     ) {
         try {
-            log.info("Received JobPostCountryChangedEvent from partition: {}, offset: {}", partition, offset);
-            log.debug("Payload: {}", payload);
-
             UUID companyId = parseUUID(payload.get("companyId"));
             UUID jobPostId = parseUUID(payload.get("jobPostId"));
             String title = (String) payload.get("title");
             String previousCountryCode = (String) payload.get("previousCountryCode");
             String newCountryCode = (String) payload.get("newCountryCode");
+            String previousLocationCity = (String) payload.get("previousLocationCity");
+            String newLocationCity = (String) payload.get("newLocationCity");
+
+            log.info("Received jobpost.country.changed event for jobPostId: {}, companyId: {}, from: {} to: {}",
+                    jobPostId, companyId, previousCountryCode, newCountryCode);
 
             if (companyId == null || jobPostId == null) {
-                log.error("Missing required fields in JobPostCountryChangedEvent. CompanyId: {}, JobPostId: {}",
-                        companyId, jobPostId);
+                log.error("Job post country changed event has null companyId or jobPostId, skipping");
                 return;
             }
 
-            String message = buildJobPostCountryChangedMessage(title, previousCountryCode, newCountryCode);
-            String metadata = buildJobPostMetadata(jobPostId, title, "COUNTRY_CHANGED");
+            String message = buildCountryChangedMessage(title, previousLocationCity, newLocationCity,
+                    previousCountryCode, newCountryCode);
+            String metadata = buildCountryChangedMetadata(jobPostId, title, previousCountryCode, newCountryCode,
+                    previousLocationCity, newLocationCity);
 
             InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
                     .userId(companyId)
                     .type(NotificationType.SYSTEM)
-                    .title("Job Post Location Updated")
+                    .title("🌍 Job Location Updated")
                     .message(message)
                     .referenceId(jobPostId.toString())
                     .referenceType("JOB_POST_COUNTRY_CHANGED")
@@ -396,172 +380,138 @@ public class JobPostEventListener {
                     .build();
 
             internalNotificationService.createNotification(notification);
-
-            log.info("Successfully created notification for job post country changed: {} (company: {})",
-                    jobPostId, companyId);
+            log.info("Successfully created job post country changed notification for jobPostId: {}. This will trigger Ultimo re-matching.", jobPostId);
 
         } catch (Exception e) {
-            log.error("Error processing JobPostCountryChangedEvent from partition: {}, offset: {}",
-                    partition, offset, e);
+            log.error("Error processing jobpost.country.changed event: {}", e.getMessage(), e);
         }
     }
 
-    // ========== Message Building Helper Methods ==========
+    // ==================== HELPER METHODS ====================
 
-    private String buildJobPostPublishedMessage(String title, LocalDateTime publishedAt, LocalDateTime expiryAt) {
-        StringBuilder message = new StringBuilder();
-        message.append("Great news! Your job post \"").append(title != null ? title : "Untitled")
-                .append("\" is now live and visible to applicants.\n\n");
-
-        if (publishedAt != null) {
-            message.append("Published: ").append(publishedAt.format(DATETIME_FORMATTER)).append("\n");
-        }
-
-        if (expiryAt != null) {
-            message.append("Expires: ").append(expiryAt.format(DATETIME_FORMATTER)).append("\n\n");
-        } else {
-            message.append("\n");
-        }
-
-        message.append("Your job post is now searchable and applicants matching your requirements will be notified.\n\n");
-        message.append("What to expect:\n");
-        message.append("• You'll receive notifications for new applications\n");
-        message.append("• Matching applicants will be alerted about this opportunity\n");
-        message.append("• Track application metrics from your dashboard");
-
-        return message.toString();
-    }
-
-    private String buildJobPostUpdatedMessage(String title) {
-        StringBuilder message = new StringBuilder();
-        message.append("Your job post \"").append(title != null ? title : "Untitled")
-                .append("\" has been updated successfully.\n\n");
-        message.append("The changes are now reflected in the live posting.");
-        return message.toString();
-    }
-
-    private String buildJobPostExpiredMessage(String title, LocalDateTime expiredAt) {
-        StringBuilder message = new StringBuilder();
-        message.append("Your job post \"").append(title != null ? title : "Untitled")
-                .append("\" has expired and is no longer visible to applicants.\n\n");
-
-        if (expiredAt != null) {
-            message.append("Expired on: ").append(expiredAt.format(DATE_FORMATTER)).append("\n\n");
-        }
-
-        message.append("What you can do:\n");
-        message.append("• Renew this job post to make it active again\n");
-        message.append("• Create a new job post with updated requirements\n");
-        message.append("• Review applications received during the active period");
-
-        return message.toString();
-    }
-
-    private String buildJobPostUnpublishedMessage(String title) {
-        StringBuilder message = new StringBuilder();
-        message.append("Your job post \"").append(title != null ? title : "Untitled")
-                .append("\" has been unpublished and is no longer visible to applicants.\n\n");
-        message.append("You can republish it anytime from your dashboard.");
-        return message.toString();
-    }
-
-    private String buildJobPostDeletedMessage(String title) {
-        StringBuilder message = new StringBuilder();
-        message.append("Your job post \"").append(title != null ? title : "Untitled")
-                .append("\" has been permanently deleted.\n\n");
-        message.append("This action cannot be undone. All associated data has been removed.");
-        return message.toString();
-    }
-
-    private String buildJobPostSkillsChangedMessage(String title) {
-        StringBuilder message = new StringBuilder();
-        message.append("The required skills for your job post \"")
-                .append(title != null ? title : "Untitled")
-                .append("\" have been updated.\n\n");
-        message.append("We're now matching your updated requirements with applicants who have the relevant skills.");
-        return message.toString();
-    }
-
-    private String buildJobPostCountryChangedMessage(String title, String previousCountryCode, String newCountryCode) {
-        StringBuilder message = new StringBuilder();
-        message.append("The location for your job post \"")
-                .append(title != null ? title : "Untitled")
-                .append("\" has been updated");
-
-        if (previousCountryCode != null && newCountryCode != null) {
-            message.append(" from ").append(previousCountryCode).append(" to ").append(newCountryCode);
-        }
-
-        message.append(".\n\n");
-        message.append("We're now matching your job post with applicants in the updated location.");
-        return message.toString();
-    }
-
-    private String buildJobPostMetadata(UUID jobPostId, String title, String action) {
-        return String.format("{\"jobPostId\":\"%s\",\"title\":\"%s\",\"action\":\"%s\",\"timestamp\":\"%s\"}",
-                jobPostId, sanitizeJsonString(title), action, LocalDateTime.now());
-    }
-
-    // ========== Utility Helper Methods ==========
-
-    private UUID parseUUID(Object uuidObj) {
-        if (uuidObj == null) {
-            return null;
-        }
-        try {
-            if (uuidObj instanceof String) {
-                return UUID.fromString((String) uuidObj);
-            } else if (uuidObj instanceof UUID) {
-                return (UUID) uuidObj;
-            } else {
-                return UUID.fromString(uuidObj.toString());
+    private UUID parseUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID) return (UUID) value;
+        if (value instanceof String) {
+            try {
+                return UUID.fromString((String) value);
+            } catch (IllegalArgumentException e) {
+                log.warn("Failed to parse UUID from string: {}", value);
+                return null;
             }
-        } catch (IllegalArgumentException e) {
-            log.error("Failed to parse UUID. Value: {}", uuidObj, e);
-            return null;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private LocalDateTime parseLocalDateTime(Object dateTimeObj) {
-        if (dateTimeObj == null) {
-            return null;
-        }
-        try {
-            if (dateTimeObj instanceof java.util.List) {
-                java.util.List<Integer> dateTimeParts = (java.util.List<Integer>) dateTimeObj;
-                if (dateTimeParts.size() < 3) {
-                    log.error("Invalid date array format. Expected at least [year, month, day], got: {}", dateTimeParts);
-                    return null;
-                }
-                int year = dateTimeParts.get(0);
-                int month = dateTimeParts.get(1);
-                int day = dateTimeParts.get(2);
-                int hour = dateTimeParts.size() > 3 ? dateTimeParts.get(3) : 0;
-                int minute = dateTimeParts.size() > 4 ? dateTimeParts.get(4) : 0;
-                int second = dateTimeParts.size() > 5 ? dateTimeParts.get(5) : 0;
-                int nano = dateTimeParts.size() > 6 ? dateTimeParts.get(6) : 0;
-                return LocalDateTime.of(year, month, day, hour, minute, second, nano);
-            } else if (dateTimeObj instanceof String) {
-                return LocalDateTime.parse((String) dateTimeObj);
-            } else if (dateTimeObj instanceof LocalDateTime) {
-                return (LocalDateTime) dateTimeObj;
-            }
-        } catch (Exception e) {
-            log.error("Failed to parse LocalDateTime. Value: {}. Using null.", dateTimeObj, e);
         }
         return null;
     }
 
-    private String sanitizeJsonString(String input) {
-        if (input == null) {
-            return "";
+    private LocalDateTime parseLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDateTime) return (LocalDateTime) value;
+        if (value instanceof List) {
+            // Handle array format: [year, month, day, hour, minute, second, nano]
+            @SuppressWarnings("unchecked")
+            List<Integer> dateArray = (List<Integer>) value;
+            if (dateArray.size() >= 6) {
+                return LocalDateTime.of(
+                        dateArray.get(0), // year
+                        dateArray.get(1), // month
+                        dateArray.get(2), // day
+                        dateArray.get(3), // hour
+                        dateArray.get(4), // minute
+                        dateArray.get(5)  // second
+                );
+            }
         }
-        return input
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        return LocalDateTime.now();
+    }
+
+    private String buildJobPostPublishedMessage(String title, LocalDateTime publishedAt, LocalDateTime expiryAt) {
+        StringBuilder message = new StringBuilder();
+        message.append(String.format("Your job post \"%s\" is now live and visible to applicants! ",
+                title != null ? title : "Untitled Position"));
+
+        if (expiryAt != null) {
+            message.append(String.format("It will remain active until %s.", expiryAt.format(DATE_FORMATTER)));
+        }
+
+        return message.toString();
+    }
+
+    private String buildJobPostExpiredMessage(String title, LocalDateTime expiredAt) {
+        return String.format("Your job post \"%s\" has reached its expiry date and is no longer visible to applicants. " +
+                "You can renew it to continue receiving applications.",
+                title != null ? title : "Untitled Position");
+    }
+
+    private String buildSkillsChangedMessage(String title, List<String> addedSkills, List<String> removedSkills) {
+        StringBuilder message = new StringBuilder();
+        message.append(String.format("Required skills for \"%s\" have been updated. ",
+                title != null ? title : "Untitled Position"));
+
+        if (addedSkills != null && !addedSkills.isEmpty()) {
+            message.append(String.format("Added: %s. ", String.join(", ", addedSkills)));
+        }
+
+        if (removedSkills != null && !removedSkills.isEmpty()) {
+            message.append(String.format("Removed: %s. ", String.join(", ", removedSkills)));
+        }
+
+        message.append("We'll automatically re-match this position with qualified applicants.");
+
+        return message.toString();
+    }
+
+    private String buildCountryChangedMessage(String title, String previousCity, String newCity,
+                                               String previousCountry, String newCountry) {
+        String location = newCity != null ? newCity + ", " + newCountry : newCountry;
+        return String.format("The location for \"%s\" has been changed to %s. " +
+                "We'll automatically re-match this position with applicants in the new location.",
+                title != null ? title : "Untitled Position",
+                location);
+    }
+
+    private String buildJobPostMetadata(UUID jobPostId, String title, String action) {
+        return String.format("{\"jobPostId\":\"%s\",\"title\":\"%s\",\"action\":\"%s\",\"timestamp\":\"%s\"}",
+                jobPostId,
+                title != null ? title.replace("\"", "\\\"") : "Untitled Position",
+                action,
+                LocalDateTime.now());
+    }
+
+    private String buildSkillsChangedMetadata(UUID jobPostId, String title, List<String> added,
+                                              List<String> removed, List<String> current) {
+        return String.format("{\"jobPostId\":\"%s\",\"title\":\"%s\",\"addedSkills\":%s,\"removedSkills\":%s,\"currentSkills\":%s,\"action\":\"SKILLS_CHANGED\",\"timestamp\":\"%s\"}",
+                jobPostId,
+                title != null ? title.replace("\"", "\\\"") : "Untitled Position",
+                toJsonArray(added),
+                toJsonArray(removed),
+                toJsonArray(current),
+                LocalDateTime.now());
+    }
+
+    private String buildCountryChangedMetadata(UUID jobPostId, String title, String previousCountry,
+                                                String newCountry, String previousCity, String newCity) {
+        return String.format("{\"jobPostId\":\"%s\",\"title\":\"%s\",\"previousCountryCode\":\"%s\",\"newCountryCode\":\"%s\",\"previousCity\":\"%s\",\"newCity\":\"%s\",\"action\":\"COUNTRY_CHANGED\",\"timestamp\":\"%s\"}",
+                jobPostId,
+                title != null ? title.replace("\"", "\\\"") : "Untitled Position",
+                previousCountry,
+                newCountry,
+                previousCity != null ? previousCity : "",
+                newCity != null ? newCity : "",
+                LocalDateTime.now());
+    }
+
+    private String toJsonArray(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            sb.append("\"").append(list.get(i).replace("\"", "\\\"")).append("\"");
+            if (i < list.size() - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }
