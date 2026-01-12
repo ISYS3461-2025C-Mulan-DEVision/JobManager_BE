@@ -22,7 +22,7 @@ echo -e "${GREEN}========================================${NC}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEPLOY_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-COMPOSE_FILE="docker-compose.ec2-1.yml"
+COMPOSE_FILE="docker-compose.ec2-edge.yml"
 
 echo -e "${BLUE}📁 Deploy directory: $DEPLOY_DIR${NC}"
 
