@@ -45,6 +45,7 @@ spring:
 applicant:
   service:
     url: ${APPLICANT_SERVICE_URL:http://localhost:9085}
+    jwe-token: ${APPLICANT_SERVICE_JWE_TOKEN:}
 
 subscription:
   service:
