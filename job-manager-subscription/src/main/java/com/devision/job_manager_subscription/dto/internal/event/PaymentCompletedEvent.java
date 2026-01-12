@@ -1,5 +1,6 @@
 package com.devision.job_manager_subscription.dto.internal.event;
 
+import com.devision.job_manager_subscription.model.PayerType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,7 @@ import java.util.UUID;
 public class PaymentCompletedEvent {
 
     private UUID paymentId;
-    private String payerType;
+    private PayerType payerType;
     private UUID payerId;
     private String email;
     private BigDecimal amount;

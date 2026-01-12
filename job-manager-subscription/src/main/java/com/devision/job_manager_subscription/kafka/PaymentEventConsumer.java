@@ -4,6 +4,7 @@ package com.devision.job_manager_subscription.kafka;
 import com.devision.job_manager_subscription.dto.internal.event.PaymentCompletedEvent;
 import com.devision.job_manager_subscription.dto.internal.request.CreateSubscriptionRequest;
 import com.devision.job_manager_subscription.dto.internal.request.UpdateSubscriptionRequest;
+import com.devision.job_manager_subscription.model.PayerType;
 import com.devision.job_manager_subscription.model.SubscriptionStatus;
 import com.devision.job_manager_subscription.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class PaymentEventConsumer {
 
         try {
             // Only process COMPANY payments
-            if (!"COMPANY".equals(event.getPayerType())) {
+            if (event.getPayerType() != PayerType.COMPANY) {
                 log.info("Ignoring payment event - not a company payment (type: {})", event.getPayerType());
                 acknowledgment.acknowledge();
                 return;
