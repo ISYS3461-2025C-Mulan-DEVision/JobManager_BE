@@ -96,4 +96,65 @@ public class CompanyEventListener {
             log.error("Error processing CompanyAccountLockedEvent for company: {}", event.getCompanyId(), e);
         }
     }
+
+    @KafkaListener(
+            topics = "company.country.changed",
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "kafkaListenerContainerFactory"
+    )
+    public void handleCompanyCountryChanged(java.util.Map<String, Object> payload) {
+        try {
+            java.util.UUID companyId = parseUUID(payload.get("companyId"));
+            String previousCountryCode = (String) payload.get("previousCountryCode");
+            String newCountryCode = (String) payload.get("newCountryCode");
+
+            log.info("Received company.country.changed event for company: {}, from: {} to: {}",
+                    companyId, previousCountryCode, newCountryCode);
+
+            if (companyId == null) {
+                log.error("Company country changed event has null companyId, skipping");
+                return;
+            }
+
+            String message = String.format("Your company location has been updated from %s to %s. " +
+                    "This may affect your job postings and applicant matching.",
+                    previousCountryCode != null ? previousCountryCode : "Unknown",
+                    newCountryCode != null ? newCountryCode : "Unknown");
+
+            String metadata = String.format("{\"companyId\":\"%s\",\"previousCountryCode\":\"%s\",\"newCountryCode\":\"%s\",\"timestamp\":\"%s\"}",
+                    companyId,
+                    previousCountryCode != null ? previousCountryCode : "",
+                    newCountryCode != null ? newCountryCode : "",
+                    java.time.LocalDateTime.now());
+
+            InternalCreateNotificationRequest notification = InternalCreateNotificationRequest.builder()
+                    .userId(companyId)
+                    .type(NotificationType.SYSTEM)
+                    .title("🌍 Company Location Updated")
+                    .message(message)
+                    .referenceId(companyId.toString())
+                    .referenceType("COMPANY_COUNTRY_CHANGED")
+                    .metadata(metadata)
+                    .build();
+
+            internalNotificationService.createNotification(notification);
+            log.info("Notification created for company country change: {}", companyId);
+        } catch (Exception e) {
+            log.error("Error processing company.country.changed event: {}", e.getMessage(), e);
+        }
+    }
+
+    private java.util.UUID parseUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.util.UUID) return (java.util.UUID) value;
+        if (value instanceof String) {
+            try {
+                return java.util.UUID.fromString((String) value);
+            } catch (IllegalArgumentException e) {
+                log.warn("Failed to parse UUID from string: {}", value);
+                return null;
+            }
+        }
+        return null;
+    }
 }
