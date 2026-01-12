@@ -50,9 +50,8 @@ public class SearchProfileServiceImpl implements SearchProfileService {
                 .companyId(request.getCompanyId())
                 .profileName(request.getProfileName())
                 .countryCode(request.getCountryCode())
-                // TODO: Salary filtering - uncomment when JA supports it
-                // .minSalary(request.getMinSalary())
-                // .maxSalary(request.getMaxSalary())
+                .minSalary(request.getMinSalary())
+                .maxSalary(request.getMaxSalary())
                 .highestDegree(request.getHighestDegree())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
@@ -143,13 +142,12 @@ public class SearchProfileServiceImpl implements SearchProfileService {
         if (request.getCountryCode() != null) {
             profile.setCountryCode(request.getCountryCode());
         }
-        // TODO: Salary filtering - uncomment when JA supports it
-        // if (request.getMinSalary() != null) {
-        //     profile.setMinSalary(request.getMinSalary());
-        // }
-        // if (request.getMaxSalary() != null) {
-        //     profile.setMaxSalary(request.getMaxSalary());
-        // }
+        if (request.getMinSalary() != null) {
+            profile.setMinSalary(request.getMinSalary());
+        }
+        if (request.getMaxSalary() != null) {
+            profile.setMaxSalary(request.getMaxSalary());
+        }
         if (request.getHighestDegree() != null) {
             profile.setHighestDegree(request.getHighestDegree());
         }
