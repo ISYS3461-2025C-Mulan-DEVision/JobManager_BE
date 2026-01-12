@@ -4,12 +4,13 @@
 # Edge & Control Plane: Gateway, Discovery, Frontend
 # ========================================
 
-set -e
+set -e  # Exit on any error
 
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}========================================${NC}"
@@ -28,10 +29,17 @@ echo -e "${BLUE}📁 Deploy directory: $DEPLOY_DIR${NC}"
 # Step 1: Load environment variables
 echo -e "${YELLOW}📋 Loading environment variables...${NC}"
 if [ -f "$DEPLOY_DIR/.env" ]; then
-    # Use set -a to export all variables, then source the file
-    set -a
-    source "$DEPLOY_DIR/.env"
-    set +a
+    # Load .env file safely, handling multiline values and comments
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        
+        # Only export lines that look like variable assignments
+        if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)= ]]; then
+            # Export the variable
+            export "$line"
+        fi
+    done < "$DEPLOY_DIR/.env"
     echo -e "${GREEN}✅ Environment variables loaded${NC}"
 else
     echo -e "${RED}❌ .env file not found!${NC}"
