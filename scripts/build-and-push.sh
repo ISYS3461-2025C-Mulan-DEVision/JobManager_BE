@@ -1,7 +1,18 @@
 #!/bin/bash
 # ========================================
-# Build and Push All Services to Docker Hub
+# Build and Push Services to Docker Hub
 # Run this script locally before deploying to EC2
+#
+# Usage:
+#   ./build-and-push.sh              # Build and push ALL services
+#   ./build-and-push.sh frontend     # Build and push only frontend
+#   ./build-and-push.sh auth         # Build and push only auth service
+#   ./build-and-push.sh gateway      # Build and push only gateway
+#   ./build-and-push.sh discovery    # Build and push only discovery
+#
+# Available services:
+#   auth, company, jobpost, applicant-search, subscription,
+#   payment, notification, gateway, discovery, frontend
 # ========================================
 
 set -e
@@ -13,29 +24,135 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}🐳 Building and Pushing All Services${NC}"
-echo -e "${GREEN}========================================${NC}"
-
 # Configuration
 DOCKER_USERNAME="hanhdau"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
+TARGET_SERVICE="${1:-all}"
 
-# Define all services
-declare -a SERVICES=(
-    "job-manager-auth:jm-auth"
-    "job-manager-company:jm-company"
-    "job-manager-jobpost:jm-jobpost"
-    "job-manager-applicant-search:jm-applicant-search"
-    "job-manager-subscription:jm-subscription"
-    "job-manager-payment:jm-payment"
-    "job-manager-notification:jm-notification"
-    "job-manager-gateway:jm-gateway"
-    "job-manager-discovery:jm-discovery"
-)
+# Function to get service directory and image name
+# Returns: "directory:image"
+get_service_info() {
+    local service=$1
+    case "$service" in
+        auth)             echo "job-manager-auth:jm-auth" ;;
+        company)          echo "job-manager-company:jm-company" ;;
+        jobpost)          echo "job-manager-jobpost:jm-jobpost" ;;
+        applicant-search) echo "job-manager-applicant-search:jm-applicant-search" ;;
+        subscription)     echo "job-manager-subscription:jm-subscription" ;;
+        payment)          echo "job-manager-payment:jm-payment" ;;
+        notification)     echo "job-manager-notification:jm-notification" ;;
+        gateway)          echo "job-manager-gateway:jm-gateway" ;;
+        discovery)        echo "job-manager-discovery:jm-discovery" ;;
+        frontend)         echo "../JobManager_FE:jm-frontend" ;;
+        *)                echo "" ;;
+    esac
+}
 
-# Frontend
-FRONTEND_SERVICE="../JobManager_FE:jm-frontend"
+# List of all backend services
+BACKEND_SERVICES="auth company jobpost applicant-search subscription payment notification gateway discovery"
+
+# Function to display usage
+show_usage() {
+    echo -e "${BLUE}Usage:${NC}"
+    echo -e "  $0              # Build and push ALL services"
+    echo -e "  $0 <service>    # Build and push specific service"
+    echo ""
+    echo -e "${BLUE}Available services:${NC}"
+    echo -e "  auth, company, jobpost, applicant-search, subscription,"
+    echo -e "  payment, notification, gateway, discovery, frontend"
+    echo ""
+    echo -e "${BLUE}Examples:${NC}"
+    echo -e "  $0 frontend     # Build only frontend"
+    echo -e "  $0 auth         # Build only auth service"
+    echo -e "  $0 gateway      # Build only gateway"
+}
+
+# Function to build backend service
+build_backend_service() {
+    local dir=$1
+    local image=$2
+    
+    if [ -d "$dir" ]; then
+        echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
+        
+        if docker buildx build \
+            --platform linux/amd64 \
+            -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
+            --push \
+            "./$dir"; then
+            echo -e "${GREEN}✅ Built and pushed $image${NC}"
+        else
+            echo -e "${RED}❌ Failed to build $image${NC}"
+            exit 1
+        fi
+        echo ""
+    else
+        echo -e "${YELLOW}⚠️  Directory $dir not found, skipping...${NC}"
+    fi
+}
+
+# Function to build frontend service
+build_frontend_service() {
+    local dir=$1
+    local image=$2
+    
+    if [ -d "$dir" ]; then
+        echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
+        
+        # Load frontend environment variables
+        FRONTEND_ENV_FILE="$dir/.env.production"
+        if [ -f "$FRONTEND_ENV_FILE" ]; then
+            echo -e "${BLUE}Loading environment from $FRONTEND_ENV_FILE${NC}"
+            export $(cat "$FRONTEND_ENV_FILE" | grep -v '^#' | xargs)
+        fi
+        
+        if docker buildx build \
+            --platform linux/amd64 \
+            --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://52.76.250.138:8080}" \
+            --build-arg VITE_API_URL="${VITE_API_URL:-http://52.76.250.138:8080}" \
+            --build-arg VITE_GATEWAY_API_URL="${VITE_GATEWAY_API_URL:-http://52.76.250.138:8080}" \
+            --build-arg VITE_STRIPE_PUBLISHABLE_KEY="${VITE_STRIPE_PUBLISHABLE_KEY}" \
+            --build-arg VITE_NODE_ENV=production \
+            --build-arg VITE_ENV=production \
+            --build-arg VITE_ENABLE_MOCK_API=false \
+            -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
+            --push \
+            "$dir"; then
+            echo -e "${GREEN}✅ Built and pushed $image${NC}"
+        else
+            echo -e "${RED}❌ Failed to build $image${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Frontend directory not found at $dir, skipping...${NC}"
+    fi
+}
+
+# Check for help flag
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_usage
+    exit 0
+fi
+
+# Validate service name if provided
+SERVICE_INFO=$(get_service_info "$TARGET_SERVICE")
+if [[ "$TARGET_SERVICE" != "all" && -z "$SERVICE_INFO" ]]; then
+    echo -e "${RED}❌ Unknown service: $TARGET_SERVICE${NC}"
+    echo ""
+    show_usage
+    exit 1
+fi
+
+# Display header
+if [[ "$TARGET_SERVICE" == "all" ]]; then
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}🐳 Building and Pushing ALL Services${NC}"
+    echo -e "${GREEN}========================================${NC}"
+else
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}🐳 Building and Pushing: $TARGET_SERVICE${NC}"
+    echo -e "${GREEN}========================================${NC}"
+fi
 
 # Step 1: Login to Docker Hub
 echo -e "${YELLOW}🔐 Logging into Docker Hub...${NC}"
@@ -50,95 +167,61 @@ fi
 
 # Step 2: Setup Docker Buildx for multi-platform builds
 echo -e "${YELLOW}🔧 Setting up Docker Buildx...${NC}"
-docker buildx create --use --name multiarch-builder --driver docker-container || docker buildx use multiarch-builder
+docker buildx create --use --name multiarch-builder --driver docker-container 2>/dev/null || docker buildx use multiarch-builder
 echo -e "${GREEN}✅ Buildx configured${NC}"
-
-# Step 3: Build and push backend services
-echo -e "${YELLOW}📦 Building Backend Services (linux/amd64)...${NC}"
 echo ""
 
-for service in "${SERVICES[@]}"; do
-    IFS=':' read -r dir image <<< "$service"
+# Track built services for summary
+BUILT_SERVICES=""
+
+# Step 3: Build service(s)
+if [[ "$TARGET_SERVICE" == "all" ]]; then
+    # Build all backend services
+    echo -e "${YELLOW}📦 Building Backend Services (linux/amd64)...${NC}"
+    echo ""
     
-    if [ -d "$dir" ]; then
-        echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
-        
-        # Build and push multi-platform image in one step
-        if docker buildx build \
-            --platform linux/amd64 \
-            -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
-            --push \
-            "./$dir"; then
-            echo -e "${GREEN}✅ Built and pushed $image${NC}"
-        else
-            echo -e "${RED}❌ Failed to build $image${NC}"
-            exit 1
-        fi
-        
-        echo ""
-    else
-        echo -e "${YELLOW}⚠️  Directory $dir not found, skipping...${NC}"
-    fi
-done
-
-# Step 4: Build and push frontend
-echo -e "${YELLOW}📦 Building Frontend Service (linux/amd64)...${NC}"
-IFS=':' read -r dir image <<< "$FRONTEND_SERVICE"
-
-if [ -d "$dir" ]; then
-    echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
-    
-    if docker buildx build \
-        --platform linux/amd64 \
-        -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
-        --push \
-        "$dir"; then
-        echo -e "${GREEN}✅ Built and pushed $image${NC}"
-    else
-        echo -e "${RED}❌ Failed to build $image${NC}"
-        exit 1
-    fi
-else
-    echo -e "${YELLOW}⚠️  Frontend directory not found at $dir, skipping...${NC}"
-fi
-
-# Step 4: Clean up local images (optional)
-echo ""
-echo -e "${YELLOW}🧹 Cleanup Options:${NC}"
-read -p "Do you want to remove local images to save space? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}Removing local images...${NC}"
-    for service in "${SERVICES[@]}"; do
-        IFS=':' read -r dir image <<< "$service"
-        docker rmi "$DOCKER_USERNAME/$image:$IMAGE_TAG" 2>/dev/null || true
+    for key in $BACKEND_SERVICES; do
+        SERVICE_INFO=$(get_service_info "$key")
+        IFS=':' read -r dir image <<< "$SERVICE_INFO"
+        build_backend_service "$dir" "$image"
+        BUILT_SERVICES="$BUILT_SERVICES $DOCKER_USERNAME/$image:$IMAGE_TAG"
     done
-    docker rmi "$DOCKER_USERNAME/jm-frontend:$IMAGE_TAG" 2>/dev/null || true
-    echo -e "${GREEN}✅ Local images removed${NC}"
+    
+    # Build frontend
+    echo -e "${YELLOW}📦 Building Frontend Service (linux/amd64)...${NC}"
+    SERVICE_INFO=$(get_service_info "frontend")
+    IFS=':' read -r dir image <<< "$SERVICE_INFO"
+    build_frontend_service "$dir" "$image"
+    BUILT_SERVICES="$BUILT_SERVICES $DOCKER_USERNAME/$image:$IMAGE_TAG"
+else
+    # Build single service
+    echo -e "${YELLOW}📦 Building $TARGET_SERVICE (linux/amd64)...${NC}"
+    echo ""
+    
+    SERVICE_INFO=$(get_service_info "$TARGET_SERVICE")
+    IFS=':' read -r dir image <<< "$SERVICE_INFO"
+    
+    if [[ "$TARGET_SERVICE" == "frontend" ]]; then
+        build_frontend_service "$dir" "$image"
+    else
+        build_backend_service "$dir" "$image"
+    fi
+    BUILT_SERVICES="$DOCKER_USERNAME/$image:$IMAGE_TAG"
 fi
 
-# Step 5: Summary
+# Step 4: Summary
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}✅ Build and Push Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${BLUE}📝 Pushed Images:${NC}"
-for service in "${SERVICES[@]}"; do
-    IFS=':' read -r dir image <<< "$service"
-    echo -e "   $DOCKER_USERNAME/$image:$IMAGE_TAG"
+for img in $BUILT_SERVICES; do
+    echo -e "   $img"
 done
-echo -e "   $DOCKER_USERNAME/jm-frontend:$IMAGE_TAG"
 echo ""
 echo -e "${YELLOW}⚠️  Next Steps:${NC}"
-echo -e "   1. SSH into EC2-2 and run: ./scripts/deploy-ec2-2.sh"
-echo -e "   2. SSH into EC2-1 and run: ./scripts/deploy-ec2-1.sh"
+echo -e "   1. SSH into EC2-2 (Core) and run: ./scripts/deploy-ec2-core.sh"
+echo -e "   2. SSH into EC2-1 (Edge) and run: ./scripts/deploy-ec2-edge.sh"
 echo -e "   3. Verify services are healthy"
-echo ""
-echo -e "${BLUE}📋 Manual Deploy Commands:${NC}"
-echo -e "   ssh -i ~/.ssh/mulan-job-manager-app-ec2-key.pem ubuntu@EC2-2-IP"
-echo -e "   cd /home/ubuntu/job-manager && ./scripts/deploy-ec2-2.sh"
-echo ""
-echo -e "   ssh -i ~/.ssh/mulan-job-manager-app-ec2-key.pem ubuntu@EC2-1-IP"
-echo -e "   cd /home/ubuntu/job-manager && ./scripts/deploy-ec2-1.sh"
 echo ""

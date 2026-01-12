@@ -4,525 +4,315 @@
 # ========================================
 
 services:
-  # ========================================
-  # Infrastructure Layer
-  # ========================================
+    # ========================================
+    # Infrastructure Layer
+    # ========================================
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: jm-zookeeper
-    restart: unless-stopped
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-logs:/var/lib/zookeeper/log
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # zookeeper:
+    #   image: confluentinc/cp-zookeeper:7.5.0
+    #   container_name: jm-zookeeper
+    #   restart: unless-stopped
+    #   environment:
+    #     ZOOKEEPER_CLIENT_PORT: 2181
+    #     ZOOKEEPER_TICK_TIME: 2000
+    #   ports:
+    #     - "2181:2181"
+    #   volumes:
+    #     - zookeeper-data:/var/lib/zookeeper/data
+    #     - zookeeper-logs:/var/lib/zookeeper/log
+    #   networks:
+    #     - jm-core-network
+    #   healthcheck:
+    #     test: ["CMD", "nc", "-z", "localhost", "2181"]
+    #     interval: 10s
+    #     timeout: 5s
+    #     retries: 5
 
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: jm-kafka
-    restart: unless-stopped
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "kafka-broker-api-versions",
-          "--bootstrap-server",
-          "localhost:9092",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 5
+    # kafka:
+    #   image: confluentinc/cp-kafka:7.5.0
+    #   container_name: jm-kafka
+    #   restart: unless-stopped
+    #   depends_on:
+    #     zookeeper:
+    #       condition: service_healthy
+    #   ports:
+    #     - "9092:9092"
+    #     - "29092:29092"
+    #   environment:
+    #     KAFKA_BROKER_ID: 1
+    #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+    #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    #   volumes:
+    #     - kafka-data:/var/lib/kafka/data
+    #   networks:
+    #     - jm-core-network
+    #   healthcheck:
+    #     test:
+    #       [
+    #         "CMD",
+    #         "kafka-broker-api-versions",
+    #         "--bootstrap-server",
+    #         "localhost:9092",
+    #       ]
+    #     interval: 10s
+    #     timeout: 10s
+    #     retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: jm-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
-    volumes:
-      - redis-data:/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # ========================================
+    # Application Services Layer
+    # ========================================
 
-  # ========================================
-  # Database Layer (PostgreSQL)
-  # ========================================
+    auth-service:
+        image: ${DOCKERHUB_USERNAME}/jm-auth:${IMAGE_TAG:-latest}
+        container_name: jm-auth-service
+        restart: unless-stopped
+        ports:
+            - "8081:8081"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/${AUTH_DB_NAME:-authdb}
+            SPRING_DATASOURCE_USERNAME: ${AUTH_DB_USER:-authuser}
+            SPRING_DATASOURCE_PASSWORD: ${AUTH_DB_PASSWORD:-authpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+            OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-auth:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-auth:
-    image: postgres:16-alpine
-    container_name: jm-postgres-auth
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${AUTH_DB_NAME:-authdb}
-      POSTGRES_USER: ${AUTH_DB_USER:-authuser}
-      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:-authpass}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-auth-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER:-authuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    company-service:
+        image: ${DOCKERHUB_USERNAME}/jm-company:${IMAGE_TAG:-latest}
+        container_name: jm-company-service
+        restart: unless-stopped
+        ports:
+            - "8082:8082"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-company:5432/${COMPANY_DB_NAME:-companydb}
+            SPRING_DATASOURCE_USERNAME: ${COMPANY_DB_USER:-companyuser}
+            SPRING_DATASOURCE_PASSWORD: ${COMPANY_DB_PASSWORD:-companypass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-company:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-company:
-    image: postgres:16-alpine
-    container_name: jm-postgres-company
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${COMPANY_DB_NAME:-companydb}
-      POSTGRES_USER: ${COMPANY_DB_USER:-companyuser}
-      POSTGRES_PASSWORD: ${COMPANY_DB_PASSWORD:-companypass}
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres-company-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${COMPANY_DB_USER:-companyuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    jobpost-service:
+        image: ${DOCKERHUB_USERNAME}/jm-jobpost:${IMAGE_TAG:-latest}
+        container_name: jm-jobpost-service
+        restart: unless-stopped
+        ports:
+            - "8083:8083"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-jobpost:5432/${JOBPOST_DB_NAME:-jobpostdb}
+            SPRING_DATASOURCE_USERNAME: ${JOBPOST_DB_USER:-jobpostuser}
+            SPRING_DATASOURCE_PASSWORD: ${JOBPOST_DB_PASSWORD:-jobpostpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-jobpost:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-jobpost:
-    image: postgres:16-alpine
-    container_name: jm-postgres-jobpost
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${JOBPOST_DB_NAME:-jobpostdb}
-      POSTGRES_USER: ${JOBPOST_DB_USER:-jobpostuser}
-      POSTGRES_PASSWORD: ${JOBPOST_DB_PASSWORD:-jobpostpass}
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-jobpost-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${JOBPOST_DB_USER:-jobpostuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    applicant-search-service:
+        image: ${DOCKERHUB_USERNAME}/jm-applicant-search:${IMAGE_TAG:-latest}
+        container_name: jm-applicant-search-service
+        restart: unless-stopped
+        ports:
+            - "8084:8084"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-applicant-search:5432/${APPLICANT_SEARCH_DB_NAME:-applicantsearchdb}
+            SPRING_DATASOURCE_USERNAME: ${APPLICANT_SEARCH_DB_USER:-applicantsearchuser}
+            SPRING_DATASOURCE_PASSWORD: ${APPLICANT_SEARCH_DB_PASSWORD:-applicantsearchpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-applicant-search:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-applicant-search:
-    image: postgres:16-alpine
-    container_name: jm-postgres-applicant-search
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${APPLICANT_SEARCH_DB_NAME:-applicantsearchdb}
-      POSTGRES_USER: ${APPLICANT_SEARCH_DB_USER:-applicantsearchuser}
-      POSTGRES_PASSWORD: ${APPLICANT_SEARCH_DB_PASSWORD:-applicantsearchpass}
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres-applicant-search-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${APPLICANT_SEARCH_DB_USER:-applicantsearchuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    subscription-service:
+        image: ${DOCKERHUB_USERNAME}/jm-subscription:${IMAGE_TAG:-latest}
+        container_name: jm-subscription-service
+        restart: unless-stopped
+        ports:
+            - "8085:8085"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-subscription:5432/${SUBSCRIPTION_DB_NAME:-subscriptiondb}
+            SPRING_DATASOURCE_USERNAME: ${SUBSCRIPTION_DB_USER:-subscriptionuser}
+            SPRING_DATASOURCE_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:-subscriptionpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-subscription:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-subscription:
-    image: postgres:16-alpine
-    container_name: jm-postgres-subscription
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${SUBSCRIPTION_DB_NAME:-subscriptiondb}
-      POSTGRES_USER: ${SUBSCRIPTION_DB_USER:-subscriptionuser}
-      POSTGRES_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:-subscriptionpass}
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres-subscription-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SUBSCRIPTION_DB_USER:-subscriptionuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    payment-service:
+        image: ${DOCKERHUB_USERNAME}/jm-payment:${IMAGE_TAG:-latest}
+        container_name: jm-payment-service
+        restart: unless-stopped
+        ports:
+            - "8086:8086"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/${PAYMENT_DB_NAME:-paymentdb}
+            SPRING_DATASOURCE_USERNAME: ${PAYMENT_DB_USER:-paymentuser}
+            SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:-paymentpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-payment:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8086/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
-  postgres-payment:
-    image: postgres:16-alpine
-    container_name: jm-postgres-payment
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${PAYMENT_DB_NAME:-paymentdb}
-      POSTGRES_USER: ${PAYMENT_DB_USER:-paymentuser}
-      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:-paymentpass}
-    ports:
-      - "5437:5432"
-    volumes:
-      - postgres-payment-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DB_USER:-paymentuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-notification:
-    image: postgres:16-alpine
-    container_name: jm-postgres-notification
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${NOTIFICATION_DB_NAME:-notificationdb}
-      POSTGRES_USER: ${NOTIFICATION_DB_USER:-notificationuser}
-      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notificationpass}
-    ports:
-      - "5438:5432"
-    volumes:
-      - postgres-notification-data:/var/lib/postgresql/data
-    networks:
-      - jm-core-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER:-notificationuser}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ========================================
-  # Application Services Layer
-  # ========================================
-
-  auth-service:
-    image: ${DOCKERHUB_USERNAME}/jm-auth:${IMAGE_TAG:-latest}
-    container_name: jm-auth-service
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/${AUTH_DB_NAME:-authdb}
-      SPRING_DATASOURCE_USERNAME: ${AUTH_DB_USER:-authuser}
-      SPRING_DATASOURCE_PASSWORD: ${AUTH_DB_PASSWORD:-authpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-auth:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8081/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  company-service:
-    image: ${DOCKERHUB_USERNAME}/jm-company:${IMAGE_TAG:-latest}
-    container_name: jm-company-service
-    restart: unless-stopped
-    ports:
-      - "8082:8082"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-company:5432/${COMPANY_DB_NAME:-companydb}
-      SPRING_DATASOURCE_USERNAME: ${COMPANY_DB_USER:-companyuser}
-      SPRING_DATASOURCE_PASSWORD: ${COMPANY_DB_PASSWORD:-companypass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-company:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8082/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  jobpost-service:
-    image: ${DOCKERHUB_USERNAME}/jm-jobpost:${IMAGE_TAG:-latest}
-    container_name: jm-jobpost-service
-    restart: unless-stopped
-    ports:
-      - "8083:8083"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-jobpost:5432/${JOBPOST_DB_NAME:-jobpostdb}
-      SPRING_DATASOURCE_USERNAME: ${JOBPOST_DB_USER:-jobpostuser}
-      SPRING_DATASOURCE_PASSWORD: ${JOBPOST_DB_PASSWORD:-jobpostpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-jobpost:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8083/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  applicant-search-service:
-    image: ${DOCKERHUB_USERNAME}/jm-applicant-search:${IMAGE_TAG:-latest}
-    container_name: jm-applicant-search-service
-    restart: unless-stopped
-    ports:
-      - "8084:8084"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-applicant-search:5432/${APPLICANT_SEARCH_DB_NAME:-applicantsearchdb}
-      SPRING_DATASOURCE_USERNAME: ${APPLICANT_SEARCH_DB_USER:-applicantsearchuser}
-      SPRING_DATASOURCE_PASSWORD: ${APPLICANT_SEARCH_DB_PASSWORD:-applicantsearchpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-applicant-search:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8084/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  subscription-service:
-    image: ${DOCKERHUB_USERNAME}/jm-subscription:${IMAGE_TAG:-latest}
-    container_name: jm-subscription-service
-    restart: unless-stopped
-    ports:
-      - "8085:8085"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-subscription:5432/${SUBSCRIPTION_DB_NAME:-subscriptiondb}
-      SPRING_DATASOURCE_USERNAME: ${SUBSCRIPTION_DB_USER:-subscriptionuser}
-      SPRING_DATASOURCE_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:-subscriptionpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-subscription:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8085/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  payment-service:
-    image: ${DOCKERHUB_USERNAME}/jm-payment:${IMAGE_TAG:-latest}
-    container_name: jm-payment-service
-    restart: unless-stopped
-    ports:
-      - "8086:8086"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/${PAYMENT_DB_NAME:-paymentdb}
-      SPRING_DATASOURCE_USERNAME: ${PAYMENT_DB_USER:-paymentuser}
-      SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:-paymentpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-payment:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8086/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  notification-service:
-    image: ${DOCKERHUB_USERNAME}/jm-notification:${IMAGE_TAG:-latest}
-    container_name: jm-notification-service
-    restart: unless-stopped
-    ports:
-      - "8087:8087"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/${NOTIFICATION_DB_NAME:-notificationdb}
-      SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-notificationuser}
-      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notificationpass}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-    depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres-notification:
-        condition: service_healthy
-    networks:
-      - jm-core-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "http://localhost:8087/actuator/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+    notification-service:
+        image: ${DOCKERHUB_USERNAME}/jm-notification:${IMAGE_TAG:-latest}
+        container_name: jm-notification-service
+        restart: unless-stopped
+        ports:
+            - "8087:8087"
+        env_file:
+            - .env
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+            EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/${NOTIFICATION_DB_NAME:-notificationdb}
+            SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-notificationuser}
+            SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notificationpass}
+            SPRING_REDIS_HOST: redis
+            SPRING_REDIS_PORT: 6379
+            SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            postgres-notification:
+                condition: service_healthy
+        networks:
+            - jm-core-network
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://localhost:8087/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
 networks:
-  jm-core-network:
-    driver: bridge
+    jm-core-network:
+        driver: bridge
 
 volumes:
-  zookeeper-data:
-  zookeeper-logs:
-  kafka-data:
-  redis-data:
-  postgres-auth-data:
-  postgres-company-data:
-  postgres-jobpost-data:
-  postgres-applicant-search-data:
-  postgres-subscription-data:
-  postgres-payment-data:
-  postgres-notification-data:
+    zookeeper-data:
+    zookeeper-logs:
+    kafka-data:
+    redis-data:
+    postgres-auth-data:
+    postgres-company-data:
+    postgres-jobpost-data:
+    postgres-applicant-search-data:
+    postgres-subscription-data:
+    postgres-payment-data:
+    postgres-notification-data:
