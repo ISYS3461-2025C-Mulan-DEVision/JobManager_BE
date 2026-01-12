@@ -42,6 +42,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 # External service URLs
+applicant:
+  service:
+    url: ${APPLICANT_SERVICE_URL:http://localhost:9085}
+
 subscription:
   service:
     url: ${SUBSCRIPTION_SERVICE_URL:http://localhost:8085}
