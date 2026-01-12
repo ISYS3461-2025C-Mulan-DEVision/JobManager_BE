@@ -1,7 +1,7 @@
 # ========================================
 # EC2-2: Core Application Plane
-# Services: All Microservices, Redis, Databases
-# Kafka: External (kafka-mulan.duckdns.org)
+# Services: All Microservices
+# Infrastructure: External (Upstash Redis, Neon PostgreSQL, External Kafka)
 # ========================================
 
 services:
@@ -28,11 +28,6 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
             OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-auth:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -61,11 +56,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-company:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -94,11 +84,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-jobpost:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -127,11 +112,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-applicant-search:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -160,11 +140,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-subscription:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -193,11 +168,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-payment:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -226,11 +196,6 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
-        depends_on:
-            redis:
-                condition: service_healthy
-            postgres-notification:
-                condition: service_healthy
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
@@ -244,13 +209,3 @@ services:
 networks:
     jm-core-network:
         driver: bridge
-
-volumes:
-    redis-data:
-    postgres-auth-data:
-    postgres-company-data:
-    postgres-jobpost-data:
-    postgres-applicant-search-data:
-    postgres-subscription-data:
-    postgres-payment-data:
-    postgres-notification-data:
