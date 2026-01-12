@@ -48,28 +48,28 @@ else
     exit 1
 fi
 
-# Step 2: Build and push backend services
-echo -e "${YELLOW}📦 Building Backend Services...${NC}"
+# Step 2: Setup Docker Buildx for multi-platform builds
+echo -e "${YELLOW}🔧 Setting up Docker Buildx...${NC}"
+docker buildx create --use --name multiarch-builder --driver docker-container || docker buildx use multiarch-builder
+echo -e "${GREEN}✅ Buildx configured${NC}"
+
+# Step 3: Build and push backend services
+echo -e "${YELLOW}📦 Building Backend Services (linux/amd64)...${NC}"
 echo ""
 
 for service in "${SERVICES[@]}"; do
     IFS=':' read -r dir image <<< "$service"
     
     if [ -d "$dir" ]; then
-        echo -e "${BLUE}Building $image from $dir...${NC}"
+        echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
         
-        # Build the image
-        if docker build -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" "./$dir"; then
-            echo -e "${GREEN}✅ Built $image${NC}"
-            
-            # Push to Docker Hub
-            echo -e "${BLUE}Pushing $image to Docker Hub...${NC}"
-            if docker push "$DOCKER_USERNAME/$image:$IMAGE_TAG"; then
-                echo -e "${GREEN}✅ Pushed $image${NC}"
-            else
-                echo -e "${RED}❌ Failed to push $image${NC}"
-                exit 1
-            fi
+        # Build and push multi-platform image in one step
+        if docker buildx build \
+            --platform linux/amd64 \
+            -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
+            --push \
+            "./$dir"; then
+            echo -e "${GREEN}✅ Built and pushed $image${NC}"
         else
             echo -e "${RED}❌ Failed to build $image${NC}"
             exit 1
@@ -81,23 +81,19 @@ for service in "${SERVICES[@]}"; do
     fi
 done
 
-# Step 3: Build and push frontend
-echo -e "${YELLOW}📦 Building Frontend Service...${NC}"
+# Step 4: Build and push frontend
+echo -e "${YELLOW}📦 Building Frontend Service (linux/amd64)...${NC}"
 IFS=':' read -r dir image <<< "$FRONTEND_SERVICE"
 
 if [ -d "$dir" ]; then
-    echo -e "${BLUE}Building $image from $dir...${NC}"
+    echo -e "${BLUE}Building $image from $dir for linux/amd64...${NC}"
     
-    if docker build -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" "$dir"; then
-        echo -e "${GREEN}✅ Built $image${NC}"
-        
-        echo -e "${BLUE}Pushing $image to Docker Hub...${NC}"
-        if docker push "$DOCKER_USERNAME/$image:$IMAGE_TAG"; then
-            echo -e "${GREEN}✅ Pushed $image${NC}"
-        else
-            echo -e "${RED}❌ Failed to push $image${NC}"
-            exit 1
-        fi
+    if docker buildx build \
+        --platform linux/amd64 \
+        -t "$DOCKER_USERNAME/$image:$IMAGE_TAG" \
+        --push \
+        "$dir"; then
+        echo -e "${GREEN}✅ Built and pushed $image${NC}"
     else
         echo -e "${RED}❌ Failed to build $image${NC}"
         exit 1
