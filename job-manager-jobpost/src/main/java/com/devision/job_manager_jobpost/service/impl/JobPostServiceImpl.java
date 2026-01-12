@@ -254,15 +254,31 @@ public class JobPostServiceImpl implements JobPostService {
             log.info("Publishing skills changed event. Added: {}, Removed: {}",
                     addedSkills.size(), removedSkills.size());
 
-            // Fetch country code from Company service (cached)
-            String countryCode = getCompanyCountry(savedJobPost.getCompanyId());
+            // Extract employment types (same as JobPostPublished event)
+            List<EmploymentType> employmentTypes = savedJobPost.getEmploymentTypes().stream()
+                    .map(JobPostEmploymentType::getType)
+                    .toList();
 
+            // Build comprehensive event matching JobPostPublishedEvent structure
             JobPostSkillsChangedEvent event = JobPostSkillsChangedEvent.builder()
+                    // Core identifiers
                     .jobPostId(savedJobPost.getJobPostId())
                     .companyId(savedJobPost.getCompanyId())
                     .title(savedJobPost.getTitle())
+                    .description(savedJobPost.getDescription())
                     .locationCity(savedJobPost.getLocationCity())
-                    .countryCode(countryCode)  // Derived from Company service (Ultimo 4.3.1)
+                    .countryCode(savedJobPost.getCountryCode())
+                    // Salary information
+                    .salaryType(savedJobPost.getSalaryType())
+                    .salaryMin(savedJobPost.getSalaryMin())
+                    .salaryMax(savedJobPost.getSalaryMax())
+                    // Job type and status
+                    .employmentTypes(employmentTypes)
+                    .fresher(savedJobPost.isFresher())
+                    // Publishing timestamps
+                    .publishedAt(savedJobPost.getPostedAt())
+                    .expiryAt(savedJobPost.getExpiryAt())
+                    // Skill change tracking
                     .addedSkills(addedSkills)
                     .removedSkills(removedSkills)
                     .currentSkills(newSkillIds)
