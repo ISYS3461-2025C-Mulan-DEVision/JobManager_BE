@@ -1,69 +1,10 @@
 # ========================================
 # EC2-2: Core Application Plane
-# Services: All Microservices, Kafka, Redis, Databases
+# Services: All Microservices, Redis, Databases
+# Kafka: External (kafka-mulan.duckdns.org)
 # ========================================
 
 services:
-    # ========================================
-    # Infrastructure Layer
-    # ========================================
-
-    # zookeeper:
-    #   image: confluentinc/cp-zookeeper:7.5.0
-    #   container_name: jm-zookeeper
-    #   restart: unless-stopped
-    #   environment:
-    #     ZOOKEEPER_CLIENT_PORT: 2181
-    #     ZOOKEEPER_TICK_TIME: 2000
-    #   ports:
-    #     - "2181:2181"
-    #   volumes:
-    #     - zookeeper-data:/var/lib/zookeeper/data
-    #     - zookeeper-logs:/var/lib/zookeeper/log
-    #   networks:
-    #     - jm-core-network
-    #   healthcheck:
-    #     test: ["CMD", "nc", "-z", "localhost", "2181"]
-    #     interval: 10s
-    #     timeout: 5s
-    #     retries: 5
-
-    # kafka:
-    #   image: confluentinc/cp-kafka:7.5.0
-    #   container_name: jm-kafka
-    #   restart: unless-stopped
-    #   depends_on:
-    #     zookeeper:
-    #       condition: service_healthy
-    #   ports:
-    #     - "9092:9092"
-    #     - "29092:29092"
-    #   environment:
-    #     KAFKA_BROKER_ID: 1
-    #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-    #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-    #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-    #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    #   volumes:
-    #     - kafka-data:/var/lib/kafka/data
-    #   networks:
-    #     - jm-core-network
-    #   healthcheck:
-    #     test:
-    #       [
-    #         "CMD",
-    #         "kafka-broker-api-versions",
-    #         "--bootstrap-server",
-    #         "localhost:9092",
-    #       ]
-    #     interval: 10s
-    #     timeout: 10s
-    #     retries: 5
-
     # ========================================
     # Application Services Layer
     # ========================================
@@ -79,7 +20,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/${AUTH_DB_NAME:-authdb}
             SPRING_DATASOURCE_USERNAME: ${AUTH_DB_USER:-authuser}
             SPRING_DATASOURCE_PASSWORD: ${AUTH_DB_PASSWORD:-authpass}
@@ -88,12 +29,12 @@ services:
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
             OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-auth:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -113,7 +54,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-company:5432/${COMPANY_DB_NAME:-companydb}
             SPRING_DATASOURCE_USERNAME: ${COMPANY_DB_USER:-companyuser}
             SPRING_DATASOURCE_PASSWORD: ${COMPANY_DB_PASSWORD:-companypass}
@@ -121,12 +62,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-company:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -146,7 +87,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-jobpost:5432/${JOBPOST_DB_NAME:-jobpostdb}
             SPRING_DATASOURCE_USERNAME: ${JOBPOST_DB_USER:-jobpostuser}
             SPRING_DATASOURCE_PASSWORD: ${JOBPOST_DB_PASSWORD:-jobpostpass}
@@ -154,12 +95,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-jobpost:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -179,7 +120,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-applicant-search:5432/${APPLICANT_SEARCH_DB_NAME:-applicantsearchdb}
             SPRING_DATASOURCE_USERNAME: ${APPLICANT_SEARCH_DB_USER:-applicantsearchuser}
             SPRING_DATASOURCE_PASSWORD: ${APPLICANT_SEARCH_DB_PASSWORD:-applicantsearchpass}
@@ -187,12 +128,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-applicant-search:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -212,7 +153,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-subscription:5432/${SUBSCRIPTION_DB_NAME:-subscriptiondb}
             SPRING_DATASOURCE_USERNAME: ${SUBSCRIPTION_DB_USER:-subscriptionuser}
             SPRING_DATASOURCE_PASSWORD: ${SUBSCRIPTION_DB_PASSWORD:-subscriptionpass}
@@ -220,12 +161,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-subscription:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -245,7 +186,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/${PAYMENT_DB_NAME:-paymentdb}
             SPRING_DATASOURCE_USERNAME: ${PAYMENT_DB_USER:-paymentuser}
             SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:-paymentpass}
@@ -253,12 +194,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-payment:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -278,7 +219,7 @@ services:
         environment:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://${EC2_1_PRIVATE_IP}:8761/eureka/
-            SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/${NOTIFICATION_DB_NAME:-notificationdb}
             SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-notificationuser}
             SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notificationpass}
@@ -286,12 +227,12 @@ services:
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
         depends_on:
-            kafka:
-                condition: service_healthy
             redis:
                 condition: service_healthy
             postgres-notification:
                 condition: service_healthy
+        extra_hosts:
+            - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
             - jm-core-network
         healthcheck:
@@ -305,9 +246,6 @@ networks:
         driver: bridge
 
 volumes:
-    zookeeper-data:
-    zookeeper-logs:
-    kafka-data:
     redis-data:
     postgres-auth-data:
     postgres-company-data:
