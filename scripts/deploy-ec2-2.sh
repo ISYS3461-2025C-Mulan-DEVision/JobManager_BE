@@ -29,7 +29,10 @@ echo -e "${BLUE}📁 Deploy directory: $DEPLOY_DIR${NC}"
 # Step 1: Load environment variables
 echo -e "${YELLOW}📋 Loading environment variables...${NC}"
 if [ -f "$DEPLOY_DIR/.env" ]; then
-    export $(cat "$DEPLOY_DIR/.env" | grep -v '^#' | xargs)
+    # Use set -a to export all variables, then source the file
+    set -a
+    source "$DEPLOY_DIR/.env"
+    set +a
     echo -e "${GREEN}✅ Environment variables loaded${NC}"
 else
     echo -e "${RED}❌ .env file not found!${NC}"
