@@ -112,6 +112,7 @@ services:
             SPRING_REDIS_HOST: redis
             SPRING_REDIS_PORT: 6379
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+            APPLICANT_SERVICE_AUTH_TOKEN: ${APPLICANT_SERVICE_AUTH_TOKEN}
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:

@@ -56,7 +56,9 @@ spring:
 # External service URLs
 applicant:
   service:
-    url: ${APPLICANT_SERVICE_URL:http://localhost:9085}
+    url: ${APPLICANT_SERVICE_URL:https://be.serverhub.id.vn}
+    auth:
+      token: ${APPLICANT_SERVICE_AUTH_TOKEN:eyJjdHkiOiJqd3QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..j_lfHxfjRllWNRZ7.sQzTSe7SsKyxPGQcSCKlIWfnt4PKMe58dH0vNh-URQsp8kzgOSVNNJS0QRkF4AG-pjqycXmEyJuR01mNUZbWCBfXieNiRwxAohogIA4Kyc5x7VBHe5Abnr6EBPWIYFxx3vCIIgnhc5_NEs6GWPb0rIw9cP1EOUbxAqErDqu2G5H9aHfLv3xM7OpdhJXKnt-nKlc-j5dlyBj26F53yac8Utduash2pZYDgm_RzsxEvutTHz1BAWbQBIksgIrBZvhxSiTMxvwFCy3GK-2u436Z7prcqdP_ldOR8aM4kOIeEIwh8y1msUW5vZ74I2BJoeYZDoIMBIWgtoMeEd9VEvAlhLNF8OgJ5AaRN9oAZulnZHJfvae-zrXzznDu7yRZNgXaMLg-Lzh0vZx-bilPNWY6QMVUHGqC_P6ldDH4lcXfZA.Qic5Js1kdrK33N-ApaJ0xA}
 
 subscription:
   service:
