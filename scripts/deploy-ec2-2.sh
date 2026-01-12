@@ -18,9 +18,13 @@ echo -e "${GREEN}🚀 Deploying to EC2-CORE (All Microservices)${NC}"
 echo -e "${GREEN}========================================${NC}"
 
 # Configuration
-DEPLOY_DIR="home/ec2-user/JobManager_BE"
+# Automatically detect the project directory (parent of scripts directory)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DEPLOY_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 COMPOSE_FILE="docker-compose.ec2-2.yml"
+
+echo -e "${BLUE}📁 Deploy directory: $DEPLOY_DIR${NC}"
 
 # Step 1: Load environment variables
 echo -e "${YELLOW}📋 Loading environment variables...${NC}"
@@ -35,7 +39,7 @@ fi
 # Step 2: Pull latest code
 echo -e "${YELLOW}📥 Pulling latest deployment configuration...${NC}"
 cd "$DEPLOY_DIR"
-git pull origin main
+git pull origin feat/deploy-ultimo || echo -e "${YELLOW}⚠️  Git pull skipped (may not be in a git repo or branch not tracking)${NC}"
 echo -e "${GREEN}✅ Code updated${NC}"
 
 # Step 3: Pull Docker images
