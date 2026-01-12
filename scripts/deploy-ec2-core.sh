@@ -1,7 +1,8 @@
 #!/bin/bash
 # ========================================
 # EC2-2 Deployment Script
-# Core Application Plane: Microservices, Kafka, Redis, Databases
+# Core Application Plane: All Microservices
+# Infrastructure: Cloud Services (Upstash Redis, Neon PostgreSQL, External Kafka)
 # ========================================
 
 set -e  # Exit on any error
@@ -63,52 +64,19 @@ echo -e "${YELLOW}🛑 Stopping old containers gracefully...${NC}"
 docker compose -f "$COMPOSE_FILE" down --timeout 30
 echo -e "${GREEN}✅ Old containers stopped${NC}"
 
-# Step 5: Start infrastructure services first (Kafka, Redis, Databases)
-echo -e "${YELLOW}▶️  Starting infrastructure services...${NC}"
-docker compose -f "$COMPOSE_FILE" up -d zookeeper kafka redis \
-    postgres-auth postgres-company postgres-jobpost \
-    postgres-applicant-search postgres-subscription \
-    postgres-payment postgres-notification
-echo -e "${GREEN}✅ Infrastructure services started${NC}"
-
-# Step 6: Wait for infrastructure to be ready
-echo -e "${YELLOW}⏳ Waiting for infrastructure to be healthy (60s)...${NC}"
-sleep 60
-
-# Step 7: Start microservices
-echo -e "${YELLOW}▶️  Starting microservices...${NC}"
-docker compose -f "$COMPOSE_FILE" up -d \
-    auth-service company-service jobpost-service \
-    applicant-search-service subscription-service \
-    payment-service notification-service
+# Step 5: Start all microservices
+echo -e "${YELLOW}▶️  Starting all microservices...${NC}"
+echo -e "${BLUE}Note: Using cloud infrastructure (Upstash Redis, Neon PostgreSQL, External Kafka)${NC}"
+docker compose -f "$COMPOSE_FILE" up -d
 echo -e "${GREEN}✅ Microservices started${NC}"
 
-# Step 8: Wait for services to be ready
-echo -e "${YELLOW}⏳ Waiting for services to be healthy (45s)...${NC}"
-sleep 45
+# Step 6: Wait for services to be ready
+echo -e "${YELLOW}⏳ Waiting for services to be healthy (60s)...${NC}"
+sleep 60
 
-# Step 9: Health checks
+# Step 7: Health checks
 echo -e "${YELLOW}🏥 Running health checks...${NC}"
-
-# Check Kafka
-echo -e "${BLUE}Checking Kafka...${NC}"
-if docker exec jm-kafka kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Kafka is healthy${NC}"
-else
-    echo -e "${RED}❌ Kafka health check failed${NC}"
-    docker compose -f "$COMPOSE_FILE" logs kafka
-    exit 1
-fi
-
-# Check Redis
-echo -e "${BLUE}Checking Redis...${NC}"
-if docker exec jm-redis redis-cli ping > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Redis is healthy${NC}"
-else
-    echo -e "${RED}❌ Redis health check failed${NC}"
-    docker compose -f "$COMPOSE_FILE" logs redis
-    exit 1
-fi
+echo -e "${BLUE}Infrastructure: Using cloud services (Upstash Redis, Neon PostgreSQL, External Kafka)${NC}"
 
 # Check Auth Service
 echo -e "${BLUE}Checking Auth Service...${NC}"
@@ -172,23 +140,7 @@ else
     echo -e "${YELLOW}⚠️  Notification Service health check failed (non-critical)${NC}"
 fi
 
-# Step 10: Database connectivity checks
-echo -e "${YELLOW}🗄️  Checking database connections...${NC}"
-
-databases=("auth:authuser:authdb" "company:companyuser:companydb" "jobpost:jobpostuser:jobpostdb")
-
-for db_info in "${databases[@]}"; do
-    IFS=':' read -r db_name db_user db_name_full <<< "$db_info"
-    echo -e "${BLUE}Checking postgres-${db_name}...${NC}"
-    if docker exec jm-postgres-${db_name} psql -U ${db_user} -d ${db_name_full} -c "SELECT 1;" > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ postgres-${db_name} is accessible${NC}"
-    else
-        echo -e "${RED}❌ postgres-${db_name} connection failed${NC}"
-        exit 1
-    fi
-done
-
-# Step 11: Check Eureka registration (if EC2-1 is accessible)
+# Step 8: Check Eureka registration (if EC2-1 is accessible)
 echo -e "${YELLOW}🔍 Checking service registration...${NC}"
 if [ -n "$EC2_1_PRIVATE_IP" ]; then
     if curl -sf http://${EC2_1_PRIVATE_IP}:8761/eureka/apps > /dev/null 2>&1; then
@@ -206,20 +158,20 @@ else
     echo -e "${YELLOW}⚠️  EC2_1_PRIVATE_IP not set - skipping Eureka check${NC}"
 fi
 
-# Step 12: Clean up
-echo -e "${YELLOW}🧹 Cleaning up old images and volumes...${NC}"
+# Step 9: Clean up
+echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
 docker image prune -f
 echo -e "${GREEN}✅ Cleanup complete${NC}"
 
-# Step 13: Display running containers
+# Step 10: Display running containers
 echo -e "${YELLOW}📊 Running containers:${NC}"
 docker compose -f "$COMPOSE_FILE" ps
 
-# Step 14: Display resource usage
+# Step 11: Display resource usage
 echo -e "${YELLOW}💻 Resource usage:${NC}"
 docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
-# Step 15: Display useful information
+# Step 12: Display useful information
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}✅ EC2-2 Deployment Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
@@ -233,9 +185,10 @@ echo -e "   Subscription Service:      http://localhost:8085/actuator/health"
 echo -e "   Payment Service:           http://localhost:8086/actuator/health"
 echo -e "   Notification Service:      http://localhost:8087/actuator/health"
 echo ""
-echo -e "${BLUE}📝 Infrastructure:${NC}"
-echo -e "   Kafka:  localhost:9092"
-echo -e "   Redis:  localhost:6379"
+echo -e "${BLUE}📝 Infrastructure (Cloud Services):${NC}"
+echo -e "   Kafka:  kafka-mulan.duckdns.org:9092"
+echo -e "   Redis:  Upstash (meet-jennet-28932.upstash.io)"
+echo -e "   PostgreSQL:  Neon (ep-delicate-math-a1aai4x4-pooler.ap-southeast-1.aws.neon.tech)"
 echo ""
 echo -e "${BLUE}📝 Useful Commands:${NC}"
 echo -e "   View logs:       docker compose -f $COMPOSE_FILE logs -f [service-name]"
