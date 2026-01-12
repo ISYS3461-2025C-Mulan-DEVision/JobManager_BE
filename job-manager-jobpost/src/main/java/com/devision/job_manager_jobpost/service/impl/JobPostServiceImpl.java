@@ -4,6 +4,7 @@ import com.devision.job_manager_jobpost.client.CompanyServiceClient;
 import com.devision.job_manager_jobpost.event.JobPostCountryChangedEvent;
 import com.devision.job_manager_jobpost.event.JobPostPublishedEvent;
 import com.devision.job_manager_jobpost.event.JobPostSkillsChangedEvent;
+import com.devision.job_manager_jobpost.event.JobPostUpdatedEvent;
 import com.devision.job_manager_jobpost.model.EmploymentType;
 import com.devision.job_manager_jobpost.model.JobPost;
 import com.devision.job_manager_jobpost.model.JobPostEmploymentType;
@@ -126,6 +127,18 @@ public class JobPostServiceImpl implements JobPostService {
 
             eventPublisher.publishJobPostCountryChanged(event);
         }
+
+        // Publish general update event to Kafka
+        log.info("Publishing general update event for job post ID: {}", id);
+        JobPostUpdatedEvent updateEvent = JobPostUpdatedEvent.builder()
+                .jobPostId(saved.getJobPostId())
+                .companyId(saved.getCompanyId())
+                .title(saved.getTitle())
+                .location(saved.getLocationCity())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        eventPublisher.publishJobPostUpdated(updateEvent);
 
         log.info("Job post updated: {} with location: {}, {}",
                 id, saved.getLocationCity(), saved.getCountryCode());
