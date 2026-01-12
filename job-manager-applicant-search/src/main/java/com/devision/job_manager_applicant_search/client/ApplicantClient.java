@@ -38,6 +38,7 @@ public class ApplicantClient {
      * @param workExperience Comma-separated work experience keywords
      * @param employmentTypes Comma-separated employment types
      * @param username Name search (firstName, lastName)
+     * @param ftsQuery Full-Text Search query for Work Experience, Objective Summary, and Technical Skills
      * @param page Page number (0-indexed)
      * @param size Page size
      * @return Paginated response of matching applicants
@@ -50,6 +51,7 @@ public class ApplicantClient {
             String workExperience,
             String employmentTypes,
             String username,
+            String ftsQuery,
             int page,
             int size) {
         try {
@@ -76,6 +78,10 @@ public class ApplicantClient {
             }
             if (username != null && !username.isEmpty()) {
                 uriBuilder.queryParam("username", username);
+            }
+            // FTS Query - Full-Text Search across Work Experience, Objective Summary, and Technical Skills
+            if (ftsQuery != null && !ftsQuery.isEmpty()) {
+                uriBuilder.queryParam("ftsQuery", ftsQuery);
             }
             uriBuilder.queryParam("page", page);
             uriBuilder.queryParam("size", size);
