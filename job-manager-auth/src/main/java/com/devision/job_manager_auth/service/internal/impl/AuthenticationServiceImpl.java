@@ -581,13 +581,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Change password request for company: {}", companyId);
 
         UUID id = UUID.fromString(companyId);
-        
+
         // Find account across shards
-        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+        ShardDirectQueryService.AccountWithShard accountWithShard = shardDirectQueryService.findByIdAcrossShards(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
+        CompanyAccount account = accountWithShard.account();
+        String shardKey = accountWithShard.shardKey();
+
         // Set shard context
-        String shardKey = account.getCountry().getShardKey();
         ShardContext.setShardKey(shardKey);
 
         try {
@@ -623,13 +625,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Change email request for company: {}", companyId);
 
         UUID id = UUID.fromString(companyId);
-        
+
         // Find account across shards
-        CompanyAccount account = shardDirectQueryService.findByIdAcrossShards(id)
+        ShardDirectQueryService.AccountWithShard accountWithShard = shardDirectQueryService.findByIdAcrossShards(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
+        CompanyAccount account = accountWithShard.account();
+        String shardKey = accountWithShard.shardKey();
+
         // Set shard context
-        String shardKey = account.getCountry().getShardKey();
         ShardContext.setShardKey(shardKey);
 
         try {
@@ -652,14 +656,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             String oldEmail = account.getEmail();
+
+            // Update email in db
             account.setEmail(request.getNewEmail());
             companyAccountRepository.save(account);
 
-            // Update email-to-shard cache
+            // Remove old email from Redis cache
+            shardLookupService.removeEmailFromCache(oldEmail);
+            log.info("Removed old email '{}' from Redis cache", oldEmail);
+
+            // Add new email to the cache
             shardLookupService.cacheEmailShard(request.getNewEmail(), shardKey);
+            log.info("Cached new email '{}' to shard '{}' in Redis", request.getNewEmail(), shardKey);
+
+            // Send confirmation email to new address
+            emailService.sendEmailChangedConfirmation(account);
 
             log.info("Email changed successfully from {} to {}", oldEmail, request.getNewEmail());
-            return ApiResponse.success("Email has been changed successfully.", null);
+            return ApiResponse.success("Email has been changed successfully. A confirmation has been sent to your new email.", null);
+
         } finally {
             ShardContext.clear();
         }

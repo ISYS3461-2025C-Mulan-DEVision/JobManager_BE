@@ -98,4 +98,22 @@ public class AuthController {
         ApiResponse<String> response = authenticationService.resetPassword(request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @RequestParam String companyId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        log.info("Change password request received for company: {}", companyId);
+        ApiResponse<String> response = authenticationService.changePassword(companyId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-email")
+    public ResponseEntity<ApiResponse<String>> changeEmail(
+            @RequestParam String companyId,
+            @Valid @RequestBody ChangeEmailRequest request) {
+        log.info("Change email request received for company: {}", companyId);
+        ApiResponse<String> response = authenticationService.changeEmail(companyId, request);
+        return ResponseEntity.ok(response);
+    }
 }

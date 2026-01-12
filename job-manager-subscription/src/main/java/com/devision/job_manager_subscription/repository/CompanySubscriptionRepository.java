@@ -32,4 +32,15 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
 
     // Find all active subscriptions (for batch processing)
     List<CompanySubscription> findAllByStatus(SubscriptionStatus status);
+
+    // Find subscriptions expiring within a date range
+    @Query("SELECT s FROM CompanySubscription s WHERE s.status = 'ACTIVE' AND s.endAt IS NOT NULL AND s.endAt BETWEEN :startDate AND :endDate")
+    List<CompanySubscription> findActiveSubscriptionsExpiringBetween(
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate
+    );
+
+    // Find subscriptions that have expired
+    @Query("SELECT s FROM CompanySubscription s WHERE s.status = 'ACTIVE' AND s.endAt IS NOT NULL AND s.endAt < :currentDate")
+    List<CompanySubscription> findExpiredSubscriptions(@Param("currentDate") java.time.LocalDateTime currentDate);
 }

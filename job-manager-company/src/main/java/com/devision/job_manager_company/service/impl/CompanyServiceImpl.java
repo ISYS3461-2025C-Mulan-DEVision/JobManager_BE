@@ -10,6 +10,8 @@ import com.devision.job_manager_company.service.CompanyService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -69,6 +71,27 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public Optional<Company> getCompanyWithProfile(UUID id) {
         return companyRepository.findByIdWithProfile(id);
+    }
+
+    @Override
+    public Page<Company> getAllCompanies(Pageable pageable) {
+        log.info("Getting all companies with pagination: page={}, size={}",
+                pageable.getPageNumber(), pageable.getPageSize());
+        return companyRepository.findAllWithProfile(pageable);
+    }
+
+    @Override
+    public Page<Company> searchCompaniesByName(String name, Pageable pageable) {
+        log.info("Searching companies by name: '{}' with pagination: page={}, size={}",
+                name, pageable.getPageNumber(), pageable.getPageSize());
+        return companyRepository.searchByName(name, pageable);
+    }
+
+    @Override
+    public Page<Company> getCompaniesByCountry(String countryCode, Pageable pageable) {
+        log.info("Getting companies by country: '{}' with pagination: page={}, size={}",
+                countryCode, pageable.getPageNumber(), pageable.getPageSize());
+        return companyRepository.findByCountryCode(countryCode, pageable);
     }
 
     @Override
