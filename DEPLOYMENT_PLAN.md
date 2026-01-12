@@ -366,18 +366,18 @@ docker login
 chmod +x scripts/*.sh
 
 # Deploy
-./scripts/deploy-ec2-2.sh
+./scripts/deploy-ec2-core.sh
 ```
 
 **Verify EC2-2 Services:**
 
 ```bash
 # Check all containers are running
-docker compose -f docker-compose.ec2-2.yml ps
+docker compose -f docker-compose.ec2-core.yml ps
 
 # Check logs
-docker compose -f docker-compose.ec2-2.yml logs -f auth-service
-docker compose -f docker-compose.ec2-2.yml logs -f kafka
+docker compose -f docker-compose.ec2-core.yml logs -f auth-service
+docker compose -f docker-compose.ec2-core.yml logs -f kafka
 
 # Test database connections
 docker exec -it jm-postgres-auth psql -U authuser -d authdb -c "SELECT 1;"
@@ -408,14 +408,14 @@ docker login
 chmod +x scripts/*.sh
 
 # Deploy
-./scripts/deploy-ec2-1.sh
+./scripts/deploy-ec2-edge.sh
 ```
 
 **Verify EC2-1 Services:**
 
 ```bash
 # Check containers
-docker compose -f docker-compose.ec2-1.yml ps
+docker compose -f docker-compose.ec2-edge.yml ps
 
 # Test Eureka
 curl http://localhost:8761/actuator/health
@@ -467,11 +467,11 @@ Logs are stored in JSON format with rotation:
 View logs:
 
 ```bash
-# EC2-1
-docker compose -f docker-compose.ec2-1.yml logs -f [service-name]
+# EC2-1 (Edge)
+docker compose -f docker-compose.ec2-edge.yml logs -f [service-name]
 
-# EC2-2
-docker compose -f docker-compose.ec2-2.yml logs -f [service-name]
+# EC2-2 (Core)
+docker compose -f docker-compose.ec2-core.yml logs -f [service-name]
 ```
 
 ### Database Backups
@@ -690,17 +690,17 @@ docker exec -it jm-kafka kafka-topics --list \
 ### Useful Commands Cheat Sheet
 
 ```bash
-# EC2-1 Commands
-docker compose -f docker-compose.ec2-1.yml up -d
-docker compose -f docker-compose.ec2-1.yml down
-docker compose -f docker-compose.ec2-1.yml logs -f gateway
-docker compose -f docker-compose.ec2-1.yml restart discovery-server
+# EC2-1 (Edge) Commands
+docker compose -f docker-compose.ec2-edge.yml up -d
+docker compose -f docker-compose.ec2-edge.yml down
+docker compose -f docker-compose.ec2-edge.yml logs -f gateway
+docker compose -f docker-compose.ec2-edge.yml restart discovery-server
 
-# EC2-2 Commands
-docker compose -f docker-compose.ec2-2.yml up -d
-docker compose -f docker-compose.ec2-2.yml down
-docker compose -f docker-compose.ec2-2.yml logs -f auth-service
-docker compose -f docker-compose.ec2-2.yml restart kafka
+# EC2-2 (Core) Commands
+docker compose -f docker-compose.ec2-core.yml up -d
+docker compose -f docker-compose.ec2-core.yml down
+docker compose -f docker-compose.ec2-core.yml logs -f auth-service
+docker compose -f docker-compose.ec2-core.yml restart kafka
 
 # Health Checks
 curl http://localhost:8761/actuator/health  # Eureka (EC2-1)
