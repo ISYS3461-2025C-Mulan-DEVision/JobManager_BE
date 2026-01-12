@@ -18,7 +18,7 @@ echo -e "${GREEN}🚀 Deploying to EC2-CORE (All Microservices)${NC}"
 echo -e "${GREEN}========================================${NC}"
 
 # Configuration
-DEPLOY_DIR="/home/ubuntu/job-manager"
+DEPLOY_DIR="home/ec2-user/JobManager_BE"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 COMPOSE_FILE="docker-compose.ec2-2.yml"
 
