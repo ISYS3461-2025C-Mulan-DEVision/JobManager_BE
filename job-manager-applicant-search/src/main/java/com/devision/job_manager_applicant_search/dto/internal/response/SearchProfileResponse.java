@@ -23,9 +23,12 @@ public class SearchProfileResponse {
     private UUID companyId;
     private String profileName;
     private String countryCode;
-    // TODO: Salary filtering - uncomment when JA adds salary support
-    // private BigDecimal minSalary;
-    // private BigDecimal maxSalary;
+    /**
+     * Salary range for profile matching (used in Kafka notification matching).
+     * TODO: Salary for Search - Not used in search API filtering until JA adds salary to UserResponse.
+     */
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
     private EducationDegree highestDegree;
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
@@ -39,9 +42,8 @@ public class SearchProfileResponse {
                 .companyId(profile.getCompanyId())
                 .profileName(profile.getProfileName())
                 .countryCode(profile.getCountryCode())
-                // TODO: Salary filtering - uncomment when JA supports it
-                // .minSalary(profile.getMinSalary())
-                // .maxSalary(profile.getMaxSalary())
+                .minSalary(profile.getMinSalary())
+                .maxSalary(profile.getMaxSalary())
                 .highestDegree(profile.getHighestDegree())
                 .employmentTypes(profile.getEmploymentTypeValues())
                 .skillIds(profile.getSkillIds())

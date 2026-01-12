@@ -24,7 +24,7 @@ spring:
         order_updates: true
 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -39,17 +39,17 @@ spring:
   cache:
     cache-names: companyCountry
     caffeine:
-      spec: maximumSize=500,expireAfterWrite=3600s # 1 hour TTL, max 500 companies
+      spec: maximumSize=500,expireAfterWrite=3600s  # 1 hour TTL, max 500 companies
 
 # Company Service Integration (for country lookup)
 company:
   service:
-    url: http://localhost:8082 # Fallback URL if Eureka unavailable
+    url: http://localhost:8082  # Fallback URL if Eureka unavailable
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
+      defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
   instance:

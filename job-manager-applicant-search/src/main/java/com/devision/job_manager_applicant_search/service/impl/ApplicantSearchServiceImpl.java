@@ -31,8 +31,8 @@ public class ApplicantSearchServiceImpl implements ApplicantSearchService {
 
     @Override
     public ApplicantSearchResult searchApplicants(ApplicantSearchRequest request) {
-        log.info("Searching applicants with filters: username={}, country={}, city={}, education={}, skills={}",
-                request.getUsername(), request.getCountryCode(), request.getCity(), 
+        log.info("Searching applicants with filters: username={}, ftsQuery={}, country={}, city={}, education={}, skills={}",
+                request.getUsername(), request.getFtsQuery(), request.getCountryCode(), request.getCity(), 
                 request.getEducation(), request.getSkills());
 
         // Build comma-separated params
@@ -47,7 +47,7 @@ public class ApplicantSearchServiceImpl implements ApplicantSearchService {
         int page = request.getPage() != null ? request.getPage() : 0;
         int size = request.getPageSize() != null ? request.getPageSize() : 10;
 
-        // Call JA service with all supported filters
+        // Call JA service with all supported filters including FTS query
         PageResponse<ApplicantResponse> jaResponse = applicantClient.searchApplicants(
                 skillsParam,
                 request.getCountryCode(),
@@ -56,6 +56,7 @@ public class ApplicantSearchServiceImpl implements ApplicantSearchService {
                 request.getWorkExperience(),
                 employmentTypesParam,
                 request.getUsername(),
+                request.getFtsQuery(),
                 page,
                 size
         );

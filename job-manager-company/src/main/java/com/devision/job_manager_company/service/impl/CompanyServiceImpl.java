@@ -16,7 +16,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -205,12 +204,5 @@ public class CompanyServiceImpl implements CompanyService {
         profile.setBannerUrl(bannerUrl);
         companyProfileRepository.save(profile);
         log.info("Updated bannerUrl in CompanyProfile for company ID: {}", companyId);
-    }
-
-    @Override
-    @Transactional
-    public Optional<List<CompanyProfile>> getAllCompanies() {
-        List<CompanyProfile> profiles = companyProfileRepository.findAll();
-        return profiles.isEmpty() ? Optional.empty() : Optional.of(profiles);
     }
 }
