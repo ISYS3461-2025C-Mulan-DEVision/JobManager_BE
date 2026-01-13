@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -48,6 +50,8 @@ public class UpdateJobPostRequest {
     private Boolean aPrivate;
 
     private LocalDateTime expiryAt;
+
+    private List<UUID> skillIds;
 }
 
 

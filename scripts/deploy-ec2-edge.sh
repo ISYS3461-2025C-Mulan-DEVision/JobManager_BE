@@ -49,7 +49,7 @@ fi
 # Step 2: Pull latest code
 echo -e "${YELLOW}📥 Pulling latest deployment configuration...${NC}"
 cd "$DEPLOY_DIR"
-git pull origin feat/deploy-ultimo || echo -e "${YELLOW}⚠️  Git pull skipped (may not be in a git repo or branch not tracking)${NC}"
+git pull origin production || echo -e "${YELLOW}⚠️  Git pull skipped (may not be in a git repo or branch not tracking)${NC}"
 echo -e "${GREEN}✅ Code updated${NC}"
 
 # Step 3: Pull Docker images

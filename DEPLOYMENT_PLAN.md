@@ -353,7 +353,7 @@ git clone https://github.com/your-org/JobManager_BE.git job-manager
 cd job-manager
 
 # Checkout deployment branch
-git checkout feat/deploy-ultimo
+git checkout production
 
 # Configure environment
 cp .env.example .env
@@ -395,7 +395,7 @@ git clone https://github.com/your-org/JobManager_BE.git job-manager
 cd job-manager
 
 # Checkout deployment branch
-git checkout feat/deploy-ultimo
+git checkout production
 
 # Configure environment (with EC2-2 private IP)
 cp .env.example .env
@@ -725,4 +725,4 @@ docker network ls  # List all networks
 
 **Last Updated**: January 12, 2026  
 **Version**: 1.0  
-**Branch**: feat/deploy-ultimo
+**Branch**: production

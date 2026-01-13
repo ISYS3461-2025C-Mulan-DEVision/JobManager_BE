@@ -232,6 +232,7 @@ services:
             SPRING_REDIS_PORT: ${REDIS_PORT}
             SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
             SPRING_DATA_REDIS_SSL_ENABLED: ${REDIS_SSL_ENABLED}
+            TZ: Asia/Ho_Chi_Minh
         extra_hosts:
             - "kafka-mulan.duckdns.org:14.169.220.23"
         networks:
