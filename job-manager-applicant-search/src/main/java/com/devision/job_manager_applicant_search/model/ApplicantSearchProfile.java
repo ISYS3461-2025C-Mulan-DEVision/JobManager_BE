@@ -39,6 +39,20 @@ public class ApplicantSearchProfile {
     private String countryCode;
 
     /**
+     * City filter for the search profile.
+     * Maps to JA's 'city' parameter.
+     */
+    @Column(name = "city", length = 100)
+    private String city;
+
+    /**
+     * Work experience keywords filter.
+     * Maps to JA's 'workExperience' parameter.
+     */
+    @Column(name = "work_experience", length = 500)
+    private String workExperience;
+
+    /**
      * Minimum salary filter for the search profile.
      * Applicants with maxSalary below this are excluded.
      */
@@ -52,9 +66,13 @@ public class ApplicantSearchProfile {
     @Column(name = "max_salary", precision = 12, scale = 2)
     private BigDecimal maxSalary;
 
+    /**
+     * Education level filter.
+     * Maps to JA's 'education' parameter.
+     */
     @Enumerated(EnumType.STRING)
-    @Column(name = "highest_degree", length = 32)
-    private EducationDegree highestDegree;
+    @Column(name = "education", length = 32)
+    private EducationDegree education;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

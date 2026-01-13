@@ -25,13 +25,29 @@ public class UpdateSearchProfileRequest {
     private String countryCode;
 
     /**
+     * City filter for the search profile.
+     */
+    @Size(max = 100, message = "City must be less than 100 characters")
+    private String city;
+
+    /**
+     * Work experience keywords filter.
+     */
+    @Size(max = 500, message = "Work experience must be less than 500 characters")
+    private String workExperience;
+
+    /**
      * Salary range for profile matching (used in Kafka notification matching).
      * TODO: Salary for Search - Not used in search API filtering until JA adds salary to UserResponse.
      */
     private BigDecimal minSalary;
     private BigDecimal maxSalary;
-    
-    private EducationDegree highestDegree;
+
+    /**
+     * Education level filter.
+     */
+    private EducationDegree education;
+
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
     private Boolean isActive;

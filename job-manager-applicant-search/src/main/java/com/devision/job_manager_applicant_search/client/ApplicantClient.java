@@ -56,7 +56,7 @@ public class ApplicantClient {
             int size) {
         try {
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                    .fromPath("https://be.serverhub.id.vn/api/v1/users/search");
+                    .fromPath("/api/v1/users/search");
 
             if (skills != null && !skills.isEmpty()) {
                 uriBuilder.queryParam("skills", skills);

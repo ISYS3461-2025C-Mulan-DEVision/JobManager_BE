@@ -26,6 +26,14 @@ public interface SubscriptionService {
     SubscriptionResponse getByCompanyId(UUID companyId);
 
     /**
+     * Gets all subscriptions for a company by company ID.
+     *
+     * @param companyId the company UUID
+     * @return list of all subscriptions for the company
+     */
+    List<SubscriptionResponse> getAllByCompanyId(UUID companyId);
+
+    /**
      * Gets a subscription by its ID.
      *
      * @param id the subscription UUID

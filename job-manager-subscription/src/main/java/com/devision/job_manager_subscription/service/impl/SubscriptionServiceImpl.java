@@ -62,6 +62,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     /**
+     * Gets all subscriptions for a company by company ID.
+     *
+     * @param companyId the company UUID
+     * @return list of all subscriptions for the company
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SubscriptionResponse> getAllByCompanyId(UUID companyId) {
+        return subscriptionRepository.findAllByCompanyIdOrderByStartAtDesc(companyId)
+                .stream()
+                .map(SubscriptionResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Gets a subscription by its ID.
      *
      * @param id the subscription UUID
@@ -128,6 +143,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         "REACTIVATION_" + subscription.getId()
                 );
 
+                // Also publish SubscriptionUpdatedEvent for services that listen to company.subscription.updated
+                publishSubscriptionEvent(subscription);
+
                 return SubscriptionResponse.fromEntity(subscription);
             } else {
                 // If subscription is ACTIVE or INACTIVE, throw error
@@ -159,6 +177,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 subscription.getEndAt(),
                 "MANUAL_CREATION_" + subscription.getId()
         );
+
+        // Also publish SubscriptionUpdatedEvent for services that listen to company.subscription.updated
+        publishSubscriptionEvent(subscription);
 
         return SubscriptionResponse.fromEntity(subscription);
     }
