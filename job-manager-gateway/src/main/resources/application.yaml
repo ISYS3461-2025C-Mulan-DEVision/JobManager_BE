@@ -50,7 +50,7 @@ spring:
                 - id: job-manager-jobpost
                   uri: http://localhost:8083/
                   predicates:
-                      - Path=/api/job-posts/**
+                      - Path=/api/job-posts/**, /api/applications/**
                   filters:
                       - Authentication
 
