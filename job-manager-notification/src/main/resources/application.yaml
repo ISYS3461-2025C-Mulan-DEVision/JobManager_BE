@@ -5,6 +5,12 @@ spring:
     application:
         name: job-manager-notification
 
+    # Set default timezone for JSON serialization
+    jackson:
+        time-zone: Asia/Ho_Chi_Minh
+        serialization:
+            write-dates-as-timestamps: false
+
     datasource:
         url: ${POSTGRES_NOTIFICATION_URL:jdbc:postgresql://localhost:5438/job_manager_notification}
         username: ${POSTGRES_NOTIFICATION_USERNAME:postgres}
