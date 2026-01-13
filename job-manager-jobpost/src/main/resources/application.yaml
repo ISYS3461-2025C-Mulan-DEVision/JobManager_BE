@@ -5,6 +5,9 @@ spring:
     application:
         name: job-manager-jobpost
 
+    profiles:
+      active: mock
+
     datasource:
         url: ${POSTGRES_JOBPOST_URL:jdbc:postgresql://localhost:5434/job_manager_jobpost}
         username: ${POSTGRES_JOBPOST_USERNAME:postgres}
@@ -91,3 +94,4 @@ logging:
         com.devision.job_manager_jobpost: DEBUG
         org.springframework.kafka: INFO
         org.apache.kafka: WARN
+

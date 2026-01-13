@@ -9,6 +9,7 @@ import com.devision.job_manager_jobpost.service.external.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Profile("!mock")
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
@@ -246,3 +248,5 @@ public class ApplicationServiceImpl implements ApplicationService {
         return emptyPage;
     }
 }
+
+

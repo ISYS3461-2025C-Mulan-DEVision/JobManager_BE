@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/internal/job-posts")
+@RequestMapping("/api/applications")  // Changed from /api/v1/internal/job-posts
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationController {
@@ -25,9 +25,9 @@ public class ApplicationController {
 
     /**
      * Get applications for a specific job post
-     * Supports filtering by archived status and pagination
+     * GET /applications/job-posts/{jobPostId}
      */
-    @GetMapping("/{jobPostId}/applications")
+    @GetMapping("/job-posts/{jobPostId}")  // Changed path
     public ResponseEntity<ApiResponse<PageableResponseDto<ApplicationResponseDto>>> getApplications(
             @PathVariable UUID jobPostId,
             @RequestParam UUID companyId,
@@ -52,8 +52,9 @@ public class ApplicationController {
 
     /**
      * Get application counts (pending vs archived)
+     * GET /applications/job-posts/{jobPostId}/counts
      */
-    @GetMapping("/{jobPostId}/applications/count")
+    @GetMapping("/job-posts/{jobPostId}/counts")  // Changed path (added 's' to match frontend)
     public ResponseEntity<ApiResponse<Map<String, Long>>> getApplicationCounts(
             @PathVariable UUID jobPostId,
             @RequestParam UUID companyId) {
@@ -78,8 +79,9 @@ public class ApplicationController {
 
     /**
      * Archive an application
+     * POST /applications/{applicationId}/archive
      */
-    @PostMapping("/applications/{applicationId}/archive")
+    @PostMapping("/{applicationId}/archive")  // Changed path
     public ResponseEntity<ApiResponse<Void>> archiveApplication(
             @PathVariable UUID applicationId,
             @RequestParam UUID companyId,
@@ -99,8 +101,9 @@ public class ApplicationController {
 
     /**
      * Unarchive an application
+     * POST /applications/{applicationId}/unarchive
      */
-    @PostMapping("/applications/{applicationId}/unarchive")
+    @PostMapping("/{applicationId}/unarchive")  // Changed path
     public ResponseEntity<ApiResponse<Void>> unarchiveApplication(
             @PathVariable UUID applicationId,
             @RequestParam UUID companyId) {
@@ -119,8 +122,9 @@ public class ApplicationController {
 
     /**
      * Download application file (Resume or Cover Letter)
+     * GET /applications/{applicationId}/files/{docType}
      */
-    @GetMapping("/applications/{applicationId}/files/{docType}")
+    @GetMapping("/{applicationId}/files/{docType}")  // Changed path
     public ResponseEntity<byte[]> downloadApplicationFile(
             @PathVariable UUID applicationId,
             @PathVariable String docType) {
@@ -131,12 +135,12 @@ public class ApplicationController {
             byte[] fileContent = applicationService.downloadApplicationFile(applicationId, docType);
 
             // Determine content type and filename
-            String contentType = docType.equals("RESUME") ? "application/pdf" : "application/pdf";
+            String contentType = "application/pdf";
             String filename = docType.equals("RESUME") ? "resume.pdf" : "cover_letter.pdf";
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
                     .body(fileContent);
         } catch (Exception e) {
             log.error("Error downloading file: ", e);
