@@ -7,7 +7,6 @@ import com.devision.job_manager_jobpost.service.external.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/applications")
+@RequestMapping("/api/v1/internal/job-posts")
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationController {
@@ -25,46 +24,41 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     /**
-     * Get applications for a job post with pagination and filtering
-     *
-     * GET /api/applications/job-posts/{jobPostId}?companyId={companyId}&page=0&size=20&archived=false
+     * Get applications for a specific job post
+     * Supports filtering by archived status and pagination
      */
-    @GetMapping("/job-posts/{jobPostId}")
-    public ResponseEntity<ApiResponse<PageableResponseDto<ApplicationResponseDto>>> getApplicationsByJobPost(
+    @GetMapping("/{jobPostId}/applications")
+    public ResponseEntity<ApiResponse<PageableResponseDto<ApplicationResponseDto>>> getApplications(
             @PathVariable UUID jobPostId,
             @RequestParam UUID companyId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Boolean archived) {
 
-        log.info("GET /api/applications/job-posts/{} - companyId: {}, page: {}, size: {}, archived: {}",
+        log.info("Fetching applications for jobPostId={}, companyId={}, page={}, size={}, archived={}",
                 jobPostId, companyId, page, size, archived);
 
         try {
             PageableResponseDto<ApplicationResponseDto> applications =
                     applicationService.getApplicationsByJobPost(jobPostId, companyId, page, size, archived);
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("Applications retrieved successfully", applications)
-            );
+            return ResponseEntity.ok(ApiResponse.success("Applications fetched successfully", applications));
         } catch (Exception e) {
-            log.error("Error fetching applications for job post {}: ", jobPostId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            log.error("Error fetching applications: ", e);
+            return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to fetch applications: " + e.getMessage()));
         }
     }
 
     /**
-     * Get application counts (pending and archived) for a job post
-     *
-     * GET /api/applications/job-posts/{jobPostId}/counts?companyId={companyId}
+     * Get application counts (pending vs archived)
      */
-    @GetMapping("/job-posts/{jobPostId}/counts")
+    @GetMapping("/{jobPostId}/applications/count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getApplicationCounts(
             @PathVariable UUID jobPostId,
             @RequestParam UUID companyId) {
 
-        log.info("GET /api/applications/job-posts/{}/counts - companyId: {}", jobPostId, companyId);
+        log.info("Fetching application counts for jobPostId={}, companyId={}", jobPostId, companyId);
 
         try {
             long[] counts = applicationService.getApplicationCounts(jobPostId, companyId);
@@ -72,117 +66,81 @@ public class ApplicationController {
             Map<String, Long> countMap = new HashMap<>();
             countMap.put("pending", counts[0]);
             countMap.put("archived", counts[1]);
+            countMap.put("total", counts[0] + counts[1]);
 
-            return ResponseEntity.ok(
-                    ApiResponse.success("Application counts retrieved successfully", countMap)
-            );
+            return ResponseEntity.ok(ApiResponse.success("Application counts retrieved", countMap));
         } catch (Exception e) {
-            log.error("Error fetching application counts for job post {}: ", jobPostId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Failed to fetch application counts: " + e.getMessage()));
+            log.error("Error fetching application counts: ", e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Failed to fetch counts: " + e.getMessage()));
         }
     }
 
     /**
      * Archive an application
-     *
-     * POST /api/applications/{applicationId}/archive
-     * Body: { "companyId": "uuid", "jobPostId": "uuid" }
      */
-    @PostMapping("/{applicationId}/archive")
+    @PostMapping("/applications/{applicationId}/archive")
     public ResponseEntity<ApiResponse<Void>> archiveApplication(
             @PathVariable UUID applicationId,
-            @RequestBody ArchiveRequest request) {
+            @RequestParam UUID companyId,
+            @RequestParam UUID jobPostId) {
 
-        log.info("POST /api/applications/{}/archive - companyId: {}, jobPostId: {}",
-                applicationId, request.getCompanyId(), request.getJobPostId());
+        log.info("Archiving application={} for company={}", applicationId, companyId);
 
         try {
-            applicationService.archiveApplication(applicationId, request.getCompanyId(), request.getJobPostId());
-
-            return ResponseEntity.ok(
-                    ApiResponse.success("Application archived successfully", null)
-            );
+            applicationService.archiveApplication(applicationId, companyId, jobPostId);
+            return ResponseEntity.ok(ApiResponse.success("Application archived successfully", null));
         } catch (Exception e) {
-            log.error("Error archiving application {}: ", applicationId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            log.error("Error archiving application: ", e);
+            return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to archive application: " + e.getMessage()));
         }
     }
 
     /**
      * Unarchive an application
-     *
-     * POST /api/applications/{applicationId}/unarchive
-     * Body: { "companyId": "uuid" }
      */
-    @PostMapping("/{applicationId}/unarchive")
+    @PostMapping("/applications/{applicationId}/unarchive")
     public ResponseEntity<ApiResponse<Void>> unarchiveApplication(
             @PathVariable UUID applicationId,
-            @RequestBody UnarchiveRequest request) {
+            @RequestParam UUID companyId) {
 
-        log.info("POST /api/applications/{}/unarchive - companyId: {}",
-                applicationId, request.getCompanyId());
+        log.info("Unarchiving application={} for company={}", applicationId, companyId);
 
         try {
-            applicationService.unarchiveApplication(applicationId, request.getCompanyId());
-
-            return ResponseEntity.ok(
-                    ApiResponse.success("Application unarchived successfully", null)
-            );
+            applicationService.unarchiveApplication(applicationId, companyId);
+            return ResponseEntity.ok(ApiResponse.success("Application unarchived successfully", null));
         } catch (Exception e) {
-            log.error("Error unarchiving application {}: ", applicationId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            log.error("Error unarchiving application: ", e);
+            return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Failed to unarchive application: " + e.getMessage()));
         }
     }
 
     /**
      * Download application file (Resume or Cover Letter)
-     *
-     * GET /api/applications/{applicationId}/files/{docType}
-     * docType: RESUME or COVER_LETTER
      */
-    @GetMapping("/{applicationId}/files/{docType}")
+    @GetMapping("/applications/{applicationId}/files/{docType}")
     public ResponseEntity<byte[]> downloadApplicationFile(
             @PathVariable UUID applicationId,
             @PathVariable String docType) {
 
-        log.info("GET /api/applications/{}/files/{}", applicationId, docType);
+        log.info("Downloading file for application={}, docType={}", applicationId, docType);
 
         try {
             byte[] fileContent = applicationService.downloadApplicationFile(applicationId, docType);
 
-            // Determine filename based on document type
-            String filename = docType.equals("RESUME") ? "resume.pdf" : "cover-letter.pdf";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("inline", filename);
-            headers.setContentLength(fileContent.length);
+            // Determine content type and filename
+            String contentType = docType.equals("RESUME") ? "application/pdf" : "application/pdf";
+            String filename = docType.equals("RESUME") ? "resume.pdf" : "cover_letter.pdf";
 
             return ResponseEntity.ok()
-                    .headers(headers)
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .body(fileContent);
-
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid document type: {}", docType);
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.error("Error downloading file for application {}: ", applicationId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Error downloading file: ", e);
+            return ResponseEntity.internalServerError().build();
         }
-    }
-
-    // Request DTOs
-    @lombok.Data
-    public static class ArchiveRequest {
-        private UUID companyId;
-        private UUID jobPostId;
-    }
-
-    @lombok.Data
-    public static class UnarchiveRequest {
-        private UUID companyId;
     }
 }

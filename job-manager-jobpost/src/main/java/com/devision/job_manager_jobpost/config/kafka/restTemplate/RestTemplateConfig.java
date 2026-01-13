@@ -11,7 +11,7 @@ import java.time.Duration;
 @Configuration
 public class RestTemplateConfig {
 
-    @Value("${application.service.base-url:http://localhost:8083}")
+    @Value("https://03ca3e0ae418.ngrok-free.app")
     private String applicationServiceBaseUrl;
 
     @Bean
