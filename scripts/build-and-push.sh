@@ -106,11 +106,13 @@ build_frontend_service() {
             export $(cat "$FRONTEND_ENV_FILE" | grep -v '^#' | xargs)
         fi
         
+        # For production with HTTPS, use /api as base URL so requests go through nginx proxy
+        # This avoids Mixed Content errors (HTTPS frontend calling HTTP backend)
         if docker buildx build \
             --platform linux/amd64 \
-            --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://52.76.250.138:8080}" \
-            --build-arg VITE_API_URL="${VITE_API_URL:-http://52.76.250.138:8080}" \
-            --build-arg VITE_GATEWAY_API_URL="${VITE_GATEWAY_API_URL:-http://52.76.250.138:8080}" \
+            --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}" \
+            --build-arg VITE_API_URL="${VITE_API_URL:-/api}" \
+            --build-arg VITE_GATEWAY_API_URL="${VITE_GATEWAY_API_URL:-}" \
             --build-arg VITE_STRIPE_PUBLISHABLE_KEY="${VITE_STRIPE_PUBLISHABLE_KEY}" \
             --build-arg VITE_NODE_ENV=production \
             --build-arg VITE_ENV=production \
