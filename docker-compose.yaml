@@ -176,6 +176,9 @@ services:
             SPRING_PROFILES_ACTIVE: docker
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
             SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+            FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
+            FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-devision-job-manager}
+            FIREBASE_BUCKET_NAME: ${FIREBASE_BUCKET_NAME:-devision-job-manager.firebasestorage.app}
         depends_on:
             discovery-server:
                 condition: service_healthy
