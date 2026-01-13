@@ -54,6 +54,11 @@ company:
     service:
         url: http://${COMPANY_SERVICE_HOST:localhost}:8082
 
+# Application Service Integration (Job Applicant Subsystem)
+application:
+  service:
+    base-url: https://be.serverhub.id.vn  # Job Applicant's Application Service
+
 eureka:
     client:
         service-url:

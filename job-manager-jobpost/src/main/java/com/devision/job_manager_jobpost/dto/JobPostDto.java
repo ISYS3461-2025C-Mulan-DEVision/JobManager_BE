@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 @Data
 @NoArgsConstructor
@@ -29,7 +30,7 @@ public class JobPostDto {
     private BigDecimal salaryMax;
     private String salaryNote;
     private String locationCity;
-    private String countryCode; // can be derived on client if needed
+    private String countryCode;
     
     @JsonProperty("isPublished")
     private boolean published;
@@ -39,6 +40,8 @@ public class JobPostDto {
     
     private LocalDateTime postedAt;
     private LocalDateTime expiryAt;
+
+    private List<UUID> skillIds;
     
     // Employment types - return single value for frontend compatibility
     private EmploymentType employmentType;
