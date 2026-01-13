@@ -51,6 +51,13 @@ spring:
           filters:
             - Authentication
 
+        # External Job Posts API (inter-service communication for JobApplicant team)
+        # IMPORTANT: Must come BEFORE job-manager-jobpost to avoid route conflicts
+        - id: job-manager-jobpost-external
+          uri: ${JOBPOST_SERVICE_URL:lb://job-manager-jobpost}
+          predicates:
+            - Path=/api/external/job-posts/**
+
         - id: job-manager-jobpost
           uri: ${JOBPOST_SERVICE_URL:lb://job-manager-jobpost}
           predicates:

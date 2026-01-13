@@ -42,6 +42,12 @@ services:
             EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
             # Gateway needs to connect to services on EC2-2 via private IP
             GATEWAY_AUTH_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8081
+            JOBPOST_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8083
+            COMPANY_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8082
+            APPLICANT_SEARCH_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8084
+            SUBSCRIPTION_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8085
+            PAYMENT_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8086
+            NOTIFICATION_SERVICE_URL: http://${EC2_2_PRIVATE_IP}:8087
         depends_on:
             discovery-server:
                 condition: service_healthy

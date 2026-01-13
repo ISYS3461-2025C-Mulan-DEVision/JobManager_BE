@@ -50,9 +50,11 @@ public class SearchProfileServiceImpl implements SearchProfileService {
                 .companyId(request.getCompanyId())
                 .profileName(request.getProfileName())
                 .countryCode(request.getCountryCode())
+                .city(request.getCity())
+                .workExperience(request.getWorkExperience())
                 .minSalary(request.getMinSalary())
                 .maxSalary(request.getMaxSalary())
-                .highestDegree(request.getHighestDegree())
+                .education(request.getEducation())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
 
@@ -148,8 +150,14 @@ public class SearchProfileServiceImpl implements SearchProfileService {
         if (request.getMaxSalary() != null) {
             profile.setMaxSalary(request.getMaxSalary());
         }
-        if (request.getHighestDegree() != null) {
-            profile.setHighestDegree(request.getHighestDegree());
+        if (request.getCity() != null) {
+            profile.setCity(request.getCity());
+        }
+        if (request.getWorkExperience() != null) {
+            profile.setWorkExperience(request.getWorkExperience());
+        }
+        if (request.getEducation() != null) {
+            profile.setEducation(request.getEducation());
         }
         if (request.getIsActive() != null) {
             // Validate premium when activating

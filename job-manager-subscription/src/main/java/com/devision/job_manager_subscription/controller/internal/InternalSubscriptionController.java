@@ -42,6 +42,13 @@ public class InternalSubscriptionController {
         return ResponseEntity.ok(ApiResponse.success("Subscription retrieved", subscription));
     }
 
+    // Get all subscriptions for a company
+    @GetMapping("/company/{companyId}/all")
+    public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getAllByCompanyId(@PathVariable UUID companyId) {
+        List<SubscriptionResponse> subscriptions = subscriptionService.getAllByCompanyId(companyId);
+        return ResponseEntity.ok(ApiResponse.success("Subscriptions retrieved", subscriptions));
+    }
+
     // Check if a company is premium
     @GetMapping("/company/{companyId}/premium")
     public ResponseEntity<ApiResponse<Boolean>> isPremium(@PathVariable UUID companyId) {

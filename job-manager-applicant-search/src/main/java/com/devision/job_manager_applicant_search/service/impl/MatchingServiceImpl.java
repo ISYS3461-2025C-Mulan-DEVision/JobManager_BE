@@ -211,7 +211,7 @@ public class MatchingServiceImpl implements MatchingService {
      * Applicant degree must be equal to or higher than profile requirement.
      */
     private boolean matchesEducation(ApplicantSearchProfile profile, ApplicantProfileUpdatedEvent applicant) {
-        EducationDegree requiredDegree = profile.getHighestDegree();
+        EducationDegree requiredDegree = profile.getEducation();
         EducationDegree applicantDegree = applicant.getHighestDegree();
 
         // If no degree requirement, match
