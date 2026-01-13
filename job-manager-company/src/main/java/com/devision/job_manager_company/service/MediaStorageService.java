@@ -3,9 +3,9 @@ package com.devision.job_manager_company.service;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,14 +13,18 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean(Storage.class)
 public class MediaStorageService {
 
     private final Storage storage;
 
     @Value("${firebase.bucket-name}")
     private String bucketName;
+
+    public MediaStorageService(Storage storage) {
+        this.storage = storage;
+    }
 
     // Upload company logo, overwrites existing logo
     public String uploadCompanyLogo(UUID companyId, MultipartFile file) throws IOException {

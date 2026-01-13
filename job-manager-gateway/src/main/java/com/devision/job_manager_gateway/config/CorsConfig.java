@@ -18,7 +18,13 @@ public class CorsConfig {
 
         // Allow your frontend origin
         corsConfig.setAllowedOrigins(List.of(
-                "http://localhost:5173"
+                "http://localhost:5173",          // Development frontend
+                "http://localhost",               // Docker frontend (port 80)
+                "http://localhost:80",            // Docker frontend (explicit port)
+                "http://52.76.250.138:5173",      // EC2 Frontend deployment
+                "http://52.76.250.138",           // EC2 Frontend (port 80)
+                "http://52.76.250.138:80",         // EC2 Frontend (explicit port 80)
+                "https://52.76.250.138:443"
         ));
 
         // Allow all HTTP methods

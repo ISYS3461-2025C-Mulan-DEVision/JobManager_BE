@@ -114,6 +114,9 @@ public class ShardingDataSourceConfig {
         dataSource.setIdleTimeout(props.getIdleTimeout());
         dataSource.setMaxLifetime(props.getMaxLifetime());
 
+        // Disable auto-commit for Spring transaction management
+        dataSource.setAutoCommit(false);
+
         return dataSource;
     }
 
@@ -167,6 +170,9 @@ public class ShardingDataSourceConfig {
             config.setConnectionTimeout(30000);
             config.setIdleTimeout(600000);
             config.setMaxLifetime(1800000);
+
+            // Disable auto-commit for Spring transaction management
+            config.setAutoCommit(false);
 
             dataSources.put(shardKey, new HikariDataSource(config));
             log.info("Created direct DataSource for shard: {}", shardKey);

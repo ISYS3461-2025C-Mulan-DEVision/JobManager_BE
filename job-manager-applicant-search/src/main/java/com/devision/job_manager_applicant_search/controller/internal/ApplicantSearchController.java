@@ -35,6 +35,7 @@ public class ApplicantSearchController {
      * 
      * Supported filters (aligned with JA service):
      * - username: Name search (firstName, lastName)
+     * - ftsQuery: Full-Text Search across Work Experience, Objective Summary, and Technical Skills
      * - countryCode: Two-letter country code
      * - city: City name filter
      * - education: Education level (HIGH_SCHOOL, ASSOCIATE, BACHELOR, MASTER, DOCTORATE)
@@ -52,6 +53,7 @@ public class ApplicantSearchController {
     public ResponseEntity<ApiResponse<ApplicantSearchResult>> searchApplicants(
             @RequestHeader(value = "X-Company-Id", required = false) UUID companyId,
             @RequestParam(required = false) String username,
+            @RequestParam(required = false) String ftsQuery,
             @RequestParam(required = false) String countryCode,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String education,
@@ -68,6 +70,7 @@ public class ApplicantSearchController {
     ) {
         ApplicantSearchRequest request = ApplicantSearchRequest.builder()
                 .username(username)
+                .ftsQuery(ftsQuery)
                 .countryCode(countryCode)
                 .city(city)
                 .education(education)
