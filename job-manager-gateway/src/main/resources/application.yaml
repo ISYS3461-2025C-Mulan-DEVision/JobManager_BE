@@ -10,6 +10,32 @@ spring:
 
   cloud:
     gateway:
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost"
+              - "http://localhost:80"
+              - "http://52.76.250.138:5173"
+              - "http://52.76.250.138"
+              - "http://52.76.250.138:80"
+              - "https://52.76.250.138:443"
+              - "https://mulan-jm.online"
+              - "https://www.mulan-jm.online"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders:
+              - "Authorization"
+            maxAge: 3600
       discovery:
         locator:
           enabled: true
