@@ -22,9 +22,11 @@ public class ActiveSearchProfileResponse {
     private UUID companyId;
     private String profileName;
     private String countryCode;
+    private String city;
+    private String workExperience;
     private BigDecimal minSalary;
     private BigDecimal maxSalary;
-    private EducationDegree highestDegree;
+    private EducationDegree education;
     private Set<EmploymentType> employmentTypes;
     private Set<UUID> skillIds;
 
@@ -39,9 +41,11 @@ public class ActiveSearchProfileResponse {
                 .companyId(profile.getCompanyId())
                 .profileName(profile.getProfileName())
                 .countryCode(profile.getCountryCode())
+                .city(profile.getCity())
+                .workExperience(profile.getWorkExperience())
                 // .minSalary(profile.getMinSalary())
                 // .maxSalary(profile.getMaxSalary())
-                .highestDegree(profile.getHighestDegree())
+                .education(profile.getEducation())
                 .employmentTypes(profile.getEmploymentTypeValues())
                 .skillIds(profile.getSkillIds())
                 .build();
