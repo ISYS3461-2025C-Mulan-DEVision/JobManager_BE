@@ -24,7 +24,9 @@ public class CorsConfig {
                 "http://52.76.250.138:5173",      // EC2 Frontend deployment
                 "http://52.76.250.138",           // EC2 Frontend (port 80)
                 "http://52.76.250.138:80",         // EC2 Frontend (explicit port 80)
-                "https://52.76.250.138:443"
+                "https://52.76.250.138:443",
+                "https://mulan-jm.online",        // Production domain
+                "https://www.mulan-jm.online"     // Production domain with www
         ));
 
         // Allow all HTTP methods
