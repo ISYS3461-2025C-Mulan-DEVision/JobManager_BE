@@ -71,8 +71,8 @@ docker compose -f "$COMPOSE_FILE" up -d
 echo -e "${GREEN}✅ Microservices started${NC}"
 
 # Step 6: Wait for services to be ready
-echo -e "${YELLOW}⏳ Waiting for services to be healthy (60s)...${NC}"
-sleep 60
+echo -e "${YELLOW}⏳ Waiting for services to be healthy (120s)...${NC}"
+sleep 120
 
 # Step 7: Health checks
 echo -e "${YELLOW}🏥 Running health checks...${NC}"

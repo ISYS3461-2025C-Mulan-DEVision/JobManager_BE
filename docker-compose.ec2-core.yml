@@ -46,8 +46,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     company-service:
         image: ${DOCKERHUB_USERNAME}/jm-company:${IMAGE_TAG:-latest}
@@ -77,8 +78,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     jobpost-service:
         image: ${DOCKERHUB_USERNAME}/jm-jobpost:${IMAGE_TAG:-latest}
@@ -108,8 +110,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     applicant-search-service:
         image: ${DOCKERHUB_USERNAME}/jm-applicant-search:${IMAGE_TAG:-latest}
@@ -140,8 +143,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     subscription-service:
         image: ${DOCKERHUB_USERNAME}/jm-subscription:${IMAGE_TAG:-latest}
@@ -171,8 +175,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     payment-service:
         image: ${DOCKERHUB_USERNAME}/jm-payment:${IMAGE_TAG:-latest}
@@ -202,8 +207,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8086/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
     notification-service:
         image: ${DOCKERHUB_USERNAME}/jm-notification:${IMAGE_TAG:-latest}
@@ -233,8 +239,9 @@ services:
         healthcheck:
             test: ["CMD", "wget", "-q", "--spider", "http://localhost:8087/actuator/health"]
             interval: 30s
-            timeout: 10s
-            retries: 5
+            timeout: 15s
+            retries: 10
+            start_period: 90s
 
 networks:
     jm-core-network:
